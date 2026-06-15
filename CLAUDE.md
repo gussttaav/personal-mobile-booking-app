@@ -1,1 +1,50 @@
-@AGENTS.md
+## Project: gustavoai mobile
+
+A React Native (Expo) mobile app for students of an existing online
+tutoring web service. It consumes the existing Next.js API over HTTP —
+it does NOT have its own backend.
+
+### Tech
+- Expo SDK 54, Expo Router (file-based), TypeScript strict
+- npm (NOT pnpm/yarn) — keep package-lock.json authoritative
+- Testing on physical Android via Expo Go until native deps require a dev build
+
+### Design source of truth
+- Design system (authoritative brand tokens, as code): docs/design/design-system/
+  - colors_and_type.css holds exact color + typography values
+  - _ds_manifest.json enumerates components and specs
+  - These drive constants/theme.ts — transcribe values from here, not from screenshots
+- Screen specifications: docs/design/screens/ (one .dc.html per screen)
+  - These are WEB html/css — translate design intent into React Native idioms,
+    do not port markup one-to-one
+- App structure reference: docs/design/screens/Inventario de Pantallas.dc.html
+  and Navegacion y Home.dc.html define the full screen list and navigation model
+- Visual verification: docs/design/screenshots/ — compare built screens against these
+- Written brief and brand description: docs/design/design-brief.md, docs/design/brand.md
+- Data model: docs/design/data-model.md
+- API contract (the existing Next.js backend): docs/api/api-contract.md
+
+### Conventions
+- Build screens one at a time against stubbed data first; wire real API later
+- Native dependencies (Google Sign-In, Stripe, Zoom) are deferred and batched
+- Do not add a native dependency without flagging the build-budget cost first
+
+### Out of scope for now
+- Zoom video integration (last phase)
+- Real authentication (stubbed until the first dev build)
+
+## Maintaining this file
+
+This file is read at the start of every session — keep it accurate or it
+misleads. When a change affects anything below, update this file IN THE SAME
+commit as the change:
+- Directory structure or where key files live
+- A new convention, or a change to an existing one
+- A dependency added/removed (especially native deps — note the build cost)
+- A deferred decision becoming active (e.g. auth approach finalized)
+- A new script, env var, or setup step
+
+When you finish a task, before reporting done, check whether any of the above
+changed. If so, update this file as part of the same change and mention it in
+your summary. If nothing changed, say "CLAUDE.md: no update needed" so I know
+it was considered, not forgotten.

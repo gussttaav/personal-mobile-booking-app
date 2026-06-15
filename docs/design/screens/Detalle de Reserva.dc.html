@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.25)}}
+  @keyframes joinGlow{0%,100%{box-shadow:0 0 24px rgba(78,222,163,0.35)}50%{box-shadow:0 0 36px rgba(78,222,163,0.55)}}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 72px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1340px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Reservas</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Detalle de reserva — arquetipo «detalle»</h1>
+    <p style="margin:0;max-width:740px;font:400 15px/1.6 Inter;color:#bbcabf;text-wrap:pretty">El concentrador de una reserva. Muestra una clase confirmada al completo y expone sus acciones: <strong style="color:#e5e1e4;font-weight:600">unirse</strong> (destacado cuando la clase está cerca), <strong style="color:#e5e1e4;font-weight:600">reprogramar</strong>, <strong style="color:#e5e1e4;font-weight:600">cancelar</strong> y <strong style="color:#e5e1e4;font-weight:600">añadir al calendario</strong>. Se abre sobre las pestañas.</p>
+  </div>
+
+  <div style="max-width:1340px;margin:40px auto 0;display:flex;justify-content:center">
+
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Confirmada · próxima · cerca</span>
+      </div>
+
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Detalle de reserva" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:260px;pointer-events:none;background:radial-gradient(circle at 50% -26%, rgba(78,222,163,0.18) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <!-- app bar: back → over tabs -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:6px;padding:10px 10px 4px">
+            <button type="button" aria-label="Volver" style="width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></button>
+            <span style="flex:1;font:700 16px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Detalle de reserva</span>
+            <span style="font:600 10.5px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px;letter-spacing:0.02em">#GA-4821</span>
+          </div>
+
+          <!-- scroll body -->
+          <div style="position:relative;z-index:1;flex:1;padding:8px 18px 18px">
+
+            <!-- HERO · time + status + near indicator -->
+            <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);box-shadow:0 14px 40px -18px rgba(78,222,163,0.45);padding:18px 18px 17px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+                <span style="display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);padding:6px 10px;border-radius:9999px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Confirmada</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font:600 11px/1 Inter;color:#4edea3"><span style="width:6px;height:6px;border-radius:9999px;background:#4edea3;animation:pulseDot 1.6s ease-in-out infinite"></span>Empieza en 12 min</span>
+              </div>
+              <div style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:8px">Tu próxima clase</div>
+              <div style="display:flex;align-items:baseline;gap:9px">
+                <span style="font:800 30px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Hoy · 18:00</span>
+                <span style="font:500 16px/1 Inter;color:#86948a">– 19:00</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;margin-top:9px">
+                <span style="font:500 13px/1.4 Inter;color:#bbcabf">1 hora · con Gustavo</span>
+                <span style="width:3px;height:3px;border-radius:9999px;background:#86948a"></span>
+                <span style="font:500 13px/1.4 Inter;color:#4edea3">Sala lista</span>
+              </div>
+            </div>
+
+            <!-- DETAILS · structured rows -->
+            <div style="border-radius:14px;background:#201f22;border:1px solid rgba(255,255,255,0.06);padding:6px 16px;margin-top:14px">
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 0">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg>
+                <span style="flex:1;font:500 13px/1.3 Inter;color:#86948a">Fecha</span>
+                <span style="font:600 13.5px/1.3 Inter;color:#e5e1e4">Jueves 26 jun 2026</span>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.05)"></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 0">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                <span style="flex:1;font:500 13px/1.3 Inter;color:#86948a">Horario</span>
+                <span style="font:600 13.5px/1.3 Inter;color:#e5e1e4">18:00 – 19:00 · 1 hora</span>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.05)"></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 0">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M2 12h6l2-7 4 14 2-7h6"></path></svg>
+                <span style="flex:1;font:500 13px/1.3 Inter;color:#86948a">Modalidad</span>
+                <span style="font:600 13.5px/1.3 Inter;color:#e5e1e4">Tutoría 1:1 · online</span>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.05)"></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:11px 0">
+                <div style="flex:none;width:34px;height:34px;margin-left:-7px;border-radius:9999px;background:#26262a;border:1.5px solid rgba(78,222,163,0.4);display:flex;align-items:center;justify-content:center;font:700 12px/1 Manrope;color:#bbcabf">GT</div>
+                <span style="flex:1;font:500 13px/1.3 Inter;color:#86948a">Profesor</span>
+                <span style="font:600 13.5px/1.3 Inter;color:#e5e1e4">con Gustavo</span>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.05)"></div>
+              <div style="display:flex;align-items:center;gap:14px;padding:13px 0">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg>
+                <span style="flex:1;font:500 13px/1.3 Inter;color:#86948a">Pago</span>
+                <span style="display:inline-flex;align-items:center;gap:8px"><span style="font:600 13.5px/1.3 Inter;color:#e5e1e4">1 crédito · Pack Esencial</span><span style="font:600 9.5px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);padding:3px 7px;border-radius:9999px">Crédito</span></span>
+              </div>
+            </div>
+
+            <!-- STUDENT NOTE -->
+            <div style="border-radius:14px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:15px 16px;margin-top:14px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M5 3h9l6 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M8 13h8M8 17h6"></path></svg>
+                <span style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a">Tu nota para Gustavo</span>
+              </div>
+              <p style="margin:0;font:400 13.5px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Quiero repasar punteros y gestión de memoria en C, y preparar el examen de Estructuras de Datos de la semana que viene.</p>
+            </div>
+
+            <!-- SALA · join_token -->
+            <div style="border-radius:14px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:15px 16px;margin-top:14px">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M16 8l5-3v14l-5-3"></path><rect x="3" y="6" width="13" height="12" rx="2"></rect></svg>
+                <span style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a">Sala de la clase</span>
+                <span style="margin-left:auto;font:600 10px/1 Inter;color:#4edea3">Activa</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 12px 0 14px;background:#201f22;border:1px solid rgba(255,255,255,0.08);border-radius:9px">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"></path><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path></svg>
+                <span style="flex:1;min-width:0;font:500 12.5px/1 Inter;color:#bbcabf;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">gustavoai.dev/sala/ax82-4821</span>
+                <button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;color:#4edea3;font:600 12.5px/1 Inter;cursor:pointer;padding:6px 2px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>Copiar</button>
+              </div>
+            </div>
+
+            <!-- cancel policy reassurance -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span style="font:400 12px/1.4 Inter;color:#86948a">Cancela o reprograma gratis hasta 24 h antes</span>
+            </div>
+
+          </div>
+
+          <!-- sticky action bar -->
+          <div style="position:sticky;bottom:0;z-index:2;background:rgba(19,19,21,0.94);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 16px 14px">
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;animation:joinGlow 2.6s ease-in-out infinite">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8l5-3v14l-5-3"></path><rect x="3" y="6" width="13" height="12" rx="2"></rect></svg>
+              Unirse a la clase
+            </button>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+              <button type="button" style="height:54px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 11.5px/1.1 Inter;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M12 12v5M9.5 14.5h5"></path></svg>
+                Calendario
+              </button>
+              <button type="button" style="height:54px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 11.5px/1.1 Inter;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 4v5h-5"></path></svg>
+                Reprogramar
+              </button>
+              <button type="button" style="height:54px;border:1px solid rgba(255,180,171,0.22);border-radius:10px;background:transparent;color:#ffb4ab;font:500 11.5px/1.1 Inter;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:540,&quot;height&quot;:1080}}"></script>
+</body>
+</html>

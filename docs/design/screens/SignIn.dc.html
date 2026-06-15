@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_ds/gustavoai-design-system-019dbfe0-dd3a-744e-b63c-14e34a8c5b58/colors_and_type.css">
+<style>
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+  <!-- top emerald glow -->
+  <div style="position:absolute;top:0;left:0;right:0;height:320px;pointer-events:none;background:radial-gradient(circle at 50% -22%, rgba(78,222,163,0.18) 0%, rgba(19,19,21,0) 62%)"></div>
+  <!-- grid texture -->
+  <div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);background-size:60px 60px"></div>
+
+  <!-- ===== BRAND HERO ===== -->
+  <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:52px 32px 24px">
+
+    <!-- brand mark -->
+    <div style="width:72px;height:72px;border-radius:18px;background:#1c1b1d;border:1px solid rgba(78,222,163,0.28);display:flex;align-items:center;justify-content:center;box-shadow:0 0 36px rgba(78,222,163,0.3);margin-bottom:20px">
+      <svg width="38" height="38" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M21.8844 14.4497C21.4269 14.3381 20.0395 14.3897 19.4861 14.3897H18.4668L17.5075 14.4497H14.9293L13.9101 14.5096H12.1114C11.9069 14.5096 11.5082 14.5462 11.3505 14.4137C11.1892 14.2776 11.2126 14.0408 11.212 13.8501V11.8715C11.212 11.6772 11.1832 11.1934 11.2732 11.0411C11.3919 10.8402 11.6083 10.8534 11.8116 10.8522H12.8908L13.7902 10.7923H26.5011C26.7397 10.7923 27.202 10.7383 27.3645 10.9308C27.4808 11.0687 27.4568 11.2833 27.461 11.4518L27.5203 12.2912L27.5779 13.3704C27.5521 13.8597 27.1804 14.0719 26.8608 14.3897L24.8822 16.3083L22.3041 18.769L19.606 21.4023L16.6081 24.2826L14.1499 26.621C13.937 26.8332 13.5317 27.3489 13.196 27.2337C12.9891 27.163 12.5155 26.5694 12.3482 26.3811L10.2959 24.0428L3.2287 16.0086L0.770437 13.2109C0.599559 13.0166 0.0725356 12.5082 0.104313 12.254C0.1223 12.1077 0.264998 11.9794 0.365127 11.8829L1.19913 11.1472L4.3169 8.44911L11.152 2.53074L12.7109 1.17631C12.9375 0.97965 12.7338 1.13438 13 1.02945C13.2272 0.940115 14.7332 0.996996 15 0.999994H15.5L16.5 0.999998L17.5 1C17.8106 1.0012 18.3805 0.953912 18.6916 1.02946C18.5657 1.45755 18.1179 1.77892 17.7923 2.06552L15.8737 3.80428L12.3961 6.96522L8.91863 10.1262L7 11.8715C6.81113 12.0424 6.24454 12.5047 6.17559 12.7211C6.10844 12.9316 5.83564 13.1012 5.96095 13.2505L7.25782 14.7495L11.9405 20.1456L13.0875 21.4647C13.2068 21.599 13.4094 21.8472 13.6103 21.8214C13.7644 21.801 14.1409 21.4503 14.2698 21.3352L15.7687 19.9909L19.546 16.6249C20.1096 16.1291 21.4917 14.9689 21.8844 14.4497Z" fill="url(#gm_grad)"></path>
+        <defs><linearGradient id="gm_grad" x1="0.4" y1="0.77" x2="26.87" y2="27.94" gradientUnits="userSpaceOnUse"><stop stop-color="#4EDEA3"></stop><stop offset="1" stop-color="#10B981"></stop></linearGradient></defs>
+      </svg>
+    </div>
+
+    <div style="font: 700 11px/1 Inter; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 15px"><span style="color:#e5e1e4">GUSTAVO</span><span style="color:#4edea3">AI.DEV</span></div>
+
+    <!-- intentional spacer — pushes value group down toward the CTA -->
+    <div style="flex:1;min-height:32px"></div>
+
+    <h1 style="margin:0 0 11px;font:800 30px/1.08 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Gustavo Torres</h1>
+    <p style="margin:0 0 20px;max-width:290px;font:400 15px/1.55 Inter;color:#bbcabf;text-wrap:pretty">Tutorías 1:1 de programación, matemáticas e IA con guía experta y directa.</p>
+
+    <!-- social proof pill -->
+    <div style="display:inline-flex;align-items:center;gap:9px;font:600 12.5px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:8px 14px;border-radius:9999px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true"><path d="M12 2.5l2.9 6.06 6.6.78-4.9 4.5 1.32 6.56L12 17.7 6.08 20.4l1.32-6.56-4.9-4.5 6.6-.78z"></path></svg>
+      <span style="color:#e5e1e4;font-weight:700">4.700</span> clases
+      <span style="width:3px;height:3px;border-radius:9999px;background:#555357;flex:none"></span>
+      <span style="color:#e5e1e4;font-weight:700">4,9</span>/5
+    </div>
+  </div>
+
+  <!-- ===== AUTH BLOCK ===== -->
+  <div style="position:relative;z-index:1;padding:0 24px calc(28px + env(safe-area-inset-bottom, 0px))">
+
+    <!-- FIX 1: Reserved alert slot — min-height anchors button position across all states -->
+    <div style="min-height:64px;display:flex;align-items:flex-end;padding-bottom:12px">
+
+      <!-- error alert -->
+      <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="width:100%;display:flex;align-items:flex-start;gap:10px;background:rgba(255,180,171,0.12);border:1px solid rgba(255,180,171,0.30);border-radius:10px;padding:12px 14px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4.5"></path><circle cx="12" cy="16.5" r=".6" fill="#ffb4ab" stroke="none"></circle></svg>
+          <span style="font:500 13px/1.45 Inter;color:#ffb4ab">No pudimos iniciar sesión, inténtalo de nuevo.</span>
+        </div>
+      </sc-if>
+
+      <!-- offline alert -->
+      <sc-if value="{{ isOffline }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="width:100%;display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.28);border-radius:10px;padding:12px 14px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><circle cx="12" cy="20" r=".5" fill="#fbbf24" stroke="none"></circle></svg>
+          <span style="font:500 13px/1.45 Inter;color:#fbbf24">Sin conexión. Comprueba tu red e inténtalo de nuevo.</span>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- FIX 3: Provider column — room for a 2nd provider without redesign -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:6px">
+
+      <!-- Google button — active (idle / error / offline) -->
+      <sc-if value="{{ showActive }}" hint-placeholder-val="{{ true }}">
+        <button type="button" style="width:100%;height:52px;border:none;border-radius:6px;background:#ffffff;color:#1f1f1f;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:11px;box-shadow:0 6px 22px rgba(0,0,0,0.38)">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path></svg>
+          Iniciar sesión con Google
+        </button>
+      </sc-if>
+
+      <!-- Google button — loading -->
+      <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+        <button type="button" disabled="{{ true }}" style="width:100%;height:52px;border:none;border-radius:6px;background:#ffffff;color:#5f6368;font:600 15px/1 Inter;cursor:default;display:flex;align-items:center;justify-content:center;gap:11px;box-shadow:0 6px 22px rgba(0,0,0,0.38);opacity:.88">
+          <span style="width:19px;height:19px;border-radius:9999px;border:2.5px solid rgba(31,31,31,0.16);border-top-color:#1f1f1f;display:inline-block;animation:spin .7s linear infinite;flex:none"></span>
+          Iniciando sesión…
+        </button>
+      </sc-if>
+
+      <!-- FIX 3: Apple placeholder slot — reserved for iOS launch, no redesign needed -->
+      <div style="width:100%;height:52px;border:1.5px dashed rgba(255,255,255,0.09);border-radius:6px;display:flex;align-items:center;justify-content:center;gap:10px;color:#555357;font:500 13px/1 Inter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#555357" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83z"></path><path d="M15.53 3.83c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>
+        Próximamente en iOS
+      </div>
+    </div>
+
+    <!-- FIX 2: Legal — separate tappable links (≥44 px touch target via padding) -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+      <span style="font:400 12px/1.5 Inter;color:#86948a">Al continuar, aceptas los</span>
+      <div style="display:flex;align-items:center;gap:0">
+        <a href="#" style="font:500 12px/1 Inter;color:#bbcabf;text-decoration:none;padding:13px 8px;display:inline-block">Términos de servicio</a>
+        <span style="color:#555357;font-size:11px;line-height:1">·</span>
+        <a href="#" style="font:500 12px/1 Inter;color:#bbcabf;text-decoration:none;padding:13px 8px;display:inline-block">Política de privacidad</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:760},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;loading&quot;,&quot;error&quot;,&quot;offline&quot;],&quot;default&quot;:&quot;idle&quot;,&quot;tsType&quot;:&quot;'idle'|'loading'|'error'|'offline'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'idle';
+    return {
+      isLoading: state === 'loading',
+      isError:   state === 'error',
+      isOffline: state === 'offline',
+      showActive: state !== 'loading',
+    };
+  }
+}
+</script>
+</body>
+</html>

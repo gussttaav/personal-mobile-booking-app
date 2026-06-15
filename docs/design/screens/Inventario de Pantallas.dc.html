@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#131315;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .ms{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -10%, rgba(78,222,163,0.13) 0%, rgba(19,19,21,0) 55%)"></div>
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);background-size:60px 60px"></div>
+
+<main style="position:relative;z-index:1;max-width:920px;margin:0 auto;padding:64px 24px 120px;font-family:Inter,system-ui,sans-serif">
+
+  <!-- ===== HEADER ===== -->
+  <div style="animation:fadeUp 0.6s ease both">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:16px">gustavoai.dev · App móvil v1.0 · Android</div>
+    <h1 style="margin:0 0 14px;font:800 clamp(2rem,5vw,2.9rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Inventario de pantallas</h1>
+    <p style="margin:0;max-width:620px;font:400 16px/1.6 Inter;color:#bbcabf">El mapa de pantallas, no las pantallas. Conjunto <strong style="color:#e5e1e4;font-weight:600">lean</strong> que cubre los 10 flujos del brief — una línea por pantalla, con sus estados como sub-puntos. Pensado para que lo anotes antes de diseñar.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px">
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#201f22;border:1px solid rgba(255,255,255,0.05);padding:7px 12px;border-radius:9999px">22 pantallas</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#201f22;border:1px solid rgba(255,255,255,0.05);padding:7px 12px;border-radius:9999px">4 tabs + experiencias sobre las tabs</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#201f22;border:1px solid rgba(255,255,255,0.05);padding:7px 12px;border-radius:9999px">10 flujos (A–J)</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#201f22;border:1px solid rgba(255,255,255,0.05);padding:7px 12px;border-radius:9999px">Solo modo oscuro</span>
+    </div>
+  </div>
+
+  <!-- ===== LEYENDA ===== -->
+  <section style="margin-top:48px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:14px;padding:22px 24px">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:16px">Cómo leer este documento</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 20px">
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:9999px;background:#4edea3;flex:none"></span><span style="font:400 13px/1.4 Inter;color:#bbcabf">Estado principal / éxito</span></div>
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:9999px;background:#6b7a70;flex:none"></span><span style="font:400 13px/1.4 Inter;color:#bbcabf">Cargando</span></div>
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:9999px;background:#bbcabf;flex:none"></span><span style="font:400 13px/1.4 Inter;color:#bbcabf">Vacío (no es error)</span></div>
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:9999px;background:#ffb4ab;flex:none"></span><span style="font:400 13px/1.4 Inter;color:#bbcabf">Error</span></div>
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24;flex:none"></span><span style="font:400 13px/1.4 Inter;color:#bbcabf">Permiso / regla que bloquea</span></div>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,0.06);margin:18px 0"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo X</span>
+      <span style="font:400 13px/1.4 Inter;color:#86948a;margin-right:8px">flujo(s) del brief que cubre</span>
+      <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Sobre las tabs</span>
+      <span style="font:400 13px/1.4 Inter;color:#86948a;margin-right:8px">se abre por encima de la barra de tabs</span>
+      <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#003824;background:#4edea3;padding:4px 9px;border-radius:9999px">★ Explorar</span>
+      <span style="font:400 13px/1.4 Inter;color:#86948a">candidata a variaciones de diseño</span>
+    </div>
+  </section>
+
+  <!-- ===== MODELO DE NAVEGACIÓN ===== -->
+  <section style="margin-top:44px">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:8px">Estructura</div>
+    <h2 style="margin:0 0 6px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Modelo de navegación</h2>
+    <p style="margin:0 0 20px;max-width:640px;font:400 14.5px/1.6 Inter;color:#bbcabf">Barra de tabs inferior fija con 4 destinos. Las experiencias enfocadas a pantalla completa (vídeo, reseña, re-login) se abren <em style="color:#e5e1e4;font-style:normal">por encima</em> de las tabs, no como tabs propias.</p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="background:#201f22;border:1px solid rgba(78,222,163,0.25);border-radius:12px;padding:16px 14px;text-align:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><div style="font:700 14px/1.2 Manrope;color:#e5e1e4;margin-top:8px">Inicio</div><div style="font:400 11.5px/1.4 Inter;color:#86948a;margin-top:3px">Próxima clase · saldo</div></div>
+      <div style="background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;text-align:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><div style="font:700 14px/1.2 Manrope;color:#e5e1e4;margin-top:8px">Reservar</div><div style="font:400 11.5px/1.4 Inter;color:#86948a;margin-top:3px">Tipo · fecha · pago</div></div>
+      <div style="background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;text-align:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8"></path><path d="M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3zM12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><div style="font:700 14px/1.2 Manrope;color:#e5e1e4;margin-top:8px">Packs</div><div style="font:400 11.5px/1.4 Inter;color:#86948a;margin-top:3px">Comprar · saldo · caducidad</div></div>
+      <div style="background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px 14px;text-align:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><div style="font:700 14px/1.2 Manrope;color:#e5e1e4;margin-top:8px">Perfil</div><div style="font:400 11.5px/1.4 Inter;color:#86948a;margin-top:3px">Cuenta · ajustes · salir</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center">
+      <span style="font:500 11px/1 Inter;color:#86948a">Sobre las tabs:</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#2a2a2c;padding:6px 11px;border-radius:8px">Sala de vídeo</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#2a2a2c;padding:6px 11px;border-radius:8px">Reseña post-clase</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#2a2a2c;padding:6px 11px;border-radius:8px">Re-login (sesión expirada)</span>
+      <span style="font:500 12px/1 Inter;color:#bbcabf;background:#2a2a2c;padding:6px 11px;border-radius:8px">Permisos del SO</span>
+    </div>
+  </section>
+
+  <!-- ===== SECCIÓN B: ONBOARDING & AUTH ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">A · Acceso</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Onboarding y autenticación</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S01</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Bienvenida / Iniciar sesión</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo A</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Marca + propuesta de valor con el botón nativo <strong style="color:#e5e1e4;font-weight:600">Iniciar sesión con Google</strong>. Layout deja sitio para un segundo proveedor (Apple) cuando llegue iOS, sin rediseño.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Inicial</strong> — pantalla de bienvenida con CTA único.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Conectando</strong> — selector de cuenta Google del sistema abierto.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Error</strong> — "no pudimos iniciar sesión, inténtalo de nuevo".</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S02</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Sesión expirada · Re-login</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo J</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Sobre las tabs</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Tras 30 días, se pide volver a entrar — en un límite natural, sin cortar al usuario a mitad de tarea. Al volver, regresa a donde estaba.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Aviso</strong> — "tu sesión ha caducado" + reentrar con Google.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Conectando</strong> · <strong style="color:#e5e1e4;font-weight:600">error</strong> — mismos que S01.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN C: INICIO ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">B · Tab Inicio</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Inicio</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(78,222,163,0.2);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S03</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Inicio — próxima clase + saldo</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo A</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#003824;background:#4edea3;padding:4px 9px;border-radius:9999px">★ Explorar</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Responde de un vistazo: <strong style="color:#e5e1e4;font-weight:600">¿cuándo es mi próxima clase y me quedan créditos?</strong> Próxima clase destacada con botón unirse, lista escaneable de las siguientes, y saldo de créditos visible cuando lo hay.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Con clases</strong> — próxima clase + lista de próximas + saldo.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Cargando</strong> — skeleton con el pulso de la marca.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Vacío (usuario nuevo)</strong> — sin reservas: CTA a Reservar + cross-sell de packs si no hay créditos. <span style="color:#86948a">(único estado vacío "primera vez" en alcance)</span></span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN D: RESERVAR ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">C · Tab Reservar</div>
+  <h2 style="margin:0 0 8px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Flujo de reserva</h2>
+  <p style="margin:0 0 16px;max-width:640px;font:400 14.5px/1.6 Inter;color:#bbcabf">Dos caminos comparten pantallas: <strong style="color:#e5e1e4;font-weight:600">pago por clase</strong> (elige duración → fecha → horario → pago) y <strong style="color:#e5e1e4;font-weight:600">con crédito de pack</strong> (salta el tipo: siempre 1h → fecha → horario → confirmar sin pago).</p>
+
+  <!-- Calendar POV callout -->
+  <div style="background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.25);border-radius:12px;padding:16px 18px;margin-bottom:18px;display:flex;gap:13px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M9 18h6M10 21h4"></path><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 3z"></path></svg>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="font:700 13px/1.3 Manrope;color:#e5e1e4">Calendario — decisión tomada</div><span style="font:600 9px/1 Inter;letter-spacing:0.06em;text-transform:uppercase;color:#003824;background:#4edea3;padding:3px 7px;border-radius:9999px">Resuelto</span></div>
+      <p style="margin:0 0 8px;font:400 13.5px/1.6 Inter;color:#bbcabf">Se mantiene la <strong style="color:#e5e1e4;font-weight:600">cuadrícula semanal</strong> (7 días) y el rojo de <strong style="color:#e5e1e4;font-weight:600">«Reservado»</strong>, por continuidad con la web. El toque cómodo se resuelve haciendo la cuadrícula <strong style="color:#e5e1e4;font-weight:600">desplazable en horizontal</strong> (celdas ~60 px) con la columna de horas y la fila de días fijas.</p>
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">
+        <li style="font:400 12.5px/1.5 Inter;color:#bbcabf">· Sesión de <strong style="color:#e5e1e4;font-weight:600">2 h</strong>: al tocar una hora elegible, el bloque se empareja <strong style="color:#e5e1e4;font-weight:600">siempre hacia adelante</strong>. El alumno no cambia la dirección; si quiere la hora anterior, la selecciona y la siguiente se une sola.</li>
+        <li style="font:400 12.5px/1.5 Inter;color:#bbcabf">· <strong style="color:#e5e1e4;font-weight:600">Fallback hacia atrás</strong>: sólo si la hora siguiente está ocupada, el bloque se forma con la anterior — nunca se rechaza una hora libre por eso.</li>
+        <li style="font:400 12.5px/1.5 Inter;color:#bbcabf">· <strong style="color:#e5e1e4;font-weight:600">«Libre · no cabe 2 h»</strong> es un estado visual propio, distinto de «Reservado» y de «No disponible», para no aparentar menos hueco del real.</li>
+      </ul>
+      <p style="margin:8px 0 0;font:400 12px/1.5 Inter;color:#86948a">Prototipo interactivo aprobado en <strong style="color:#bbcabf;font-weight:600">«Calendario — Exploración»</strong>.</p>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(78,222,163,0.2);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S04</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Tipo de sesión — 1 h / 2 h</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo B</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#003824;background:#4edea3;padding:4px 9px;border-radius:9999px">★ Explorar</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Se elige la duración <strong style="color:#e5e1e4;font-weight:600">primero</strong> para que el calendario solo muestre huecos que caben. Solo en el camino de pago por clase; con crédito de pack se salta.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Selección</strong> — 1 h y 2 h con su precio (€/clase).</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S05</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Cuadrícula semanal de horarios</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo B · D</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#003824;background:#4edea3;padding:4px 9px;border-radius:9999px">★ Explorar</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Cuadrícula de 7 días, desplazable en horizontal, en la zona horaria del dispositivo. En 2 h, las horas elegibles se emparejan hacia adelante (con fallback hacia atrás). Ver decisión arriba.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Con horarios</strong> — celdas Disponible / «Libre · no cabe 2 h» / Reservado / No disponible.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Cargando</strong> — al tocar una fecha.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Sin huecos</strong> — día libre / completo / dentro del aviso de 5 h. Un vacío claro que <em style="font-style:normal;color:#e5e1e4">no parezca error</em>, explicando el porqué.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Hueco tomado</strong> — alguien lo reservó antes; "esa hora se acaba de ocupar" → volver a horarios.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S06</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Confirmar y pagar — sesión individual</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo B</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Resumen + precio con la hoja de pago de Stripe. Deja sitio para el botón nativo de <strong style="color:#e5e1e4;font-weight:600">Google Pay</strong>, con tarjeta como alternativa.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Resumen</strong> — fecha, hora, duración, precio.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Procesando</strong> — pago en curso.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Pago rechazado</strong> — vuelve al paso de pago para reintentar.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Hueco tomado durante el pago</strong> — devuelve a selección de horario.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S07</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Confirmar — con crédito de pack</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo D</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Clase de 1 h que gasta exactamente <strong style="color:#e5e1e4;font-weight:600">1 crédito</strong> — sin paso de pago.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Confirmar</strong> — resumen + "gastas 1 crédito (te quedan N)".</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Sin créditos / expirados</strong> — camino no disponible: cross-sell a comprar pack en vez de callejón sin salida.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S08</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Reserva confirmada</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo B · D · I</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Fecha, hora y cómo unirse, con <strong style="color:#e5e1e4;font-weight:600">Añadir al calendario</strong> (uno de los dos puntos de entrada del Flujo I).</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Éxito</strong> — detalle + añadir al calendario + volver a Inicio.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN E: PACKS ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">D · Tab Packs</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Comprar y gestionar packs</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S09</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Packs — saldo, caducidad y compra</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo C</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Pack Esencial (5) e Intensivo (10) con ahorro en pill. Saldo actual y <strong style="color:#e5e1e4;font-weight:600">tiempo restante de caducidad</strong> (180 días) para que los créditos no mueran en silencio.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Con pack activo</strong> — saldo + caducidad arriba, opción de recomprar.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Sin pack</strong> — solo las dos ofertas, foco en convertir.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S10</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Pago del pack</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo C</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Stripe + Google Pay. La activación <strong style="color:#e5e1e4;font-weight:600">no es instantánea</strong>: el estado "confirmando pago" es obligatorio — nunca mostrar créditos antes de que existan.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Procesando</strong> — pago en la hoja de Stripe.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Confirmando pago</strong> — estado asíncrono mientras se activan los créditos.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Éxito</strong> — saldo actualizado + "reservar una clase ahora".</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Error de pago</strong> — reintentar.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN F: CICLO DE VIDA ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">E · Ciclo de vida de una reserva</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Detalle, cancelar y reprogramar</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S11</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Detalle de la reserva</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo E · F · G · I</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Fecha, hora, duración, la nota del alumno y las acciones por reserva: <strong style="color:#e5e1e4;font-weight:600">unirse, cancelar, reprogramar, añadir al calendario</strong>. Centro desde el que salen E, F, G e I.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Por defecto</strong> — acción de unirse resaltada cuando la clase está cerca.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S12</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Cancelar reserva</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo E</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Diálogo de confirmación que <strong style="color:#e5e1e4;font-weight:600">expone la regla de 2 h</strong> y distingue reembolso manual (sesión pagada) de devolución automática del crédito (pack).</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Confirmar</strong> — consecuencia clara; pagada → reembolso manual de Gustavo (la comisión no se devuelve); pack → crédito devuelto.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Fuera de ventana (≤2 h)</strong> — acción bloqueada con explicación, no fallo silencioso.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Error</strong> — fallo al cancelar.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S13</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Reprogramar reserva</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo F</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Elegir un nuevo hueco del <strong style="color:#e5e1e4;font-weight:600">mismo tipo</strong> — sin nuevo pago, el pago original se traslada. Reusa las pantallas de horarios (S05).</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Selección de nuevo hueco</strong> + <strong style="color:#e5e1e4;font-weight:600">éxito</strong> sin cargo.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Fuera de ventana (≤2 h)</strong> — bloqueado, misma regla que cancelar.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Sin huecos</strong> y <strong style="color:#e5e1e4;font-weight:600">hueco tomado</strong> — reusan los estados de S05.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN G: VÍDEO ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">F · Clase en vídeo · sobre las tabs</div>
+  <h2 style="margin:0 0 8px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Sala de vídeo</h2>
+  <p style="margin:0 0 16px;max-width:640px;font:400 13.5px/1.6 Inter;color:#86948a"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>Diseño conservador hasta confirmar qué soporta el SDK de vídeo de Zoom — no sobre-invertir en variaciones aquí.</p>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S14</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Pre-unión — prueba de cámara y micro</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo G</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Sobre las tabs</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Previsualizar vídeo, elegir cámara/micro y tocar <strong style="color:#e5e1e4;font-weight:600">Entrar</strong>.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Permiso cámara/micro</strong> — solicitud (primera vez).</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Permiso denegado</strong> — recuperación: por qué se necesita y cómo reactivarlo en Ajustes.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Vista previa lista</strong> — preview + selección de dispositivos.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S15</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Sala — en clase</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo G</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Sobre las tabs</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Controles de <strong style="color:#e5e1e4;font-weight:600">silenciar, cámara, chat y salir</strong>. Al salir → reseña (S16).</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#6b7a70"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Conectando</strong> — uniéndose a la sala.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Esperando al tutor</strong> — el alumno puede llegar primero; estado en calma, no sala vacía.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">En clase</strong> y <strong style="color:#e5e1e4;font-weight:600">chat abierto</strong> — vídeo activo con/ sin panel de chat.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN H: RESEÑA ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">G · Reseña · sobre las tabs</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Reseña post-clase</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S16</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Valoración con estrellas</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo H</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Sobre las tabs</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">1–5 estrellas → comentario opcional → (solo 4–5) prompt de reseña en Google con skip claro. Todo paso tras la primera estrella es saltable.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Estrellas</strong> → <strong style="color:#e5e1e4;font-weight:600">comentario</strong> (saltable) → <strong style="color:#e5e1e4;font-weight:600">gracias</strong>.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#bbcabf"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Prompt de Google</strong> — solo con 4–5; las de 1–3 nunca lo ven.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== SECCIÓN I: PERFIL ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:52px 0 8px">H · Tab Perfil</div>
+  <h2 style="margin:0 0 18px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Perfil, ajustes y permisos</h2>
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S17</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Perfil</h3>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Cuenta (nombre y foto del perfil de Google), entrada a Ajustes y cerrar sesión. Sin editar nombre (viene de Google) ni borrar cuenta (web).</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Por defecto</strong> — identidad + saldo de créditos + accesos.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S18</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Ajustes</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Permisos</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Notificaciones push (toggle + <strong style="color:#e5e1e4;font-weight:600">antelación del recordatorio, por defecto 10 min</strong>), acceso a calendario, idioma ES/EN y cerrar sesión. Sin ajuste de zona horaria.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Por defecto</strong> — lista de ajustes.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Permiso de notificaciones</strong> — se pide al activar el toggle; con ruta de concedido y denegado.</span></li>
+      </ul>
+    </article>
+
+    <article style="background:#1c1b1d;border:1px dashed rgba(255,255,255,0.12);border-radius:12px;padding:18px 20px 14px">
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:7px">
+        <span style="font:800 13px/1 Manrope;color:#4edea3">S19</span>
+        <h3 style="margin:0;font:700 17px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Añadir al calendario</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.25);padding:4px 9px;border-radius:9999px">Flujo I</span>
+          <span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 9px;border-radius:9999px">Patrón / hoja</span>
+        </div>
+      </div>
+      <p style="margin:0 0 12px;font:400 14px/1.55 Inter;color:#bbcabf">Disponible en confirmación (S08) y detalle (S11). Probablemente una hoja, no pantalla completa. Escribe fecha, hora, duración y enlace en el calendario del dispositivo.</p>
+      <ul style="list-style:none;margin:0;padding:0">
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#fbbf24"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Permiso de calendario</strong> — solicitud en el primer uso.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#ffb4ab"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Denegado</strong> — recuperación apuntando a Ajustes.</span></li>
+        <li style="display:flex;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.04)"><span style="flex:none;width:7px;height:7px;border-radius:9999px;margin-top:6px;background:#4edea3"></span><span style="font:400 13.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Éxito</strong> · <strong style="color:#e5e1e4;font-weight:600">error</strong>.</span></li>
+      </ul>
+    </article>
+  </div>
+
+  <!-- ===== MATRIZ DE COBERTURA ===== -->
+  <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin:56px 0 8px">Verificación</div>
+  <h2 style="margin:0 0 8px;font:700 24px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Cobertura de los 10 flujos</h2>
+  <p style="margin:0 0 18px;max-width:640px;font:400 14.5px/1.6 Inter;color:#bbcabf">Cada flujo del brief mapea al menos a una pantalla. Si falta algo, está aquí.</p>
+  <div style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.055);border-radius:14px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;font:600 10px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#86948a;background:#201f22;padding:13px 18px">
+      <div>Flujo</div><div>Pantallas</div><div style="text-align:right">Estado</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">A · Iniciar sesión</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S01, S03</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">B · Reservar sesión (pago)</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S04, S05, S06, S08</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">C · Comprar pack</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S09, S10</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">D · Reservar con crédito</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S05, S07, S08</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">E · Cancelar reserva</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S11, S12</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">F · Reprogramar</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S11, S13</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">G · Clase en vídeo</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S11, S14, S15</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">H · Reseña</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S16</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">I · Añadir al calendario</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S08, S11, S19</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1.6fr 0.9fr;gap:0;padding:13px 18px;border-top:1px solid rgba(255,255,255,0.04);align-items:center"><div style="font:600 13px/1.3 Manrope;color:#e5e1e4">J · Sesión expirada</div><div style="font:400 13px/1.4 Inter;color:#bbcabf">S02</div><div style="text-align:right"><span style="font:600 11px/1 Inter;color:#4edea3">✓ Cubierto</span></div></div>
+  </div>
+
+  <!-- ===== NOTAS ===== -->
+  <div style="margin-top:40px;background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:22px 24px">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:14px">Decisiones que llevo a las pantallas</div>
+    <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px">
+      <li style="display:flex;gap:11px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg><span style="font:400 13.5px/1.55 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Insets de Android</strong> — barra de estado y zona de gestos respetadas; las alturas flexean (sin asumir un único alto de lienzo).</span></li>
+      <li style="display:flex;gap:11px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg><span style="font:400 13.5px/1.55 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Botones nativos</strong> — sitio reservado para Google Sign-In (S01) y Google Pay (S06, S10).</span></li>
+      <li style="display:flex;gap:11px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg><span style="font:400 13.5px/1.55 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Negocio = recompra de packs</strong> — saldo visible en Inicio y Perfil; recompra a un toque; cross-sell cuando no hay créditos.</span></li>
+      <li style="display:flex;gap:11px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M8 12h8"></path></svg><span style="font:400 13.5px/1.55 Inter;color:#86948a"><strong style="color:#bbcabf;font-weight:600">Fuera de alcance (sin entradas):</strong> prueba gratis, historial de reservas/reseñas, recibos, editar nombre, borrar cuenta, panel admin, asistente IA.</span></li>
+    </ul>
+  </div>
+
+  <p style="margin:36px 0 0;font:400 13px/1.6 Inter;color:#86948a;text-align:center">Anota cualquier pantalla o estado. Cuando lo apruebes, empiezo por <strong style="color:#bbcabf;font-weight:600">Inicio (S03)</strong> y el <strong style="color:#bbcabf;font-weight:600">flujo de reserva (S04–S08)</strong> — tus dos áreas de exploración.</p>
+
+</main>
+</x-dc>
+</body>
+</html>

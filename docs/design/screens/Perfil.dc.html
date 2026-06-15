@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 72px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1340px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Perfil</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Perfil — arquetipo «cuenta»</h1>
+    <p style="margin:0;max-width:720px;font:400 15px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Identidad del estudiante de un vistazo y dos rutas claras: entrar en <strong style="color:#e5e1e4;font-weight:600">Ajustes</strong> y <strong style="color:#e5e1e4;font-weight:600">cerrar sesión</strong>. El nombre y la foto vienen de Google (no se editan aquí); eliminar la cuenta es solo web.</p>
+  </div>
+
+  <div style="max-width:1340px;margin:40px auto 0;display:flex;justify-content:center">
+
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Estado por defecto</span>
+      </div>
+
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:280px;pointer-events:none;background:radial-gradient(circle at 50% -30%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 65%)"></div>
+
+          <!-- header -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:18px 18px 4px">
+            <span style="font:800 19px/1.15 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Perfil</span>
+            <button type="button" aria-label="Ajustes" style="width:40px;height:40px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+          </div>
+
+          <!-- scroll body -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:8px 18px 16px">
+
+            <!-- IDENTITY -->
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px 12px 22px">
+              <div style="width:88px;height:88px;border-radius:9999px;background:linear-gradient(150deg,#2a2a2c,#201f22);border:2px solid rgba(78,222,163,0.45);display:flex;align-items:center;justify-content:center;font:800 30px/1 Manrope;color:#4edea3;box-shadow:0 0 30px rgba(78,222,163,0.22)">LR</div>
+              <h2 style="margin:16px 0 0;font:800 22px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Lucía Ramírez</h2>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:7px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+                <span style="font:400 13.5px/1.4 Inter;color:#bbcabf">lucia.ramirez@gmail.com</span>
+              </div>
+              <span style="display:inline-flex;align-items:center;gap:6px;margin-top:13px;font:600 10.5px/1 Inter;letter-spacing:0.04em;color:#bbcabf;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);padding:6px 11px;border-radius:9999px">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                Cuenta vinculada con Google
+              </span>
+            </div>
+
+            <!-- CREDIT BALANCE -->
+            <div style="border-radius:14px;background:#201f22;border:1px solid rgba(255,255,255,0.06);padding:16px 18px">
+              <div style="display:flex;align-items:center;gap:13px">
+                <div style="flex:none;width:46px;height:46px;border-radius:11px;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.22);display:flex;align-items:center;justify-content:center">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"></rect><path d="M2 10h20"></path><path d="M6 15h4"></path></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:6px">Saldo de créditos</div>
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font:800 24px/1 Manrope;color:#4edea3;letter-spacing:-0.02em">5</span>
+                    <span style="font:600 13px/1 Inter;color:#e5e1e4">créditos</span>
+                    <span style="font:500 11.5px/1 Inter;color:#86948a">· Pack Esencial</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SETTINGS GROUP -->
+            <div style="margin-top:18px;border-radius:14px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);overflow:hidden">
+              <button type="button" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 16px;background:transparent;border:none;cursor:pointer;text-align:left">
+                <div style="flex:none;width:38px;height:38px;border-radius:10px;background:#26262a;display:flex;align-items:center;justify-content:center">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font:600 14.5px/1.3 Inter;color:#e5e1e4">Ajustes</div>
+                  <div style="font:400 12px/1.3 Inter;color:#86948a;margin-top:2px">Notificaciones, idioma y privacidad</div>
+                </div>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg>
+              </button>
+            </div>
+
+            <!-- SIGN OUT -->
+            <button type="button" style="margin-top:18px;width:100%;height:50px;border:1px solid rgba(255,180,171,0.30);border-radius:10px;background:rgba(255,180,171,0.08);color:#ffb4ab;font:600 14.5px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>
+              Cerrar sesión
+            </button>
+
+            <!-- footer meta -->
+            <div style="margin-top:auto;padding-top:24px;text-align:center">
+              <span style="font:400 11.5px/1.4 Inter;color:#86948a">gustavoai.dev · versión 1.0.0</span>
+            </div>
+
+          </div>
+
+          <!-- bottom tab bar -->
+          <div style="position:sticky;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(19,19,21,0.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:9px 6px 8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Inicio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Reservar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="rgba(78,222,163,0.14)" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Perfil</span></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1340,&quot;height&quot;:1040}}"></script>
+</body>
+</html>

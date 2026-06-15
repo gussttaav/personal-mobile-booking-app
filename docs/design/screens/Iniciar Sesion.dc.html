@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_ds/gustavoai-design-system-019dbfe0-dd3a-744e-b63c-14e34a8c5b58/colors_and_type.css">
+<script src="_ds/gustavoai-design-system-019dbfe0-dd3a-744e-b63c-14e34a8c5b58/_ds_bundle.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 80px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Pantalla completa enfocada</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Iniciar sesión</h1>
+    <p style="margin:0;max-width:720px;font:400 15px/1.6 Inter;color:#bbcabf;text-wrap:pretty">El arquetipo <strong style="color:#e5e1e4;font-weight:600">«pantalla completa enfocada»</strong> — del que heredarán el re-login y otras entradas a pantalla completa. Un alumno entra con Google en un toque; la columna de proveedores deja sitio para añadir <em style="font-style:normal;color:#e5e1e4">Iniciar sesión con Apple</em> cuando llegue iOS, sin rediseñar.</p>
+
+    <!-- pattern notes -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:18px">
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.28);padding:7px 11px;border-radius:8px">Marca + prueba social</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:7px 11px;border-radius:8px">Botón Google nativo</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:7px 11px;border-radius:8px">Slot Apple reservado</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:7px 11px;border-radius:8px">Botón anclado · sin salto</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:7px 11px;border-radius:8px">Insets seguros Android</span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font:600 12px/1 Inter;color:#bbcabf;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);padding:7px 11px;border-radius:8px">Tap targets ≥44 px legales</span>
+    </div>
+  </div>
+
+  <!-- frames -->
+  <div style="max-width:1200px;margin:40px auto 0;display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+
+    <!-- IDLE -->
+    <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <span style="width:8px;height:8px;border-radius:9999px;background:#4edea3"></span>
+        <span style="font:700 12px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#e5e1e4">Inicial</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <dc-import name="SignIn" state="idle" hint-size="100%,100%"></dc-import>
+      </x-import>
+      <p style="max-width:380px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Un único botón primario. Toca → se abre el selector de cuentas de Google del sistema.</p>
+    </div>
+
+    <!-- LOADING -->
+    <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24"></span>
+        <span style="font:700 12px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#e5e1e4">Cargando</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <dc-import name="SignIn" state="loading" hint-size="100%,100%"></dc-import>
+      </x-import>
+      <p style="max-width:380px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">El botón se bloquea con spinner mientras se valida la cuenta y se crea el usuario en el primer acceso.</p>
+    </div>
+
+    <!-- ERROR -->
+    <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <span style="width:8px;height:8px;border-radius:9999px;background:#ffb4ab"></span>
+        <span style="font:700 12px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#e5e1e4">Error</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <dc-import name="SignIn" state="error" hint-size="100%,100%"></dc-import>
+      </x-import>
+      <p style="max-width:380px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Aviso amable en rojo; el botón sigue activo para reintentar al instante.</p>
+    </div>
+
+    <!-- OFFLINE -->
+    <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+        <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24"></span>
+        <span style="font:700 12px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#e5e1e4">Sin conexión</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <dc-import name="SignIn" state="offline" hint-size="100%,100%"></dc-import>
+      </x-import>
+      <p style="max-width:380px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Aviso en ámbar; el mensaje y el remedio son distintos al error genérico.</p>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1080}}"></script>
+</body>
+</html>

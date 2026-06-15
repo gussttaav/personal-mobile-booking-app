@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 72px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1500px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Reseña post-clase</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Reseña post-clase — prompt multipaso</h1>
+    <p style="margin:0;max-width:780px;font:400 15px/1.6 Inter;color:#bbcabf">Se abre <strong style="color:#e5e1e4;font-weight:600">sobre las pestañas</strong> al salir de la clase. Captura primero una <strong style="color:#e5e1e4;font-weight:600">valoración de 1–5★</strong>, luego un <strong style="color:#e5e1e4;font-weight:600">comentario opcional</strong>, y solo con 4–5★ ofrece <strong style="color:#e5e1e4;font-weight:600">dejar reseña en Google</strong>. Siempre con salida clara.</p>
+
+    <!-- FLOW STRIP -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:26px;padding:14px 16px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:12px;max-width:fit-content">
+      <span style="display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter;color:#e5e1e4;background:#26262a;padding:7px 12px;border-radius:9999px"><span style="width:18px;height:18px;border-radius:9999px;background:#4edea3;color:#003824;font:700 11px/18px Inter;text-align:center">1</span>Valoración</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      <span style="display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter;color:#e5e1e4;background:#26262a;padding:7px 12px;border-radius:9999px"><span style="width:18px;height:18px;border-radius:9999px;background:#4edea3;color:#003824;font:700 11px/18px Inter;text-align:center">2</span>Comentario<span style="font:500 11px/1 Inter;color:#86948a">opcional</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      <span style="display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.28);padding:7px 12px;border-radius:9999px"><span style="width:18px;height:18px;border-radius:9999px;background:#4edea3;color:#003824;font:700 11px/18px Inter;text-align:center">3</span>Reseña Google<span style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3">solo 4–5★</span></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      <span style="display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter;color:#e5e1e4;background:#26262a;padding:7px 12px;border-radius:9999px"><span style="width:18px;height:18px;border-radius:9999px;background:#26262a;border:1px solid rgba(78,222,163,0.4);color:#4edea3;font:700 11px/16px Inter;text-align:center">✓</span>Gracias</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;max-width:780px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+      <span style="font:400 12.5px/1.5 Inter;color:#86948a">Con <strong style="color:#bbcabf;font-weight:600">1–3★</strong> se omite el paso de Google: del comentario se pasa directamente a «Gracias».</span>
+    </div>
+  </div>
+
+  <div style="max-width:1500px;margin:40px auto 0;display:flex;gap:44px;flex-wrap:wrap;justify-content:center;align-items:flex-start">
+
+    <!-- ============================================================= -->
+    <!-- STATE 1 · VALORACIÓN (INICIAL)                                 -->
+    <!-- ============================================================= -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#86948a"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#bbcabf">Paso 1 · Valoración</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:240px;pointer-events:none;background:radial-gradient(circle at 50% -32%, rgba(78,222,163,0.14) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <!-- app bar -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px;padding:12px 12px 6px">
+            <button type="button" aria-label="Cerrar" style="flex:none;width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+            <div style="flex:1;min-width:0;text-align:center">
+              <div style="font:700 14px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Clase con Gustavo</div>
+              <div style="font:500 11.5px/1.3 Inter;color:#86948a;margin-top:2px">Hoy · 18:00 – 19:00 · 1 hora</div>
+            </div>
+            <span style="flex:none;font:600 11px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">1 · 2</span>
+          </div>
+
+          <!-- body -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 26px 0;text-align:center">
+            <div style="width:56px;height:56px;margin:0 auto 22px;border-radius:9999px;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.26);display:flex;align-items:center;justify-content:center;box-shadow:0 0 26px rgba(78,222,163,0.2)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+            </div>
+            <h2 style="margin:0 0 8px;font:800 23px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Cómo ha ido tu clase?</h2>
+            <p style="margin:0 auto;max-width:280px;font:400 13.5px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Tu valoración ayuda a Gustavo a mejorar cada sesión.</p>
+
+            <!-- stars (empty) -->
+            <div style="display:flex;justify-content:center;gap:6px;margin:30px 0 14px">
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3c4a42" stroke-width="1.4" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3c4a42" stroke-width="1.4" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3c4a42" stroke-width="1.4" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3c4a42" stroke-width="1.4" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3c4a42" stroke-width="1.4" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+            </div>
+            <div style="font:500 12.5px/1 Inter;color:#86948a">Toca una estrella para valorar</div>
+          </div>
+
+          <!-- footer -->
+          <div style="position:relative;z-index:1;padding:18px 22px 26px">
+            <button type="button" disabled style="width:100%;height:50px;border:none;border-radius:10px;background:#26262a;color:#86948a;font:600 15px/1 Inter;cursor:not-allowed">Continuar</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STATE 2 · VALORACIÓN (5★ SELECCIONADO)                         -->
+    <!-- ============================================================= -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Valoración seleccionada</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:240px;pointer-events:none;background:radial-gradient(circle at 50% -32%, rgba(78,222,163,0.18) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px;padding:12px 12px 6px">
+            <button type="button" aria-label="Cerrar" style="flex:none;width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+            <div style="flex:1;min-width:0;text-align:center">
+              <div style="font:700 14px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Clase con Gustavo</div>
+              <div style="font:500 11.5px/1.3 Inter;color:#86948a;margin-top:2px">Hoy · 18:00 – 19:00 · 1 hora</div>
+            </div>
+            <span style="flex:none;font:600 11px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">1 · 2</span>
+          </div>
+
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 26px 0;text-align:center">
+            <div style="width:56px;height:56px;margin:0 auto 22px;border-radius:9999px;background:rgba(78,222,163,0.14);border:1px solid rgba(78,222,163,0.4);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(78,222,163,0.32)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+            </div>
+            <h2 style="margin:0 0 8px;font:800 23px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Cómo ha ido tu clase?</h2>
+            <p style="margin:0 auto;max-width:280px;font:400 13.5px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Tu valoración ayuda a Gustavo a mejorar cada sesión.</p>
+
+            <!-- stars (5 filled) -->
+            <div style="display:flex;justify-content:center;gap:6px;margin:30px 0 14px;filter:drop-shadow(0 0 8px rgba(78,222,163,0.45))">
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+              <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg></div>
+            </div>
+            <div style="font:700 15px/1 Manrope;color:#4edea3;letter-spacing:-0.01em">¡Excelente!</div>
+          </div>
+
+          <div style="position:relative;z-index:1;padding:18px 22px 26px">
+            <button type="button" style="width:100%;height:50px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 26px rgba(78,222,163,0.4)">Continuar<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STATE 3 · COMENTARIO (OPCIONAL)                                -->
+    <!-- ============================================================= -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Paso 2 · Comentario</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:220px;pointer-events:none;background:radial-gradient(circle at 50% -32%, rgba(78,222,163,0.12) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <!-- app bar with back -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px;padding:12px 12px 6px">
+            <button type="button" aria-label="Atrás" style="flex:none;width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+            <div style="flex:1;min-width:0;text-align:center">
+              <div style="font:700 14px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Clase con Gustavo</div>
+              <div style="font:500 11.5px/1.3 Inter;color:#86948a;margin-top:2px">Hoy · 18:00 – 19:00 · 1 hora</div>
+            </div>
+            <span style="flex:none;font:600 11px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">2 · 2</span>
+          </div>
+
+          <!-- body -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:14px 22px 0">
+
+            <!-- rating recap -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:24px">
+              <div style="display:flex;gap:2px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+              </div>
+              <span style="font:600 12.5px/1 Inter;color:#4edea3">Excelente</span>
+            </div>
+
+            <h2 style="margin:0 0 7px;font:800 21px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Quieres añadir un comentario?</h2>
+            <p style="margin:0 0 16px;font:400 13.5px/1.6 Inter;color:#bbcabf;text-wrap:pretty"><span style="color:#86948a">Opcional ·</span> Cuéntale a Gustavo qué te ha ayudado o qué se puede mejorar.</p>
+
+            <!-- textarea -->
+            <div style="position:relative;border-radius:12px;background:#201f22;border:1px solid rgba(78,222,163,0.28);padding:14px 14px 34px;min-height:130px;box-shadow:0 0 0 3px rgba(78,222,163,0.08)">
+              <span style="font:400 14px/1.6 Inter;color:#86948a">Escribe tu comentario…</span>
+              <span style="position:absolute;left:14px;top:14px;width:1.5px;height:18px;background:#4edea3"></span>
+              <span style="position:absolute;right:12px;bottom:10px;font:500 11px/1 Inter;color:#86948a">0 / 280</span>
+            </div>
+
+            <!-- quick chips -->
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+              <span style="font:500 12px/1 Inter;color:#bbcabf;background:#26262a;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:9999px">Explica muy claro</span>
+              <span style="font:500 12px/1 Inter;color:#bbcabf;background:#26262a;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:9999px">Buen ritmo</span>
+              <span style="font:500 12px/1 Inter;color:#bbcabf;background:#26262a;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:9999px">Material útil</span>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div style="position:relative;z-index:1;padding:18px 22px 26px;display:flex;flex-direction:column;gap:10px">
+            <button type="button" style="width:100%;height:50px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;box-shadow:0 0 26px rgba(78,222,163,0.4)">Enviar reseña</button>
+            <button type="button" style="width:100%;height:46px;border:none;border-radius:10px;background:transparent;color:#bbcabf;font:600 14px/1 Inter;cursor:pointer">Omitir</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STATE 4 · RESEÑA EN GOOGLE (4–5★)                              -->
+    <!-- ============================================================= -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Reseña Google · solo 4–5★</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:240px;pointer-events:none;background:radial-gradient(circle at 50% -32%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <!-- app bar -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px;padding:12px 12px 6px">
+            <div style="flex:none;width:40px"></div>
+            <div style="flex:1;min-width:0;text-align:center">
+              <div style="font:700 14px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Clase con Gustavo</div>
+              <div style="font:500 11.5px/1.3 Inter;color:#86948a;margin-top:2px">Reseña guardada</div>
+            </div>
+            <button type="button" aria-label="Cerrar" style="flex:none;width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+          </div>
+
+          <!-- body -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 24px 0;text-align:center">
+
+            <!-- saved confirmation -->
+            <div style="display:inline-flex;align-self:center;align-items:center;gap:7px;margin-bottom:26px;padding:7px 13px;border-radius:9999px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.28)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+              <span style="font:600 12px/1 Inter;color:#4edea3">Tu valoración se ha guardado</span>
+            </div>
+
+            <!-- google card -->
+            <div style="border-radius:16px;background:#201f22;border:1px solid rgba(255,255,255,0.07);padding:26px 22px 24px;box-shadow:0 14px 40px -20px rgba(0,0,0,0.6)">
+              <div style="width:54px;height:54px;margin:0 auto 18px;border-radius:9999px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.35)">
+                <svg width="28" height="28" viewBox="0 0 48 48"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"></path><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"></path><path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"></path><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"></path></svg>
+              </div>
+              <div style="display:flex;justify-content:center;gap:3px;margin-bottom:14px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+              </div>
+              <h2 style="margin:0 0 8px;font:800 20px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Nos dejas una reseña en Google?</h2>
+              <p style="margin:0 auto;max-width:260px;font:400 13px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Ayudas a que más estudiantes encuentren a Gustavo. Te llevará menos de un minuto.</p>
+              <button type="button" style="margin-top:20px;width:100%;height:50px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 0 26px rgba(78,222,163,0.4)">
+                Dejar reseña en Google
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5h6v6"></path><path d="M19 5l-9 9"></path><path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- footer skip -->
+          <div style="position:relative;z-index:1;padding:16px 22px 26px">
+            <button type="button" style="width:100%;height:46px;border:none;border-radius:10px;background:transparent;color:#bbcabf;font:600 14px/1 Inter;cursor:pointer">Ahora no, gracias</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- STATE 5 · GRACIAS (DONE)                                       -->
+    <!-- ============================================================= -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Estado final · Gracias</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:320px;pointer-events:none;background:radial-gradient(circle at 50% -22%, rgba(78,222,163,0.22) 0%, rgba(19,19,21,0) 62%)"></div>
+
+          <!-- body -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 30px;text-align:center">
+            <div style="width:96px;height:96px;border-radius:9999px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.4);display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(78,222,163,0.35);animation:pop .5s ease both">
+              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h2 style="margin:30px 0 10px;font:800 26px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¡Gracias por tu reseña!</h2>
+            <p style="margin:0;max-width:280px;font:400 14px/1.65 Inter;color:#bbcabf;text-wrap:pretty">Tu opinión ayuda a Gustavo a seguir mejorando. Nos vemos en tu próxima clase.</p>
+
+            <!-- mini recap -->
+            <div style="margin-top:24px;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:9999px;background:#201f22;border:1px solid rgba(255,255,255,0.06)">
+              <div style="display:flex;gap:2px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3"><path d="M12 17.75l-6.172 3.245 1.179-6.873-4.993-4.867 6.9-1.002L12 2.25l3.086 6.003 6.9 1.002-4.993 4.867 1.179 6.873z"></path></svg>
+              </div>
+              <span style="font:500 12px/1 Inter;color:#86948a">Valoración enviada</span>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div style="position:relative;z-index:1;padding:18px 22px 26px">
+            <button type="button" style="width:100%;height:50px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 26px rgba(78,222,163,0.4)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:1040}}"></script>
+</body>
+</html>

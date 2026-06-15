@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes sheetUp{from{transform:translateY(22px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.25)}}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 72px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1380px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Reservas</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Cancelar reserva — arquetipo «confirmación destructiva»</h1>
+    <p style="margin:0;max-width:760px;font:400 15px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Cancelar dejando las consecuencias a la vista, con la <strong style="color:#e5e1e4;font-weight:600">regla de las 2 h</strong> en el momento de la acción. Las consecuencias cambian según el pago: <strong style="color:#e5e1e4;font-weight:600">crédito de pack</strong> (devolución automática) o <strong style="color:#e5e1e4;font-weight:600">sesión pagada</strong> (reembolso manual de Gustavo, comisión de Stripe no reembolsable). Se abre como hoja inferior sobre las pestañas.</p>
+  </div>
+
+  <div style="max-width:1380px;margin:40px auto 0;display:flex;gap:46px;flex-wrap:wrap;justify-content:center;align-items:flex-start">
+
+    <!-- ============================================================ -->
+    <!-- FRAME 1 · CONFIRM · PACK (credit auto-return)                -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#ffb4ab;box-shadow:0 0 10px rgba(255,180,171,0.6)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Confirmar · sesión con crédito</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — confirmar (pack)" style="position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+          <!-- dimmed detail backdrop -->
+          <div style="position:absolute;inset:0;z-index:0">
+            <div style="position:absolute;top:0;left:0;right:0;height:240px;background:radial-gradient(circle at 50% -26%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 64%)"></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:10px 10px 4px">
+              <div style="width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+              <span style="flex:1;font:700 16px/1.2 Manrope;color:#e5e1e4">Detalle de reserva</span>
+              <span style="font:600 10.5px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">#GA-4821</span>
+            </div>
+            <div style="padding:8px 18px">
+              <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);padding:18px">
+                <div style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#4edea3;margin-bottom:10px">Tu próxima clase</div>
+                <div style="font:800 28px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Hoy · 18:00</div>
+                <div style="font:500 13px/1.4 Inter;color:#bbcabf;margin-top:9px">1 hora · con Gustavo</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- scrim -->
+          <div style="position:absolute;inset:0;z-index:1;background:rgba(8,8,10,0.74);backdrop-filter:blur(2px)"></div>
+
+          <!-- BOTTOM SHEET -->
+          <div style="position:relative;z-index:2;background:#1c1b1d;border-top:1px solid rgba(255,255,255,0.08);border-radius:22px 22px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -24px 60px rgba(0,0,0,0.5);animation:sheetUp .28s ease">
+            <div style="width:38px;height:4px;border-radius:9999px;background:#3c4a42;margin:0 auto 16px"></div>
+
+            <!-- header -->
+            <div style="display:flex;align-items:flex-start;gap:13px">
+              <div style="flex:none;width:46px;height:46px;border-radius:9999px;background:rgba(255,180,171,0.12);border:1px solid rgba(255,180,171,0.30);display:flex;align-items:center;justify-content:center">
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:1px">
+                <h2 style="margin:0;font:800 19px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Cancelar esta clase?</h2>
+                <p style="margin:5px 0 0;font:400 13px/1.5 Inter;color:#86948a">Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+
+            <!-- mini booking -->
+            <div style="display:flex;align-items:center;gap:12px;background:#201f22;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-top:16px">
+              <div style="flex:none;width:40px;height:40px;border-radius:10px;background:#26262a;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg></div>
+              <div style="flex:1;min-width:0"><div style="font:700 14px/1.2 Manrope;color:#e5e1e4">Jueves 26 jun · 18:00–19:00</div><div style="font:500 12px/1.3 Inter;color:#86948a;margin-top:3px">1 hora · con Gustavo</div></div>
+              <span style="flex:none;font:600 9.5px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);padding:4px 8px;border-radius:9999px">Crédito</span>
+            </div>
+
+            <!-- 2h rule line -->
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 2px 2px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M9 12l2 2 4-4"></path></svg>
+              <span style="font:500 12.5px/1.45 Inter;color:#bbcabf;text-wrap:pretty">Cancelación gratuita: faltan más de <strong style="color:#e5e1e4;font-weight:600">2 h</strong> para el inicio.</span>
+            </div>
+
+            <!-- consequence · PACK -->
+            <div style="border-radius:12px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.26);padding:13px 14px;margin-top:12px">
+              <div style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:11px">Qué pasa al cancelar</div>
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"></path><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:600 13.5px/1.4 Inter;color:#e5e1e4">Se devuelve 1 crédito a tu Pack Esencial</div><div style="font:400 12px/1.45 Inter;color:#bbcabf;margin-top:3px">Automático e inmediato. Quedarás con 6 créditos disponibles.</div></div>
+              </div>
+            </div>
+
+            <!-- actions -->
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#ffb4ab;color:#3a0a06;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a0a06" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+              Sí, cancelar la clase
+            </button>
+            <button type="button" style="width:100%;height:48px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Mantener clase</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FRAME 2 · CONFIRM · PAID (manual refund + Stripe fee)        -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#ffb4ab;box-shadow:0 0 10px rgba(255,180,171,0.6)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Confirmar · sesión pagada</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — confirmar (pagada)" style="position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+          <div style="position:absolute;inset:0;z-index:0">
+            <div style="position:absolute;top:0;left:0;right:0;height:240px;background:radial-gradient(circle at 50% -26%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 64%)"></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:10px 10px 4px">
+              <div style="width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+              <span style="flex:1;font:700 16px/1.2 Manrope;color:#e5e1e4">Detalle de reserva</span>
+              <span style="font:600 10.5px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">#GA-4822</span>
+            </div>
+            <div style="padding:8px 18px">
+              <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);padding:18px">
+                <div style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#4edea3;margin-bottom:10px">Tu próxima clase</div>
+                <div style="font:800 28px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Lun · 10:00</div>
+                <div style="font:500 13px/1.4 Inter;color:#bbcabf;margin-top:9px">2 horas · con Gustavo</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;inset:0;z-index:1;background:rgba(8,8,10,0.74);backdrop-filter:blur(2px)"></div>
+
+          <div style="position:relative;z-index:2;background:#1c1b1d;border-top:1px solid rgba(255,255,255,0.08);border-radius:22px 22px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -24px 60px rgba(0,0,0,0.5);animation:sheetUp .28s ease">
+            <div style="width:38px;height:4px;border-radius:9999px;background:#3c4a42;margin:0 auto 16px"></div>
+
+            <div style="display:flex;align-items:flex-start;gap:13px">
+              <div style="flex:none;width:46px;height:46px;border-radius:9999px;background:rgba(255,180,171,0.12);border:1px solid rgba(255,180,171,0.30);display:flex;align-items:center;justify-content:center">
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:1px">
+                <h2 style="margin:0;font:800 19px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">¿Cancelar esta clase?</h2>
+                <p style="margin:5px 0 0;font:400 13px/1.5 Inter;color:#86948a">Esta acción no se puede deshacer.</p>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;background:#201f22;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-top:16px">
+              <div style="flex:none;width:40px;height:40px;border-radius:10px;background:#26262a;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg></div>
+              <div style="flex:1;min-width:0"><div style="font:700 14px/1.2 Manrope;color:#e5e1e4">Lunes 22 jun · 10:00–12:00</div><div style="font:500 12px/1.3 Inter;color:#86948a;margin-top:3px">2 horas · con Gustavo</div></div>
+              <span style="flex:none;font:600 9.5px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:4px 8px;border-radius:9999px">Pagada</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 2px 2px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M9 12l2 2 4-4"></path></svg>
+              <span style="font:500 12.5px/1.45 Inter;color:#bbcabf;text-wrap:pretty">Cancelación gratuita: faltan más de <strong style="color:#e5e1e4;font-weight:600">2 h</strong> para el inicio.</span>
+            </div>
+
+            <!-- consequence · PAID -->
+            <div style="border-radius:12px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.26);padding:13px 14px;margin-top:12px">
+              <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:12px">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:600 13.5px/1.4 Inter;color:#e5e1e4">El reembolso lo gestiona Gustavo a mano</div><div style="font:400 12px/1.45 Inter;color:#bbcabf;margin-top:3px">No es automático ni inmediato. Suele tardar hasta 48 h.</div></div>
+              </div>
+              <div style="height:1px;background:rgba(251,191,36,0.18)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0 0"><span style="font:500 12.5px/1 Inter;color:#86948a">Importe pagado</span><span style="font:600 12.5px/1 Inter;color:#e5e1e4">€32,00</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0"><span style="font:500 12.5px/1 Inter;color:#86948a">Comisión de Stripe · no reembolsable</span><span style="font:600 12.5px/1 Inter;color:#ffb4ab">−€0,71</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 1px;border-top:1px solid rgba(251,191,36,0.18);margin-top:2px"><span style="font:600 12.5px/1 Inter;color:#e5e1e4">Reembolso estimado</span><span style="font:700 13.5px/1 Manrope;color:#4edea3">€31,29</span></div>
+            </div>
+
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#ffb4ab;color:#3a0a06;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a0a06" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+              Sí, cancelar la clase
+            </button>
+            <button type="button" style="width:100%;height:48px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Mantener clase</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FRAME 3 · BLOCKED (class starts in ≤2h)                      -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,0.55)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Bloqueado · empieza en ≤ 2 h</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — bloqueado" style="position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+          <div style="position:absolute;inset:0;z-index:0">
+            <div style="position:absolute;top:0;left:0;right:0;height:240px;background:radial-gradient(circle at 50% -26%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 64%)"></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:10px 10px 4px">
+              <div style="width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+              <span style="flex:1;font:700 16px/1.2 Manrope;color:#e5e1e4">Detalle de reserva</span>
+              <span style="font:600 10.5px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">#GA-4821</span>
+            </div>
+            <div style="padding:8px 18px">
+              <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);padding:18px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#4edea3">Tu próxima clase</span><span style="display:inline-flex;align-items:center;gap:6px;font:600 11px/1 Inter;color:#4edea3"><span style="width:6px;height:6px;border-radius:9999px;background:#4edea3;animation:pulseDot 1.6s ease-in-out infinite"></span>En 1 h 40 min</span></div>
+                <div style="font:800 28px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Hoy · 18:00</div>
+                <div style="font:500 13px/1.4 Inter;color:#bbcabf;margin-top:9px">1 hora · con Gustavo</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;inset:0;z-index:1;background:rgba(8,8,10,0.74);backdrop-filter:blur(2px)"></div>
+
+          <div style="position:relative;z-index:2;background:#1c1b1d;border-top:1px solid rgba(255,255,255,0.08);border-radius:22px 22px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -24px 60px rgba(0,0,0,0.5);animation:sheetUp .28s ease">
+            <div style="width:38px;height:4px;border-radius:9999px;background:#3c4a42;margin:0 auto 16px"></div>
+
+            <div style="display:flex;align-items:flex-start;gap:13px">
+              <div style="flex:none;width:46px;height:46px;border-radius:9999px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.30);display:flex;align-items:center;justify-content:center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:1px">
+                <h2 style="margin:0;font:800 19px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">Ya no puedes cancelar online</h2>
+                <p style="margin:5px 0 0;font:400 13px/1.5 Inter;color:#bbcabf;text-wrap:pretty">Tu clase empieza en <strong style="color:#e5e1e4;font-weight:600">1 h 40 min</strong>. La cancelación gratuita se cierra 2 h antes del inicio.</p>
+              </div>
+            </div>
+
+            <!-- why -->
+            <div style="border-radius:12px;background:#201f22;border:1px solid rgba(255,255,255,0.06);padding:13px 14px;margin-top:16px">
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:600 13px/1.45 Inter;color:#e5e1e4">Por respeto al tiempo reservado</div><div style="font:400 12px/1.5 Inter;color:#86948a;margin-top:3px">Gustavo ya tiene tu hora bloqueada. Dentro de las 2 h previas, la clase no se reembolsa ni se devuelve el crédito.</div></div>
+              </div>
+            </div>
+
+            <!-- alternative -->
+            <div style="border-radius:12px;background:rgba(78,222,163,0.06);border:1px solid rgba(78,222,163,0.22);padding:13px 14px;margin-top:12px">
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:600 13px/1.45 Inter;color:#e5e1e4">¿No puedes asistir?</div><div style="font:400 12px/1.5 Inter;color:#bbcabf;margin-top:3px">Avísale a Gustavo y lo resolvéis juntos. A veces puede reubicarte si avisas con tiempo.</div></div>
+              </div>
+            </div>
+
+            <button type="button" style="width:100%;height:52px;border:1px solid rgba(78,222,163,0.40);border-radius:10px;background:rgba(78,222,163,0.10);color:#4edea3;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"></path></svg>
+              Avisar a Gustavo
+            </button>
+            <button type="button" style="width:100%;height:48px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Volver al detalle</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FRAME 4 · SUCCESS · PACK (credit restored)                   -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Cancelada · crédito devuelto</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — éxito (pack)" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:280px;pointer-events:none;background:radial-gradient(circle at 50% -24%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 62%)"></div>
+
+          <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:flex-end;padding:8px 8px 0">
+            <button type="button" aria-label="Cerrar" style="width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+          </div>
+
+          <div style="position:relative;z-index:1;flex:1;padding:6px 18px 16px;display:flex;flex-direction:column">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 6px 4px">
+              <div style="width:80px;height:80px;border-radius:9999px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.32);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(78,222,163,0.25)">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+              </div>
+              <span style="margin-top:18px;font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#bbcabf;background:#26262a;padding:6px 11px;border-radius:9999px">Reserva cancelada</span>
+              <h2 style="margin:14px 0 8px;font:800 24px/1.15 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">Clase cancelada</h2>
+              <p style="margin:0;max-width:286px;font:400 14px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Has cancelado tu clase del jueves 26 jun. No se ha cobrado nada.</p>
+            </div>
+
+            <!-- credit restored card -->
+            <div style="border-radius:14px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.26);padding:16px;margin-top:22px">
+              <div style="display:flex;align-items:center;gap:13px">
+                <div style="flex:none;width:46px;height:46px;border-radius:10px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.26);display:flex;align-items:center;justify-content:center"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"></path><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"></path></svg></div>
+                <div style="flex:1;min-width:0"><div style="font:700 15px/1.2 Manrope;color:#e5e1e4">1 crédito devuelto</div><div style="font:500 12.5px/1.4 Inter;color:#bbcabf;margin-top:3px">Ya disponible en tu Pack Esencial</div></div>
+                <div style="flex:none;text-align:right"><div style="font:800 22px/1 Manrope;color:#4edea3;letter-spacing:-0.02em">6</div><div style="font:500 10px/1 Inter;color:#86948a;margin-top:4px">créditos</div></div>
+              </div>
+            </div>
+
+            <!-- cancelled booking summary -->
+            <div style="display:flex;align-items:center;gap:12px;background:#201f22;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:13px 14px;margin-top:12px">
+              <div style="flex:none;width:40px;height:40px;border-radius:10px;background:#26262a;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 14l6 0"></path></svg></div>
+              <div style="flex:1;min-width:0"><div style="font:600 13.5px/1.2 Inter;color:#86948a;text-decoration:line-through">Jueves 26 jun · 18:00–19:00</div><div style="font:500 12px/1.3 Inter;color:#86948a;margin-top:3px">Cancelada · #GA-4821</div></div>
+            </div>
+          </div>
+
+          <div style="position:sticky;bottom:0;z-index:2;background:rgba(19,19,21,0.94);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 16px calc(14px + env(safe-area-inset-bottom))">
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 0 26px rgba(78,222,163,0.35)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M12 12v5M9.5 14.5h5"></path></svg>Reservar otra clase</button>
+            <button type="button" style="width:100%;height:46px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Volver a Inicio</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FRAME 5 · SUCCESS · PAID (manual refund)                     -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Cancelada · reembolso manual</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — éxito (pagada)" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:280px;pointer-events:none;background:radial-gradient(circle at 50% -24%, rgba(78,222,163,0.13) 0%, rgba(19,19,21,0) 62%)"></div>
+
+          <div style="position:relative;z-index:1;display:flex;align-items:center;justify-content:flex-end;padding:8px 8px 0">
+            <button type="button" aria-label="Cerrar" style="width:40px;height:40px;border:none;border-radius:9999px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+          </div>
+
+          <div style="position:relative;z-index:1;flex:1;padding:6px 18px 16px;display:flex;flex-direction:column">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 6px 4px">
+              <div style="width:80px;height:80px;border-radius:9999px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.32);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(78,222,163,0.22)">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+              </div>
+              <span style="margin-top:18px;font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#bbcabf;background:#26262a;padding:6px 11px;border-radius:9999px">Reserva cancelada</span>
+              <h2 style="margin:14px 0 8px;font:800 24px/1.15 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">Clase cancelada</h2>
+              <p style="margin:0;max-width:290px;font:400 14px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Has cancelado tu clase del lunes 22 jun. Tu reembolso está en marcha.</p>
+            </div>
+
+            <!-- refund in progress card -->
+            <div style="border-radius:14px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.24);padding:15px 16px;margin-top:22px">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:700 14.5px/1.2 Manrope;color:#e5e1e4">Reembolso en proceso</div><div style="font:500 12px/1.4 Inter;color:#bbcabf;margin-top:3px">Gustavo lo gestiona a mano · hasta 48 h</div></div>
+              </div>
+              <div style="height:1px;background:rgba(251,191,36,0.18)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0 0"><span style="font:500 12.5px/1 Inter;color:#86948a">Importe pagado</span><span style="font:600 12.5px/1 Inter;color:#e5e1e4">€32,00</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0"><span style="font:500 12.5px/1 Inter;color:#86948a">Comisión de Stripe · no reembolsable</span><span style="font:600 12.5px/1 Inter;color:#ffb4ab">−€0,71</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 1px;border-top:1px solid rgba(251,191,36,0.18);margin-top:2px"><span style="font:600 12.5px/1 Inter;color:#e5e1e4">Reembolso a tu tarjeta</span><span style="font:700 14px/1 Manrope;color:#4edea3">€31,29</span></div>
+            </div>
+
+            <!-- email reassurance -->
+            <div style="display:flex;align-items:center;gap:10px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:13px 14px;margin-top:12px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
+              <span style="flex:1;font:400 12.5px/1.5 Inter;color:#bbcabf;text-wrap:pretty">Te avisaremos por email en cuanto el reembolso esté confirmado.</span>
+            </div>
+          </div>
+
+          <div style="position:sticky;bottom:0;z-index:2;background:rgba(19,19,21,0.94);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:12px 16px calc(14px + env(safe-area-inset-bottom))">
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 0 26px rgba(78,222,163,0.35)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>Volver a Inicio</button>
+            <button type="button" style="width:100%;height:46px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Reservar otra clase</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- FRAME 6 · ERROR                                              -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#ffb4ab;box-shadow:0 0 10px rgba(255,180,171,0.6)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Error · no se pudo cancelar</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Cancelar — error" style="position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+          <div style="position:absolute;inset:0;z-index:0">
+            <div style="position:absolute;top:0;left:0;right:0;height:240px;background:radial-gradient(circle at 50% -26%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 64%)"></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:10px 10px 4px">
+              <div style="width:40px;height:40px;border-radius:9999px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg></div>
+              <span style="flex:1;font:700 16px/1.2 Manrope;color:#e5e1e4">Detalle de reserva</span>
+              <span style="font:600 10.5px/1 Inter;color:#86948a;background:#26262a;padding:6px 10px;border-radius:9999px">#GA-4821</span>
+            </div>
+            <div style="padding:8px 18px">
+              <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);padding:18px">
+                <div style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#4edea3;margin-bottom:10px">Tu próxima clase</div>
+                <div style="font:800 28px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Hoy · 18:00</div>
+                <div style="font:500 13px/1.4 Inter;color:#bbcabf;margin-top:9px">1 hora · con Gustavo</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;inset:0;z-index:1;background:rgba(8,8,10,0.74);backdrop-filter:blur(2px)"></div>
+
+          <div style="position:relative;z-index:2;background:#1c1b1d;border-top:1px solid rgba(255,255,255,0.08);border-radius:22px 22px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -24px 60px rgba(0,0,0,0.5);animation:sheetUp .28s ease">
+            <div style="width:38px;height:4px;border-radius:9999px;background:#3c4a42;margin:0 auto 16px"></div>
+
+            <div style="display:flex;align-items:flex-start;gap:13px">
+              <div style="flex:none;width:46px;height:46px;border-radius:9999px;background:rgba(255,180,171,0.12);border:1px solid rgba(255,180,171,0.30);display:flex;align-items:center;justify-content:center">
+                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>
+              </div>
+              <div style="flex:1;min-width:0;padding-top:1px">
+                <h2 style="margin:0;font:800 19px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">No hemos podido cancelar</h2>
+                <p style="margin:5px 0 0;font:400 13px/1.5 Inter;color:#bbcabf;text-wrap:pretty">Algo ha fallado por nuestra parte. Inténtalo de nuevo en un momento.</p>
+              </div>
+            </div>
+
+            <!-- reassurance -->
+            <div style="border-radius:12px;background:#201f22;border:1px solid rgba(255,255,255,0.06);padding:13px 14px;margin-top:16px">
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>
+                <div style="flex:1;min-width:0"><div style="font:600 13px/1.45 Inter;color:#e5e1e4">Tu reserva sigue activa</div><div style="font:400 12px/1.5 Inter;color:#86948a;margin-top:3px">No se ha cancelado nada ni se ha hecho ningún cobro. Tu crédito está intacto.</div></div>
+              </div>
+            </div>
+
+            <button type="button" style="width:100%;height:52px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:16px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 4v5h-5"></path></svg>
+              Reintentar
+            </button>
+            <button type="button" style="width:100%;height:48px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;margin-top:10px">Volver al detalle</button>
+            <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:14px">
+              <span style="font:400 12px/1.4 Inter;color:#86948a">¿Sigue fallando?</span>
+              <button type="button" style="border:none;background:transparent;color:#4edea3;font:600 12px/1.4 Inter;cursor:pointer;padding:0">Escribir a Gustavo</button>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1380,&quot;height&quot;:2060}}"></script>
+</body>
+</html>

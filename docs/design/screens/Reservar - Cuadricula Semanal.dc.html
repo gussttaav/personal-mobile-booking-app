@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes skeletonPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 72px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1380px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Reservar</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Cuadrícula semanal de horarios</h1>
+    <p style="margin:0;max-width:740px;font:400 15px/1.6 Inter;color:#bbcabf">El arquetipo «explorar»: una semana de 7 días que se desplaza en horizontal, con la columna de horas y la fila de días fijas. Elige fecha y hora disponible, filtradas a la duración, en la zona horaria del dispositivo. Tres estados: <strong style="color:#e5e1e4;font-weight:600">con huecos</strong>, <strong style="color:#e5e1e4;font-weight:600">sin disponibilidad</strong> y la <strong style="color:#e5e1e4;font-weight:600">carga</strong> tras tocar una fecha.</p>
+  </div>
+
+  <div style="max-width:1380px;margin:40px auto 0;display:flex;gap:48px;flex-wrap:wrap;justify-content:center;align-items:flex-start">
+
+    <!-- ============================================================ -->
+    <!-- STATE 1 · DEFAULT (interactivo, con huecos)                  -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#4edea3;box-shadow:0 0 10px rgba(78,222,163,0.7)"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#e5e1e4">Con huecos · interactivo</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Reservar — con huecos" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:180px;pointer-events:none;background:radial-gradient(circle at 50% -34%, rgba(78,222,163,0.13) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <!-- header -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:14px 16px 8px">
+            <button type="button" style="flex:none;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+            </button>
+            <div style="flex:1">
+              <div style="font:700 18px/1.1 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Reservar</div>
+              <div style="font:500 11.5px/1.2 Inter;color:#86948a;margin-top:2px">Paso 2 de 3 · elige fecha y hora</div>
+            </div>
+          </div>
+
+          <!-- duration toggle -->
+          <div style="position:relative;z-index:1;padding:6px 16px 12px">
+            <div style="display:flex;gap:4px;background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:4px">
+              <button type="button" style="{{ seg1Style }}" onClick="{{ set1h }}">1 hora</button>
+              <button type="button" style="{{ seg2Style }}" onClick="{{ set2h }}">2 horas</button>
+            </div>
+          </div>
+
+          <!-- week nav -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px">
+            <div>
+              <div style="font:700 15px/1.1 Manrope;color:#e5e1e4">15 – 21 jun</div>
+              <div style="font:500 11px/1.2 Inter;color:#86948a;margin-top:2px">Junio 2026 · Europe/Madrid</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button type="button" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;cursor:default;display:flex;align-items:center;justify-content:center;opacity:0.4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+              </button>
+              <button type="button" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(78,222,163,0.28);background:rgba(78,222,163,0.10);cursor:pointer;display:flex;align-items:center;justify-content:center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- grid -->
+          <div style="position:relative;z-index:1;margin:0 14px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:auto;flex:1;min-height:160px;max-height:330px;background:#161517">
+            <div style="width:max-content">
+              <div style="display:flex;position:sticky;top:0;z-index:3;background:#131315;border-bottom:1px solid rgba(255,255,255,0.07)">
+                <div style="position:sticky;left:0;z-index:4;width:46px;flex:0 0 46px;height:48px;background:#131315;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.06)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <sc-for list="{{ header }}" as="day" hint-placeholder-count="7">
+                  <div style="width:60px;flex:0 0 60px;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.04)">
+                    <span style="{{ day.dowStyle }}">{{ day.dow }}</span>
+                    <span style="{{ day.dStyle }}">{{ day.d }}</span>
+                    <sc-if value="{{ day.today }}" hint-placeholder-val="{{ false }}">
+                      <span style="width:4px;height:4px;border-radius:9999px;background:#4edea3;margin-top:3px"></span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-for list="{{ rows }}" as="row" hint-placeholder-count="9">
+                <div style="display:flex">
+                  <div style="position:sticky;left:0;z-index:2;width:46px;flex:0 0 46px;height:42px;background:#131315;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.06);border-top:1px solid rgba(255,255,255,0.03)">
+                    <span style="font:500 10px/1 Inter;color:#86948a">{{ row.hourLabel }}</span>
+                  </div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+                    <button type="button" style="{{ cell.style }}" onClick="{{ cell.onClick }}">
+                      <sc-if value="{{ cell.locked }}" hint-placeholder-val="{{ false }}">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke-linecap="round"></path></svg>
+                      </sc-if>
+                      <span style="font:600 11px/1 Inter;color:inherit">{{ cell.label }}</span>
+                      <span style="font:700 8px/1 Inter;letter-spacing:0.04em;color:inherit;opacity:0.9;margin-top:2px">{{ cell.badge }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- legend -->
+          <div style="position:relative;z-index:1;display:flex;gap:8px;overflow-x:auto;padding:12px 14px 6px">
+            <div style="display:flex;align-items:center;gap:6px;flex:none"><span style="width:14px;height:14px;border-radius:4px;background:rgba(78,222,163,0.12);border:1px solid rgba(78,222,163,0.32)"></span><span style="font:500 11px/1 Inter;color:#bbcabf;white-space:nowrap">Disponible</span></div>
+            <div style="display:flex;align-items:center;gap:6px;flex:none"><span style="width:14px;height:14px;border-radius:4px;background-image:repeating-linear-gradient(45deg, rgba(78,222,163,0.30) 0 2px, transparent 2px 5px);border:1px dashed rgba(78,222,163,0.45)"></span><span style="font:500 11px/1 Inter;color:#bbcabf;white-space:nowrap">Libre · no cabe 2 h</span></div>
+            <div style="display:flex;align-items:center;gap:6px;flex:none"><span style="width:14px;height:14px;border-radius:4px;background:rgba(255,128,120,0.14);border:1px solid rgba(255,128,120,0.30)"></span><span style="font:500 11px/1 Inter;color:#bbcabf;white-space:nowrap">Reservado</span></div>
+            <div style="display:flex;align-items:center;gap:6px;flex:none"><span style="width:14px;height:14px;border-radius:4px;background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 5px);border:1px solid rgba(255,255,255,0.06)"></span><span style="font:500 11px/1 Inter;color:#bbcabf;white-space:nowrap">No disponible</span></div>
+            <div style="display:flex;align-items:center;gap:6px;flex:none"><span style="width:14px;height:14px;border-radius:4px;background:#4edea3"></span><span style="font:500 11px/1 Inter;color:#bbcabf;white-space:nowrap">Seleccionado</span></div>
+          </div>
+
+          <!-- dock -->
+          <div style="position:relative;z-index:1;padding:8px 14px 12px;border-top:1px solid rgba(255,255,255,0.06);background:#131315">
+            <sc-if value="{{ hasHint }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:8px;align-items:flex-start;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.28);border-radius:8px;padding:8px 10px;margin-bottom:10px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01" stroke-linecap="round"></path></svg>
+                <span style="font:400 12px/1.45 Inter;color:#e5e1e4;flex:1">{{ hint }}</span>
+              </div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:10px;min-height:38px;margin-bottom:10px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" style="flex:none"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4" stroke-linecap="round"></path><path d="M9 15l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <div style="flex:1;min-width:0">
+                <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+                  <div style="font:700 14px/1.2 Manrope;color:#e5e1e4">{{ selLabel }}</div>
+                  <div style="font:500 11px/1.3 Inter;color:#4edea3;margin-top:2px">{{ dirLabel }}</div>
+                </sc-if>
+                <sc-if value="{{ noSel }}" hint-placeholder-val="{{ false }}">
+                  <div style="font:500 13px/1.3 Inter;color:#86948a">Elige una hora disponible para continuar</div>
+                </sc-if>
+              </div>
+            </div>
+            <button type="button" style="{{ ctaStyle }}" onClick="{{ continuar }}">Continuar</button>
+          </div>
+
+          <!-- tab bar -->
+          <div style="position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(19,19,21,0.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:9px 6px 8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Inicio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="rgba(78,222,163,0.14)" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Reservar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Perfil</span></div>
+          </div>
+        </div>
+      </x-import>
+      <p style="max-width:412px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Toca una celda verde. En <strong style="color:#bbcabf;font-weight:600">MAR 16</strong> prueba <strong style="color:#bbcabf;font-weight:600">15:00</strong> (empareja hacia atrás) y <strong style="color:#bbcabf;font-weight:600">12:00</strong> (libre, no cabe 2 h). El <strong style="color:#bbcabf;font-weight:600">LUN 15</strong> hoy: la mañana cae dentro del aviso mínimo de 5 h.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- STATE 2 · EMPTY (sin disponibilidad — no es un error)        -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#fbbf24"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#bbcabf">Sin disponibilidad</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Reservar — sin disponibilidad" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:180px;pointer-events:none;background:radial-gradient(circle at 50% -34%, rgba(78,222,163,0.10) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:14px 16px 8px">
+            <button type="button" style="flex:none;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+            </button>
+            <div style="flex:1">
+              <div style="font:700 18px/1.1 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Reservar</div>
+              <div style="font:500 11.5px/1.2 Inter;color:#86948a;margin-top:2px">Paso 2 de 3 · elige fecha y hora</div>
+            </div>
+          </div>
+
+          <div style="position:relative;z-index:1;padding:6px 16px 12px">
+            <div style="display:flex;gap:4px;background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:4px">
+              <button type="button" style="flex:1;height:36px;border-radius:7px;border:none;background:transparent;color:#bbcabf;font:500 13px/1 Inter;cursor:pointer">1 hora</button>
+              <button type="button" style="flex:1;height:36px;border-radius:7px;border:none;background:#4edea3;color:#003824;font:600 13px/1 Inter;cursor:pointer">2 horas</button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px">
+            <div>
+              <div style="font:700 15px/1.1 Manrope;color:#e5e1e4">22 – 28 jun</div>
+              <div style="font:500 11px/1.2 Inter;color:#86948a;margin-top:2px">Junio 2026 · Europe/Madrid</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button type="button" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(78,222,163,0.28);background:rgba(78,222,163,0.10);cursor:pointer;display:flex;align-items:center;justify-content:center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+              </button>
+              <button type="button" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(78,222,163,0.28);background:rgba(78,222,163,0.10);cursor:pointer;display:flex;align-items:center;justify-content:center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- empty panel -->
+          <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:8px 18px 16px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid rgba(255,255,255,0.06);border-radius:14px;background:#161517;padding:28px 24px">
+              <div style="width:62px;height:62px;border-radius:9999px;background:rgba(78,222,163,0.08);border:1px solid rgba(78,222,163,0.22);display:flex;align-items:center;justify-content:center;margin-bottom:18px">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path><circle cx="11" cy="15" r="3"></circle><path d="M15.5 19.5L14 18"></path></svg>
+              </div>
+              <h2 style="margin:0 0 8px;font:800 19px/1.25 Manrope;color:#e5e1e4;letter-spacing:-0.02em;text-wrap:pretty">No quedan huecos esta semana</h2>
+              <p style="margin:0 0 18px;max-width:268px;font:400 13px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Gustavo no tiene horas libres para clases de 2 h del 22 al 28 jun. Prueba con otra semana o cambia la duración a 1 hora.</p>
+              <button type="button" style="width:100%;max-width:280px;height:48px;border:none;border-radius:9px;background:#4edea3;color:#003824;font:600 14px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">Ver semana siguiente<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+              <button type="button" style="margin-top:10px;width:100%;max-width:280px;height:44px;border:1px solid rgba(255,255,255,0.10);border-radius:9px;background:transparent;color:#bbcabf;font:500 13px/1 Inter;cursor:pointer">Probar con 1 hora</button>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;padding:0 2px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" style="flex:none;margin-top:1px" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+              <span style="font:400 11.5px/1.5 Inter;color:#86948a">Los huecos salen de la disponibilidad de Gustavo menos las reservas confirmadas, y respetan el aviso mínimo de 5 h.</span>
+            </div>
+          </div>
+
+          <div style="position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(19,19,21,0.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:9px 6px 8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Inicio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="rgba(78,222,163,0.14)" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Reservar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Perfil</span></div>
+          </div>
+        </div>
+      </x-import>
+      <p style="max-width:412px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Día libre, agenda llena o dentro del corte de 5 h: el mismo estado tranquilo. <strong style="color:#bbcabf;font-weight:600">Nunca</strong> se lee como un error — siempre ofrece una salida.</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- STATE 3 · LOADING (tras tocar una fecha)                     -->
+    <!-- ============================================================ -->
+    <div style="flex:0 0 auto">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;justify-content:center">
+        <span style="width:7px;height:7px;border-radius:9999px;background:#86948a"></span>
+        <span style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#bbcabf">Cargando · tras tocar fecha</span>
+      </div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div data-screen-label="Reservar — cargando" style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:180px;pointer-events:none;background:radial-gradient(circle at 50% -34%, rgba(78,222,163,0.10) 0%, rgba(19,19,21,0) 64%)"></div>
+
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:14px 16px 8px">
+            <button type="button" style="flex:none;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,0.08);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e5e1e4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+            </button>
+            <div style="flex:1">
+              <div style="font:700 18px/1.1 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Reservar</div>
+              <div style="font:500 11.5px/1.2 Inter;color:#86948a;margin-top:2px">Paso 2 de 3 · elige fecha y hora</div>
+            </div>
+          </div>
+
+          <div style="position:relative;z-index:1;padding:6px 16px 12px">
+            <div style="display:flex;gap:4px;background:#201f22;border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:4px">
+              <button type="button" style="flex:1;height:36px;border-radius:7px;border:none;background:transparent;color:#bbcabf;font:500 13px/1 Inter;cursor:pointer">1 hora</button>
+              <button type="button" style="flex:1;height:36px;border-radius:7px;border:none;background:#4edea3;color:#003824;font:600 13px/1 Inter;cursor:pointer">2 horas</button>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px">
+            <div>
+              <div style="font:700 15px/1.1 Manrope;color:#e5e1e4">22 – 28 jun</div>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:3px">
+                <span style="width:12px;height:12px;border-radius:9999px;border:2px solid rgba(78,222,163,0.25);border-top-color:#4edea3;animation:spin 0.7s linear infinite"></span>
+                <span style="font:500 11px/1.2 Inter;color:#4edea3">Cargando disponibilidad…</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- skeleton grid -->
+          <div style="position:relative;z-index:1;margin:0 14px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;flex:1;min-height:160px;max-height:330px;background:#161517">
+            <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.07);background:#131315">
+              <div style="width:46px;flex:0 0 46px;height:48px;border-right:1px solid rgba(255,255,255,0.06)"></div>
+              <div style="display:flex;flex:1">
+                <div style="flex:1;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><div style="width:20px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:16px;height:13px;border-radius:3px;background:#2a2a2c;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+                <div style="flex:1;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><div style="width:20px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:16px;height:13px;border-radius:3px;background:#2a2a2c;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+                <div style="flex:1;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><div style="width:20px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:16px;height:13px;border-radius:3px;background:#2a2a2c;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+                <div style="flex:1;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><div style="width:20px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:16px;height:13px;border-radius:3px;background:#2a2a2c;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+                <div style="flex:1;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><div style="width:20px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:16px;height:13px;border-radius:3px;background:#2a2a2c;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+              </div>
+            </div>
+            <sc-for list="{{ skelRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;border-top:1px solid rgba(255,255,255,0.03)">
+                <div style="width:46px;flex:0 0 46px;height:42px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(255,255,255,0.06)"><div style="width:24px;height:8px;border-radius:3px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+                <div style="display:flex;flex:1">
+                  <div style="flex:1;height:42px;padding:6px"><div style="{{ r.s0 }}"></div></div>
+                  <div style="flex:1;height:42px;padding:6px"><div style="{{ r.s1 }}"></div></div>
+                  <div style="flex:1;height:42px;padding:6px"><div style="{{ r.s2 }}"></div></div>
+                  <div style="flex:1;height:42px;padding:6px"><div style="{{ r.s3 }}"></div></div>
+                  <div style="flex:1;height:42px;padding:6px"><div style="{{ r.s4 }}"></div></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- dock skeleton -->
+          <div style="position:relative;z-index:1;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.06);background:#131315;display:flex;align-items:center;gap:10px">
+            <div style="width:20px;height:20px;border-radius:5px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px"><div style="width:60%;height:13px;border-radius:4px;background:#26262a;animation:skeletonPulse 1.4s ease-in-out infinite"></div><div style="width:40%;height:10px;border-radius:4px;background:#201f22;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+          </div>
+          <div style="position:relative;z-index:1;padding:0 14px 12px;background:#131315"><div style="width:100%;height:48px;border-radius:9px;background:#1c1f1d;animation:skeletonPulse 1.4s ease-in-out infinite"></div></div>
+
+          <div style="position:relative;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(19,19,21,0.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:9px 6px 8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Inicio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="rgba(78,222,163,0.14)" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Reservar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Perfil</span></div>
+          </div>
+        </div>
+      </x-import>
+      <p style="max-width:412px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">Tras tocar una fecha o cambiar de semana, el esqueleto mantiene la estructura de la cuadrícula mientras llegan los huecos — sin saltos de layout.</p>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1380,&quot;height&quot;:1120}}">
+class Component extends DCLogic {
+  DAYS = [
+    { dow: 'LUN', d: 15, today: true },
+    { dow: 'MAR', d: 16 },
+    { dow: 'MIÉ', d: 17 },
+    { dow: 'JUE', d: 18 },
+    { dow: 'VIE', d: 19 },
+    { dow: 'SÁB', d: 20 },
+    { dow: 'DOM', d: 21 },
+  ];
+  HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+  // F = libre, B = reservado (otra reserva confirmada), U = no disponible (día libre / pasado / dentro del corte de 5 h)
+  G = [
+    ['U','U','U','U','F','F','B','F','F'], // LUN 15 · hoy — mañana dentro del corte de 5 h
+    ['F','F','B','F','B','F','F','B','F'], // MAR 16
+    ['F','F','F','F','F','U','U','F','F'], // MIÉ 17
+    ['B','F','F','B','F','F','B','F','B'], // JUE 18
+    ['F','F','F','F','F','F','F','B','B'], // VIE 19
+    ['U','U','F','F','U','U','U','U','U'], // SÁB 20
+    ['U','U','U','U','U','U','U','U','U'], // DOM 21 · día libre
+  ];
+
+  state = { mode: '2h', sel: { di: 1, s: 5, e: 6, anchor: 6, dir: 'backward' }, hint: '' };
+
+  pad(n) { return String(n).padStart(2, '0'); }
+
+  statusOf(di, hi) {
+    if (hi < 0 || hi >= this.HOURS.length) return 'X';
+    return this.G[di][hi];
+  }
+
+  role(di, hi) {
+    const st = this.G[di][hi];
+    if (st === 'B') return 'booked';
+    if (st === 'U') return 'unavail';
+    if (this.state.mode === '1h') return 'eligible';
+    const fwd = this.statusOf(di, hi + 1) === 'F';
+    const bwd = this.statusOf(di, hi - 1) === 'F';
+    return (fwd || bwd) ? 'eligible' : 'nofit';
+  }
+
+  tap(di, hi) {
+    const role = this.role(di, hi);
+    if (role === 'eligible') {
+      if (this.state.mode === '1h') {
+        this.setState({ sel: { di, s: hi, e: hi, anchor: hi, dir: 'single' }, hint: '' });
+        return;
+      }
+      // emparejado SIEMPRE hacia adelante; hacia atrás sólo si la hora siguiente está reservada
+      if (this.statusOf(di, hi + 1) === 'F') {
+        this.setState({ sel: { di, s: hi, e: hi + 1, anchor: hi, dir: 'forward' }, hint: '' });
+      } else {
+        this.setState({ sel: { di, s: hi - 1, e: hi, anchor: hi, dir: 'backward' }, hint: '' });
+      }
+    } else if (role === 'nofit') {
+      this.setState({ hint: 'Esta hora está libre, pero no caben 2 h seguidas aquí. Las horas en verde sí permiten 2 h.' });
+    } else if (role === 'booked') {
+      this.setState({ hint: 'Esa hora ya está reservada por otro alumno.' });
+    } else {
+      this.setState({ hint: '' });
+    }
+  }
+
+  buildCell(di, hi, h) {
+    const role = this.role(di, hi);
+    const sel = this.state.sel;
+    const selected = sel && sel.di === di && hi >= sel.s && hi <= sel.e;
+    const anchor = sel && sel.di === di && hi === sel.anchor;
+    const time = this.pad(h) + ':00';
+    const s = {
+      width: 60, height: 42, flex: '0 0 60px', boxSizing: 'border-box',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      margin: 0, padding: 0, borderRadius: 5, cursor: 'default', color: 'inherit',
+      appearance: 'none', WebkitAppearance: 'none', outline: 'none', border: '1px solid transparent',
+      borderTop: '1px solid rgba(255,255,255,0.03)', borderRight: '1px solid rgba(255,255,255,0.03)',
+      transition: 'background 0.12s ease',
+    };
+    let label = '', locked = false, badge = '';
+    if (selected) {
+      if (anchor) { s.background = '#4edea3'; s.border = '1px solid #4edea3'; s.color = '#003824'; s.boxShadow = '0 0 14px rgba(78,222,163,0.45)'; }
+      else { s.background = 'rgba(78,222,163,0.30)'; s.border = '1px solid rgba(78,222,163,0.7)'; s.color = '#e5fff4'; }
+      s.cursor = 'pointer'; label = time;
+    } else if (role === 'eligible') {
+      s.background = 'rgba(78,222,163,0.10)'; s.border = '1px solid rgba(78,222,163,0.32)'; s.color = '#7ff0c2'; s.cursor = 'pointer'; label = time;
+    } else if (role === 'nofit') {
+      s.background = 'rgba(78,222,163,0.03)';
+      s.backgroundImage = 'repeating-linear-gradient(45deg, rgba(78,222,163,0.12) 0 3px, transparent 3px 7px)';
+      s.border = '1px dashed rgba(78,222,163,0.32)'; s.color = '#8a9990'; s.cursor = 'pointer'; label = time; badge = '1 h';
+    } else if (role === 'booked') {
+      s.background = 'rgba(255,128,120,0.10)'; s.border = '1px solid rgba(255,128,120,0.24)'; s.color = '#ffb3af'; s.cursor = 'not-allowed'; locked = true;
+    } else {
+      s.background = 'transparent';
+      s.backgroundImage = 'repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 4px, transparent 4px 9px)';
+      s.border = '1px solid rgba(255,255,255,0.05)'; s.color = '#54545a'; s.cursor = 'not-allowed';
+    }
+    return { key: di + '-' + hi, style: s, label, locked, badge, onClick: () => this.tap(di, hi) };
+  }
+
+  segStyle(active) {
+    return active
+      ? { flex: 1, height: 36, borderRadius: 7, border: 'none', cursor: 'pointer', font: '600 13px/1 Inter', background: '#4edea3', color: '#003824' }
+      : { flex: 1, height: 36, borderRadius: 7, border: 'none', cursor: 'pointer', font: '500 13px/1 Inter', background: 'transparent', color: '#bbcabf' };
+  }
+
+  skelStyle(seed) {
+    const w = [62, 78, 70, 84, 66][seed % 5];
+    return {
+      width: w + '%', height: '100%', borderRadius: 5,
+      background: '#201f22', animation: 'skeletonPulse 1.4s ease-in-out infinite',
+      animationDelay: (seed % 7) * 0.08 + 's',
+    };
+  }
+
+  renderVals() {
+    const { mode, sel, hint } = this.state;
+    const is2h = mode === '2h';
+    const header = this.DAYS.map(d => ({
+      dow: d.dow, d: d.d, today: !!d.today,
+      dowStyle: { font: '700 9.5px/1 Inter', letterSpacing: '0.06em', color: d.today ? '#4edea3' : '#86948a' },
+      dStyle: { font: '700 16px/1.05 Manrope', color: d.today ? '#4edea3' : '#e5e1e4', marginTop: '3px' },
+    }));
+    const rows = this.HOURS.map((h, hi) => ({
+      hourLabel: this.pad(h) + ':00',
+      cells: this.DAYS.map((d, di) => this.buildCell(di, hi, h)),
+    }));
+    const skelRows = [0, 1, 2, 3, 4, 5].map(r => ({
+      s0: this.skelStyle(r), s1: this.skelStyle(r + 1), s2: this.skelStyle(r + 2),
+      s3: this.skelStyle(r + 3), s4: this.skelStyle(r + 4),
+    }));
+    let selLabel = '', dirLabel = '';
+    if (sel) {
+      const d = this.DAYS[sel.di];
+      const sH = this.HOURS[sel.s], eH = this.HOURS[sel.e] + 1;
+      selLabel = `${d.dow} ${d.d} jun · ${this.pad(sH)}:00–${this.pad(eH)}:00`;
+      dirLabel = sel.dir === 'forward' ? 'Bloque de 2 h · se une con la hora siguiente'
+        : sel.dir === 'backward' ? 'Bloque de 2 h · la hora siguiente está reservada, se une hacia atrás'
+        : 'Sesión de 1 hora';
+    }
+    return {
+      seg1Style: this.segStyle(!is2h), seg2Style: this.segStyle(is2h),
+      set1h: () => this.setState({ mode: '1h', sel: null, hint: '' }),
+      set2h: () => this.setState({ mode: '2h', sel: null, hint: '' }),
+      header, rows, skelRows,
+      hasSel: !!sel, noSel: !sel, selLabel, dirLabel,
+      hint, hasHint: !!hint,
+      ctaStyle: {
+        width: '100%', height: 48, borderRadius: 9, border: 'none', cursor: sel ? 'pointer' : 'default',
+        font: '600 15px/1 Inter', background: sel ? '#4edea3' : '#26332c',
+        color: sel ? '#003824' : '#5e6b63',
+      },
+      continuar: () => {},
+    };
+  }
+}
+</script>
+</body>
+</html>

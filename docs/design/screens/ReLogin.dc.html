@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_ds/gustavoai-design-system-019dbfe0-dd3a-744e-b63c-14e34a8c5b58/colors_and_type.css">
+<style>
+  @keyframes spin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif;overflow:hidden">
+
+  <!-- top emerald glow -->
+  <div style="position:absolute;top:0;left:0;right:0;height:320px;pointer-events:none;background:radial-gradient(circle at 50% -22%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 62%)"></div>
+  <!-- grid texture -->
+  <div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);background-size:60px 60px"></div>
+
+  <!-- ===== FOCUS HERO ===== -->
+  <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:56px 32px 18px">
+
+    <!-- expired-session icon badge -->
+    <div style="width:72px;height:72px;border-radius:20px;background:#1c1b1d;border:1px solid rgba(78,222,163,0.26);display:flex;align-items:center;justify-content:center;box-shadow:0 0 34px rgba(78,222,163,0.22);margin-bottom:22px">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9.5V13l2.4 1.6"></path><path d="M9 2.2h6"></path></svg>
+    </div>
+
+    <div style="font:700 11px/1 Inter;letter-spacing:0.16em;text-transform:uppercase;color:#4edea3;margin-bottom:14px">Sesión caducada</div>
+
+    <h1 style="margin:0 0 12px;font:800 27px/1.12 Manrope;color:#e5e1e4;letter-spacing:-0.03em;max-width:300px;text-wrap:balance">Tu sesión ha caducado</h1>
+    <p style="margin:0;max-width:296px;font:400 14.5px/1.6 Inter;color:#bbcabf;text-wrap:pretty">Por seguridad cerramos tu sesión tras 30 días. Vuelve a entrar y te llevamos justo a donde lo dejaste.</p>
+
+    <!-- intentional spacer — pushes the auth group toward the anchored CTA -->
+    <div style="flex:1;min-height:28px"></div>
+
+    <!-- known-student identity: "continuar como" -->
+    <div style="font:600 10.5px/1 Inter;letter-spacing:0.12em;text-transform:uppercase;color:#86948a;margin-bottom:12px">Continuar como</div>
+    <div style="display:flex;align-items:center;gap:13px;width:100%;max-width:330px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:13px 15px;text-align:left">
+      <div style="flex:none;width:44px;height:44px;border-radius:9999px;background:#26262a;border:1.5px solid rgba(78,222,163,0.4);display:flex;align-items:center;justify-content:center;font:700 15px/1 Manrope;color:#bbcabf">LR</div>
+      <div style="flex:1;min-width:0">
+        <div style="font:700 15px/1.2 Manrope;color:#e5e1e4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Lucía Romero</div>
+        <div style="font:400 12.5px/1.3 Inter;color:#86948a;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">lucia.romero<span style="color:#86948a">@</span>gmail<span style="color:#86948a">.</span>com</div>
+      </div>
+      <span style="flex:none;width:8px;height:8px;border-radius:9999px;background:#86948a;box-shadow:0 0 0 4px rgba(134,148,138,0.12)"></span>
+    </div>
+  </div>
+
+  <!-- ===== AUTH BLOCK (anchored) ===== -->
+  <div style="position:relative;z-index:1;padding:0 24px calc(26px + env(safe-area-inset-bottom, 0px))">
+
+    <!-- Reserved alert slot — min-height keeps the button fixed across states -->
+    <div style="min-height:62px;display:flex;align-items:flex-end;padding-bottom:12px">
+      <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="width:100%;display:flex;align-items:flex-start;gap:10px;background:rgba(255,180,171,0.12);border:1px solid rgba(255,180,171,0.30);border-radius:10px;padding:12px 14px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4.5"></path><circle cx="12" cy="16.5" r=".6" fill="#ffb4ab" stroke="none"></circle></svg>
+          <span style="font:500 13px/1.45 Inter;color:#ffb4ab">No pudimos volver a iniciar sesión. Inténtalo de nuevo.</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- Provider column — room for a 2nd provider without redesign -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+
+      <!-- Google — active (prompt / error) -->
+      <sc-if value="{{ showActive }}" hint-placeholder-val="{{ true }}">
+        <button type="button" style="width:100%;height:52px;border:none;border-radius:6px;background:#ffffff;color:#1f1f1f;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:11px;box-shadow:0 6px 22px rgba(0,0,0,0.38)">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path></svg>
+          Iniciar sesión con Google
+        </button>
+      </sc-if>
+
+      <!-- Google — signing in -->
+      <sc-if value="{{ isSigning }}" hint-placeholder-val="{{ false }}">
+        <button type="button" disabled="{{ true }}" style="width:100%;height:52px;border:none;border-radius:6px;background:#ffffff;color:#5f6368;font:600 15px/1 Inter;cursor:default;display:flex;align-items:center;justify-content:center;gap:11px;box-shadow:0 6px 22px rgba(0,0,0,0.38);opacity:.88">
+          <span style="width:19px;height:19px;border-radius:9999px;border:2.5px solid rgba(31,31,31,0.16);border-top-color:#1f1f1f;display:inline-block;animation:spin .7s linear infinite;flex:none"></span>
+          Iniciando sesión…
+        </button>
+      </sc-if>
+
+      <!-- Apple placeholder slot — reserved for iOS launch -->
+      <div style="width:100%;height:52px;border:1.5px dashed rgba(255,255,255,0.09);border-radius:6px;display:flex;align-items:center;justify-content:center;gap:10px;color:#555357;font:500 13px/1 Inter">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#555357" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83z"></path><path d="M15.53 3.83c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"></path></svg>
+        Próximamente en iOS
+      </div>
+    </div>
+
+    <!-- return-context reassurance: where we'll send them back -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 5 5v3"></path></svg>
+      <span style="font:400 12px/1.4 Inter;color:#86948a">Volverás a <span style="color:#bbcabf;font-weight:500">Reservar · Mar 18</span></span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:760},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;prompt&quot;,&quot;signing&quot;,&quot;error&quot;],&quot;default&quot;:&quot;prompt&quot;,&quot;tsType&quot;:&quot;'prompt'|'signing'|'error'&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'prompt';
+    return {
+      isSigning:  state === 'signing',
+      isError:    state === 'error',
+      showActive: state !== 'signing',
+    };
+  }
+}
+</script>
+</body>
+</html>

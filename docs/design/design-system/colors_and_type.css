@@ -1,0 +1,377 @@
+/**
+ * GustavoAI Design System — Emerald Nocturne
+ * colors_and_type.css
+ *
+ * Import this file (or link it) to get all design tokens.
+ * Fonts are loaded via Google Fonts (see <link> tags in layout).
+ *
+ * Usage:
+ *   @import url('./colors_and_type.css');
+ *
+ * Fonts (add to <head>):
+ *   <link rel="preconnect" href="https://fonts.googleapis.com" />
+ *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ *   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+ *   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet" />
+ */
+
+/* ─── Google Fonts import ─────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ─── Base Design Tokens ──────────────────────────────────────────────────── */
+:root {
+
+  /* ── Font Families ── */
+  --font-headline: "Manrope", sans-serif;
+  --font-body:     "Inter", system-ui, sans-serif;
+  --font-mono:     "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+
+  /* ── Surface Hierarchy (darkest → brightest) ── */
+  --bg:                    #131315;   /* Layer 0 — Page foundation */
+  --surface:               #131315;
+  --surface-lowest:        #0e0e10;   /* Deepest (rare) */
+  --surface-low:           #1c1b1d;   /* Layer 1 — Section backgrounds */
+  --surface-container:     #201f22;   /* Layer 2 — Cards, inputs */
+  --surface-high:          #2a2a2c;   /* Elevated cards, dropdowns */
+  --surface-highest:       #353437;   /* Layer 3 — Floating, popovers */
+  --surface-bright:        #39393b;   /* Highest surface (pressed states) */
+
+  /* ── Primary / Emerald ── */
+  --green:                 #4edea3;                    /* Primary action, highlights */
+  --green-container:       #10b981;                    /* Brand anchor, gradient end */
+  --green-on:              #003824;                    /* Text on green backgrounds */
+  --green-dim:             rgba(78, 222, 163, 0.12);   /* Muted fill */
+  --green-mid:             rgba(78, 222, 163, 0.25);   /* Medium-emphasis fill */
+  --green-border:          rgba(78, 222, 163, 0.25);   /* Default green border */
+  --green-border-hover:    rgba(78, 222, 163, 0.55);   /* Hover green border */
+
+  /* ── Secondary (desaturated green-grey) ── */
+  --secondary:             #9ed2b5;
+  --secondary-container:   #21523c;
+  --on-secondary:          #013824;
+
+  /* ── Tertiary (soft coral/error-adjacent) ── */
+  --tertiary:              #ffb3af;
+  --tertiary-container:    #fc7c78;
+  --on-tertiary:           #650911;
+
+  /* ── Text ── */
+  --text:                  #e5e1e4;   /* Primary text — on-surface */
+  --text-muted:            #bbcabf;   /* Secondary/body text */
+  --text-dim:              #86948a;   /* Tertiary/placeholder/timestamps */
+
+  /* ── Borders ── */
+  --border:                rgba(255, 255, 255, 0.05);  /* Default: extremely subtle */
+  --border-variant:        #3c4a42;                    /* Green-tinted dark border */
+
+  /* ── Status ── */
+  --error:                 #ffb4ab;
+  --error-bg:              rgba(255, 180, 171, 0.12);
+  --error-border:          rgba(255, 180, 171, 0.25);
+  --warning:               #fbbf24;
+  --warning-bg:            rgba(251, 191, 36, 0.12);
+  --warning-border:        rgba(251, 191, 36, 0.25);
+  --success:               #4edea3;    /* Same as --green */
+  --success-bg:            rgba(78, 222, 163, 0.10);
+  --success-border:        rgba(78, 222, 163, 0.25);
+
+  /* ── Inverse (light-on-dark) ── */
+  --inverse-surface:       #e5e1e4;
+  --inverse-on-surface:    #313032;
+  --inverse-primary:       #006c49;
+
+  /* ── Outline ── */
+  --outline:               #86948a;
+  --outline-variant:       #3c4a42;
+
+  /* ── Border Radius Scale ── */
+  --radius-xs:    2px;    /* Sharp — data elements */
+  --radius-sm:    4px;
+  --radius-md:    6px;    /* Buttons */
+  --radius-lg:    8px;    /* Tooltips, small cards */
+  --radius-xl:    10px;   /* Hero CTAs, session cards */
+  --radius-2xl:   12px;   /* Main cards */
+  --radius-3xl:   14px;   /* Spec cards */
+  --radius-4xl:   16px;   /* Pack cards */
+  --radius-5xl:   18px;   /* Chat panel */
+  --radius-full:  9999px; /* Pills, FAB */
+
+  /* Semantic alias */
+  --radius:       12px;   /* Default card radius */
+
+  /* ── Shadows / Elevation ── */
+  --shadow-sm:     0 4px  16px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md:     0 8px  32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-lg:     0 20px 40px rgba(0, 0, 0, 0.40), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-modal:  0 20px 60px rgba(0, 0, 0, 0.60);
+  --shadow-glow:   0 0   30px rgba(78, 222, 163, 0.40);
+  --shadow-glow-lg:0 20px 60px -15px rgba(78, 222, 163, 0.50);
+
+  /* ── Transitions ── */
+  --transition-fast:   0.15s ease;
+  --transition-base:   0.20s ease;
+  --transition-slow:   0.35s ease;
+  --transition-panel:  0.22s ease;
+
+  /* ── Spacing scale ── */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+
+  /* ── Layout ── */
+  --max-width:        1280px;
+  --navbar-height:    64px;
+
+  /* ── Legacy aliases (backward compat) ── */
+  --color-brand:           #4edea3;
+  --color-brand-hover:     #10b981;
+  --color-surface:         #1c1b1d;
+  --color-background:      #131315;
+  --color-border:          rgba(255, 255, 255, 0.05);
+  --color-text-primary:    #e5e1e4;
+  --color-text-secondary:  #bbcabf;
+  --color-text-muted:      #86948a;
+  --color-text-body:       #c9d1de;
+  --color-error:           #ffb4ab;
+  --color-warning:         #fbbf24;
+  --surface-2:             #1c1b1d;
+}
+
+/* ─── Base Typography ─────────────────────────────────────────────────────── */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family:             var(--font-body);
+  font-size:               1rem;
+  font-weight:             400;
+  line-height:             1.65;
+  color:                   var(--text);
+  background-color:        var(--bg);
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Semantic Type Scale ─────────────────────────────────────────────────── */
+
+/* Display / Hero H1 */
+.t-display {
+  font-family:     var(--font-headline);
+  font-size:       clamp(2.4rem, 6vw, 4.25rem);
+  font-weight:     800;
+  line-height:     1.05;
+  letter-spacing:  -0.02em;
+  color:           var(--text);
+}
+
+/* Section heading H2 */
+.t-h2 {
+  font-family:     var(--font-headline);
+  font-size:       clamp(1.75rem, 4vw, 2.75rem);
+  font-weight:     800;
+  line-height:     1.15;
+  letter-spacing:  -0.02em;
+  color:           var(--text);
+}
+
+/* Card heading H3 */
+.t-h3 {
+  font-family:     var(--font-headline);
+  font-size:       1.125rem;
+  font-weight:     700;
+  line-height:     1.25;
+  letter-spacing:  -0.01em;
+  color:           var(--text);
+}
+
+/* Sub-heading / large card label */
+.t-h4 {
+  font-family:     var(--font-headline);
+  font-size:       1rem;
+  font-weight:     700;
+  line-height:     1.3;
+  letter-spacing:  -0.01em;
+  color:           var(--text);
+}
+
+/* Eyebrow / Overline */
+.t-overline {
+  font-family:     var(--font-body);
+  font-size:       11px;
+  font-weight:     600;
+  line-height:     1.4;
+  letter-spacing:  0.1em;
+  text-transform:  uppercase;
+  color:           var(--green);
+}
+
+/* Body / Paragraph */
+.t-body {
+  font-family:  var(--font-body);
+  font-size:    1rem;
+  font-weight:  400;
+  line-height:  1.65;
+  color:        var(--text-muted);
+}
+
+/* Body small */
+.t-body-sm {
+  font-family:  var(--font-body);
+  font-size:    0.9375rem;
+  font-weight:  400;
+  line-height:  1.65;
+  color:        var(--text-muted);
+}
+
+/* Caption / Meta */
+.t-caption {
+  font-family:  var(--font-body);
+  font-size:    0.75rem;
+  font-weight:  400;
+  line-height:  1.5;
+  color:        var(--text-dim);
+}
+
+/* Label / UI text */
+.t-label {
+  font-family:  var(--font-body);
+  font-size:    0.875rem;
+  font-weight:  500;
+  line-height:  1.4;
+  color:        var(--text-muted);
+}
+
+/* Stat number */
+.t-stat {
+  font-family:     var(--font-headline);
+  font-size:       1.75rem;
+  font-weight:     800;
+  line-height:     1;
+  letter-spacing:  -0.03em;
+  color:           var(--green);
+}
+
+/* Price number */
+.t-price {
+  font-family:     var(--font-headline);
+  font-size:       2rem;
+  font-weight:     800;
+  line-height:     1;
+  letter-spacing:  -0.02em;
+  color:           var(--green);
+}
+
+/* Badge / pill text */
+.t-badge {
+  font-family:     var(--font-body);
+  font-size:       10px;
+  font-weight:     700;
+  line-height:     1;
+  letter-spacing:  0.06em;
+  text-transform:  uppercase;
+}
+
+/* Code / mono */
+.t-mono {
+  font-family:  var(--font-mono);
+  font-size:    0.875rem;
+  font-weight:  400;
+  line-height:  1.6;
+  color:        var(--text-muted);
+}
+
+/* ─── Emerald text gradient (hero accent) ────────────────────────────────── */
+.t-gradient {
+  background:             linear-gradient(135deg, #4edea3, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip:         text;
+}
+
+/* ─── Background textures ─────────────────────────────────────────────────── */
+
+/* Hero orb — apply to body or a full-height container */
+.bg-hero-orb::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 90vh;
+  background: radial-gradient(circle at 50% -20%, rgba(78, 222, 163, 0.15) 0%, rgba(19, 19, 21, 0) 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle grid texture */
+.bg-grid::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Global Animations ───────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+@keyframes chatDotPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.2); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+.animate-fade-up      { animation: fadeUp       0.6s ease both; }
+.animate-fade-in      { animation: fadeIn       0.4s ease both; }
+.animate-skeleton     { animation: skeletonPulse 1.4s ease-in-out infinite; }
+
+/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 6px; }
+::-webkit-scrollbar-track       { background: transparent; }
+::-webkit-scrollbar-thumb       { background: var(--border-variant); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+/* ─── Focus ───────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline:        2px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* ─── Selection ───────────────────────────────────────────────────────────── */
+::selection {
+  background-color: rgba(78, 222, 163, 0.3);
+  color:            var(--green);
+}

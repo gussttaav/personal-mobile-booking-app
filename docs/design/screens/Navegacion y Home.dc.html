@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0c0e;-webkit-font-smoothing:antialiased}
+  ::selection{background:rgba(78,222,163,0.3);color:#4edea3}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-thumb{background:#3c4a42;border-radius:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.25)}}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at 50% -8%, rgba(78,222,163,0.10) 0%, rgba(12,12,14,0) 55%)"></div>
+
+<main style="position:relative;z-index:1;min-height:100vh;padding:48px 28px 80px;font-family:Inter,system-ui,sans-serif">
+
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="font:600 11px/1 Inter;letter-spacing:0.14em;text-transform:uppercase;color:#86948a;margin-bottom:14px">App móvil · Android · Estructura</div>
+    <h1 style="margin:0 0 12px;font:800 clamp(1.8rem,4vw,2.5rem)/1.05 Manrope;color:#e5e1e4;letter-spacing:-0.03em">Navegación + pantalla ancla</h1>
+    <p style="margin:0;max-width:680px;font:400 15px/1.6 Inter;color:#bbcabf">La columna de la izquierda define cómo se estructura y se recorre la app. A la derecha, <strong style="color:#e5e1e4;font-weight:600">Inicio</strong> diseñada en detalle — el ancla desde la que cuelga todo lo demás.</p>
+  </div>
+
+  <div style="max-width:1200px;margin:36px auto 0;display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+
+    <!-- ===================== NAV STRUCTURE ===================== -->
+    <div style="flex:1 1 440px;max-width:520px;display:flex;flex-direction:column;gap:16px">
+
+      <!-- justification -->
+      <div style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px 22px">
+        <div style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:8px">Navegación primaria</div>
+        <h2 style="margin:0 0 10px;font:700 19px/1.2 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Barra de tabs inferior · 4 destinos</h2>
+        <p style="margin:0 0 14px;font:400 13.5px/1.6 Inter;color:#bbcabf">Cuatro destinos fijos y un uso <strong style="color:#e5e1e4;font-weight:600">bajo y a ráfagas</strong> piden una estructura plana y siempre visible — el alumno entra, comprueba algo y sale. La barra deja todo a un toque.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:18px;height:18px;border-radius:9999px;background:rgba(255,180,171,0.12);display:flex;align-items:center;justify-content:center;margin-top:1px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span><span style="font:400 12.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Menú lateral (drawer):</strong> esconde los destinos tras un toque extra — penaliza el uso rápido y recurrente.</span></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:18px;height:18px;border-radius:9999px;background:rgba(255,180,171,0.12);display:flex;align-items:center;justify-content:center;margin-top:1px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffb4ab" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></span><span style="font:400 12.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Pila/jerarquía sola:</strong> demasiado profunda para 4 áreas planas que no dependen entre sí.</span></div>
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:18px;height:18px;border-radius:9999px;background:rgba(78,222,163,0.14);display:flex;align-items:center;justify-content:center;margin-top:1px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"></path></svg></span><span style="font:400 12.5px/1.5 Inter;color:#bbcabf"><strong style="color:#e5e1e4;font-weight:600">Barra de tabs:</strong> los 4 destinos visibles siempre; cada flujo abre como pila <em style="font-style:normal;color:#e5e1e4">dentro</em> de su tab.</span></div>
+        </div>
+      </div>
+
+      <!-- top-level destinations -->
+      <div style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px 22px">
+        <div style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:14px">Destinos de nivel superior</div>
+        <!-- mini tab bar -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#131315;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 6px;margin-bottom:16px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Inicio</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Reservar</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Perfil</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <div style="display:flex;gap:11px;align-items:baseline"><span style="flex:none;font:700 12px/1.3 Manrope;color:#4edea3;width:60px">Inicio</span><span style="font:400 13px/1.5 Inter;color:#bbcabf">Próxima clase, saldo de créditos y próximas reservas. <span style="color:#4edea3">← esta pantalla.</span></span></div>
+          <div style="display:flex;gap:11px;align-items:baseline"><span style="flex:none;font:700 12px/1.3 Manrope;color:#e5e1e4;width:60px">Reservar</span><span style="font:400 13px/1.5 Inter;color:#bbcabf">El flujo de reserva: tipo → fecha/hora → confirmar.</span></div>
+          <div style="display:flex;gap:11px;align-items:baseline"><span style="flex:none;font:700 12px/1.3 Manrope;color:#e5e1e4;width:60px">Packs</span><span style="font:400 13px/1.5 Inter;color:#bbcabf">Comprar pack de 5 o 10; saldo y caducidad.</span></div>
+          <div style="display:flex;gap:11px;align-items:baseline"><span style="flex:none;font:700 12px/1.3 Manrope;color:#e5e1e4;width:60px">Perfil</span><span style="font:400 13px/1.5 Inter;color:#bbcabf">Cuenta, ajustes (permisos, idioma) y cerrar sesión.</span></div>
+        </div>
+      </div>
+
+      <!-- over the tabs -->
+      <div style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px 22px">
+        <div style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:6px">Sobre las tabs · pantalla completa</div>
+        <p style="margin:0 0 12px;font:400 13px/1.55 Inter;color:#bbcabf">Tres experiencias enfocadas se abren <strong style="color:#e5e1e4;font-weight:600">por encima</strong> de la barra (que se oculta) y devuelven al usuario a su origen al terminar.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.28);padding:7px 11px;border-radius:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8l5-3v14l-5-3"></path><rect x="3" y="6" width="13" height="12" rx="2"></rect></svg>Sala de vídeo</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.28);padding:7px 11px;border-radius:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.1 1.2 6L12 16.8 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"></path></svg>Reseña post-clase</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.28);padding:7px 11px;border-radius:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><path d="M10 17l5-5-5-5M15 12H3"></path></svg>Re-login (sesión expirada)</span>
+        </div>
+      </div>
+
+      <!-- movement / journeys -->
+      <div style="background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px 22px">
+        <div style="font:600 10px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a;margin-bottom:14px">Cómo se mueve el usuario</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <div>
+            <div style="font:700 12px/1.2 Manrope;color:#e5e1e4;margin-bottom:8px">Unirse a una clase</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.25);padding:5px 9px;border-radius:7px">Inicio</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Próxima clase</span><span style="color:#86948a;font-size:13px">→</span><span style="font:600 11px/1 Inter;color:#003824;background:#4edea3;padding:5px 9px;border-radius:7px">Sala de vídeo</span><span style="color:#86948a;font-size:13px">→</span><span style="font:600 11px/1 Inter;color:#003824;background:#4edea3;padding:5px 9px;border-radius:7px">Reseña</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Inicio</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font:700 12px/1.2 Manrope;color:#e5e1e4;margin-bottom:8px">Reservar (pago por clase)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.25);padding:5px 9px;border-radius:7px">Reservar</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Tipo 1h/2h</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Fecha · hora</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Pagar</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Confirmación</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font:700 12px/1.2 Manrope;color:#e5e1e4;margin-bottom:8px">Reservar con crédito · comprar pack</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.25);padding:5px 9px;border-radius:7px">Packs</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Pago</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Confirmando…</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Saldo +5</span><span style="color:#86948a;font-size:13px">→</span><span style="font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.25);padding:5px 9px;border-radius:7px">Reservar</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font:700 12px/1.2 Manrope;color:#e5e1e4;margin-bottom:8px">Gestionar una reserva</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.10);border:1px solid rgba(78,222,163,0.25);padding:5px 9px;border-radius:7px">Inicio</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Detalle de reserva</span><span style="color:#86948a;font-size:13px">→</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Cancelar</span><span style="color:#86948a;font-size:13px">/</span><span style="font:500 11px/1 Inter;color:#bbcabf;background:#26262a;padding:5px 9px;border-radius:7px">Reprogramar</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== HOME SCREEN ===================== -->
+    <div style="flex:0 0 auto">
+      <div style="font:600 11px/1 Inter;letter-spacing:0.08em;text-transform:uppercase;color:#86948a;margin-bottom:14px;text-align:center">Inicio · pantalla ancla</div>
+      <x-import component="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+
+        <div style="position:relative;min-height:100%;display:flex;flex-direction:column;background:#131315;color:#e5e1e4;font-family:Inter,system-ui,sans-serif">
+          <div style="position:absolute;top:0;left:0;right:0;height:240px;pointer-events:none;background:radial-gradient(circle at 50% -30%, rgba(78,222,163,0.16) 0%, rgba(19,19,21,0) 65%)"></div>
+
+          <!-- header -->
+          <div style="position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:16px 18px 8px">
+            <div style="flex:1">
+              <div style="font:500 12px/1.2 Inter;color:#86948a">Buenas tardes</div>
+              <div style="font:800 21px/1.15 Manrope;color:#e5e1e4;letter-spacing:-0.02em;margin-top:3px">Hola, Lucía</div>
+            </div>
+            <div style="width:42px;height:42px;border-radius:9999px;background:#26262a;border:1.5px solid rgba(78,222,163,0.4);display:flex;align-items:center;justify-content:center;font:700 14px/1 Manrope;color:#bbcabf">LR</div>
+          </div>
+
+          <!-- scroll body -->
+          <div style="position:relative;z-index:1;flex:1;padding:6px 18px 16px">
+
+            <!-- NEXT CLASS HERO -->
+            <div style="border-radius:16px;background:rgba(78,222,163,0.07);border:1px solid rgba(78,222,163,0.28);box-shadow:0 14px 40px -18px rgba(78,222,163,0.45);padding:18px 18px 16px;margin-top:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <span style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#4edea3">Tu próxima clase</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font:600 11px/1 Inter;color:#4edea3;background:rgba(78,222,163,0.12);padding:5px 9px;border-radius:9999px"><span style="width:6px;height:6px;border-radius:9999px;background:#4edea3;animation:pulseDot 1.6s ease-in-out infinite"></span>Empieza en 8 min</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <span style="font:800 28px/1 Manrope;color:#e5e1e4;letter-spacing:-0.02em">Hoy · 18:00</span>
+                <span style="font:500 15px/1 Inter;color:#86948a">– 19:00</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                <span style="font:500 13px/1.4 Inter;color:#bbcabf">1 hora · con Gustavo</span>
+                <span style="width:3px;height:3px;border-radius:9999px;background:#86948a"></span>
+                <span style="font:500 13px/1.4 Inter;color:#86948a">Sala lista</span>
+              </div>
+              <button type="button" style="margin-top:16px;width:100%;height:50px;border:none;border-radius:10px;background:#4edea3;color:#003824;font:600 15px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 0 26px rgba(78,222,163,0.4)">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#003824" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8l5-3v14l-5-3"></path><rect x="3" y="6" width="13" height="12" rx="2"></rect></svg>
+                Unirse a la clase
+              </button>
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <button type="button" style="flex:1;height:42px;border:1px solid rgba(255,255,255,0.10);border-radius:9px;background:transparent;color:#bbcabf;font:500 13px/1 Inter;cursor:pointer">Ver detalle</button>
+                <button type="button" style="flex:none;width:46px;height:42px;border:1px solid rgba(255,255,255,0.10);border-radius:9px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbcabf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 15l2 2 4-4"></path></svg></button>
+              </div>
+            </div>
+
+            <!-- CREDITS -->
+            <div style="border-radius:14px;background:#201f22;border:1px solid rgba(255,255,255,0.06);padding:16px 18px;margin-top:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <span style="font:600 10.5px/1 Inter;letter-spacing:0.1em;text-transform:uppercase;color:#86948a">Saldo de créditos</span>
+                <span style="font:600 12px/1 Inter;color:#4edea3;cursor:pointer">Comprar más</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <span style="font:800 26px/1 Manrope;color:#4edea3;letter-spacing:-0.02em">5</span>
+                <span style="font:600 14px/1 Inter;color:#e5e1e4">créditos</span>
+                <span style="font:500 12px/1 Inter;color:#86948a;margin-left:2px">· Pack Esencial</span>
+              </div>
+              <div style="margin-top:12px">
+                <div style="height:5px;border-radius:9999px;background:#131315;overflow:hidden"><div style="height:100%;width:79%;border-radius:9999px;background:#4edea3"></div></div>
+                <div style="font:500 11px/1.3 Inter;color:#86948a;margin-top:7px">Caduca en 142 días · 12 dic 2026</div>
+              </div>
+              <button type="button" style="margin-top:14px;width:100%;height:44px;border:1px solid rgba(78,222,163,0.4);border-radius:9px;background:rgba(78,222,163,0.10);color:#4edea3;font:600 14px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">Reservar con crédito<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+            </div>
+
+            <!-- UPCOMING -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 2px 12px">
+              <span style="font:700 16px/1 Manrope;color:#e5e1e4;letter-spacing:-0.01em">Próximas clases</span>
+              <span style="font:600 11px/1 Inter;color:#86948a;background:#26262a;padding:4px 9px;border-radius:9999px">2</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:14px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:13px 14px;cursor:pointer">
+                <div style="flex:none;width:46px;text-align:center"><div style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#86948a">Jue</div><div style="font:800 20px/1.05 Manrope;color:#e5e1e4;margin-top:2px">18</div></div>
+                <div style="flex:1;min-width:0;border-left:1px solid rgba(255,255,255,0.06);padding-left:14px">
+                  <div style="font:700 14px/1.2 Manrope;color:#e5e1e4">17:00 – 18:00</div>
+                  <div style="display:flex;align-items:center;gap:7px;margin-top:4px"><span style="font:500 12px/1 Inter;color:#bbcabf">1 hora</span><span style="font:600 9.5px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#4edea3;background:rgba(78,222,163,0.12);padding:3px 7px;border-radius:9999px">Crédito</span></div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;background:#1c1b1d;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:13px 14px;cursor:pointer">
+                <div style="flex:none;width:46px;text-align:center"><div style="font:600 10px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#86948a">Lun</div><div style="font:800 20px/1.05 Manrope;color:#e5e1e4;margin-top:2px">22</div></div>
+                <div style="flex:1;min-width:0;border-left:1px solid rgba(255,255,255,0.06);padding-left:14px">
+                  <div style="font:700 14px/1.2 Manrope;color:#e5e1e4">10:00 – 12:00</div>
+                  <div style="display:flex;align-items:center;gap:7px;margin-top:4px"><span style="font:500 12px/1 Inter;color:#bbcabf">2 horas</span><span style="font:600 9.5px/1 Inter;letter-spacing:0.04em;text-transform:uppercase;color:#bbcabf;background:#2a2a2c;padding:3px 7px;border-radius:9999px">Pagada</span></div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg>
+              </div>
+            </div>
+
+            <!-- secondary book -->
+            <button type="button" style="margin-top:16px;width:100%;height:46px;border:1px dashed rgba(255,255,255,0.14);border-radius:10px;background:transparent;color:#bbcabf;font:500 14px/1 Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>Reservar otra clase</button>
+
+          </div>
+
+          <!-- bottom tab bar -->
+          <div style="position:sticky;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(19,19,21,0.92);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.06);padding:9px 6px 8px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="rgba(78,222,163,0.14)" stroke="#4edea3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg><span style="font:700 10px/1 Inter;color:#4edea3">Inicio</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Reservar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1"></rect><path d="M5 13v8h14v-8M12 8v13"></path><path d="M12 8C8 8 6 7 6 5.5S7.5 4 9 5s3 3 3 3z"></path><path d="M12 8c4 0 6-1 6-2.5S16.5 4 15 5s-3 3-3 3z"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Packs</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#86948a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:500 10px/1 Inter;color:#86948a">Perfil</span></div>
+          </div>
+
+        </div>
+      </x-import>
+      <p style="max-width:412px;margin:14px auto 0;font:400 12px/1.5 Inter;color:#86948a;text-align:center">«¿Cuándo es mi próxima clase y me quedan créditos?» — resuelto en el primer pantallazo. Unirse en estado activo (clase inminente); saldo y recompra a un toque.</p>
+    </div>
+
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:1020}}"></script>
+</body>
+</html>

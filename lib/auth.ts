@@ -37,6 +37,20 @@ export class AuthError extends Error {
   }
 }
 
+// ── In-memory session store ───────────────────────────────────────────────────
+// TODO (A3 secure-storage): back this with expo-secure-store so the session
+//   survives app restarts (matching the existing TODO in exchangeGoogleToken).
+
+let _session: AuthSession | null = null;
+
+export function getStoredSession(): AuthSession | null {
+  return _session;
+}
+
+export function setStoredSession(session: AuthSession | null): void {
+  _session = session;
+}
+
 // ── Sign in ───────────────────────────────────────────────────────────────────
 // Runs the native Google sign-in sheet and returns the raw idToken.
 // Callers should pass the idToken straight to exchangeGoogleToken().
@@ -97,6 +111,7 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
     throw new AuthError(msg, 'UNKNOWN', res.status);
   }
 
+  setStoredSession(body as AuthSession);
   return body as AuthSession;
 }
 
@@ -104,5 +119,6 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
 
 export async function signOutGoogle(): Promise<void> {
   await GoogleSignin.signOut();
+  setStoredSession(null);
   // TODO (secure storage): clear the persisted AuthSession from expo-secure-store here.
 }

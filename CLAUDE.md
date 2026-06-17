@@ -27,7 +27,12 @@ it does NOT have its own backend.
 ### Key files
 - `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `signOutGoogle`,
-  `AuthSession`/`AuthUser` types, `AuthError` class
+  `AuthSession`/`AuthUser` types, `AuthError` class,
+  `getStoredSession`/`setStoredSession` (in-memory session store)
+- `types/api.ts` — TypeScript interfaces for all API request/response shapes and domain error codes
+- `lib/api-client.ts` — typed fetch wrapper; use `api.*` methods from here, never call `fetch` directly
+  - `registerRefreshHook(fn)` — wire to silent-refresh when A3 task is done
+  - `ApiError` class — `{ status, code, requiresAuth? }`
 - `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` runs here at app init
 
 ### Conventions
@@ -36,12 +41,14 @@ it does NOT have its own backend.
 - Do not add a native dependency without flagging the build-budget cost first
 - Auth module lives in `lib/auth.ts`; screens import from there, never call
   `GoogleSignin` or the auth endpoint directly
+- All backend calls go through `api` from `lib/api-client.ts`; screens never call `fetch` directly
 
 ### Auth status
 - Google Sign-In handshake verified end-to-end on physical Android (dev build)
 - Bearer token exchange working against staging backend
+- In-memory session store added to lib/auth.ts (`getStoredSession`/`setStoredSession`)
 - Pending: secure token storage (expo-secure-store) — see TODOs in lib/auth.ts
-- Pending: silent refresh on 401 — see TODOs in lib/auth.ts
+- Pending: silent refresh on 401 (A3 task) — `registerRefreshHook` in lib/api-client.ts is the hook point
 
 ### Out of scope for now
 - Zoom video integration (last phase)

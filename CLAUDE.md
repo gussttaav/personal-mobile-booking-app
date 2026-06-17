@@ -24,14 +24,27 @@ it does NOT have its own backend.
 - Data model: docs/design/data-model.md
 - API contract (the existing Next.js backend): docs/api/api-contract.md
 
+### Key files
+- `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
+- `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `signOutGoogle`,
+  `AuthSession`/`AuthUser` types, `AuthError` class
+- `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` runs here at app init
+
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later
 - Native dependencies (Google Sign-In, Stripe, Zoom) are deferred and batched
 - Do not add a native dependency without flagging the build-budget cost first
+- Auth module lives in `lib/auth.ts`; screens import from there, never call
+  `GoogleSignin` or the auth endpoint directly
+
+### Auth status
+- Google Sign-In handshake verified end-to-end on physical Android (dev build)
+- Bearer token exchange working against staging backend
+- Pending: secure token storage (expo-secure-store) — see TODOs in lib/auth.ts
+- Pending: silent refresh on 401 — see TODOs in lib/auth.ts
 
 ### Out of scope for now
 - Zoom video integration (last phase)
-- Real authentication (stubbed until the first dev build)
 
 ## Maintaining this file
 

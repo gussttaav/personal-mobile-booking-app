@@ -1,7 +1,12 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+
+GoogleSignin.configure({
+  webClientId: '676995776728-cj85r0hoia2rmtcllodmiqci0nbs3bkc.apps.googleusercontent.com',
+});
 
 export const unstable_settings = {
   anchor: '(tabs)',

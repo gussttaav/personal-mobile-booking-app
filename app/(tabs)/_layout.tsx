@@ -10,21 +10,37 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.tint,
+        tabBarInactiveTintColor: Colors.tabIconDefault,
+        tabBarStyle: { backgroundColor: Colors.surfaceLow },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Inicio',
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="(booking)"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Reservar',
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="calendar" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(packs)"
+        options={{
+          title: 'Packs',
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="creditcard.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(profile)"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.fill" color={color} />,
         }}
       />
     </Tabs>

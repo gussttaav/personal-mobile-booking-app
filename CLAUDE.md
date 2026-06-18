@@ -24,6 +24,39 @@ it does NOT have its own backend.
 - Data model: docs/design/data-model.md
 - API contract (the existing Next.js backend): docs/api/api-contract.md
 
+### Navigation structure
+```
+app/
+├── _layout.tsx            — root Stack; registers (tabs) + full-screen experiences
+├── login.tsx              — S01 Bienvenida / Iniciar sesión
+├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
+├── video-prejoin.tsx      — S14 Pre-unión                    (tab bar hidden)
+├── video-room.tsx         — S15 Sala · en clase              (tab bar hidden)
+├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
+├── add-to-calendar.tsx    — S19 Añadir al calendario         (modal)
+└── (tabs)/
+    ├── _layout.tsx        — 4-tab Tabs navigator
+    ├── (home)/            — Tab: Inicio (house.fill)
+    │   ├── index.tsx      — S03 Inicio
+    │   ├── booking-detail.tsx — S11 Detalle de la reserva
+    │   ├── cancel.tsx     — S12 Cancelar reserva
+    │   └── reschedule.tsx — S13 Reprogramar reserva
+    ├── (booking)/         — Tab: Reservar (calendar)
+    │   ├── index.tsx      — S04 Tipo de sesión
+    │   ├── schedule.tsx   — S05 Cuadrícula semanal
+    │   ├── confirm.tsx    — S06 Confirmar y pagar
+    │   ├── confirm-credit.tsx — S07 Confirmar con crédito
+    │   └── success.tsx    — S08 Reserva confirmada
+    ├── (packs)/           — Tab: Packs (creditcard.fill)
+    │   ├── index.tsx      — S09 Packs
+    │   └── pay.tsx        — S10 Pago del pack
+    └── (profile)/         — Tab: Perfil (person.fill)
+        ├── index.tsx      — S17 Perfil
+        └── settings.tsx   — S18 Ajustes
+```
+Screens outside `(tabs)` automatically hide the tab bar (Expo Router behaviour).
+Each tab group has its own `_layout.tsx` wrapping a `<Stack>`.
+
 ### Key files
 - `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `signOutGoogle`,

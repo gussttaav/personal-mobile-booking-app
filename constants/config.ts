@@ -1,1 +1,1 @@
-export const API_BASE = 'https://www.gustavoai.dev';
+export const API_BASE = 'https://staging.gustavoai.dev';

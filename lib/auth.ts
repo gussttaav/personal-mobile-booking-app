@@ -1,5 +1,6 @@
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { API_BASE } from '../constants/config';
+import { clearPersistedSession, loadPersistedSession, persistSession } from './token-store';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,8 +39,10 @@ export class AuthError extends Error {
 }
 
 // ── In-memory session store ───────────────────────────────────────────────────
-// TODO (A3 secure-storage): back this with expo-secure-store so the session
-//   survives app restarts (matching the existing TODO in exchangeGoogleToken).
+// Synchronous source of truth for lib/api-client.ts (buildHeaders) and screens
+// that read the session on render. It's backed by expo-secure-store: writes go
+// through to disk via persistSession() and the cache is rehydrated on launch via
+// hydrateSession(). Keep this getter synchronous so callers don't need to await.
 
 let _session: AuthSession | null = null;
 
@@ -49,6 +52,19 @@ export function getStoredSession(): AuthSession | null {
 
 export function setStoredSession(session: AuthSession | null): void {
   _session = session;
+}
+
+// ── Launch-time hydration ─────────────────────────────────────────────────────
+// Loads any persisted session from secure storage into the in-memory cache.
+// Call this once at launch, before the navigator renders, so getStoredSession()
+// is populated. Presence-check only — the token is NOT validated against the
+// server here; an expired token will surface as a 401 on the first API call
+// (graceful 401 handling is the silent-refresh task, see below).
+
+export async function hydrateSession(): Promise<AuthSession | null> {
+  const session = await loadPersistedSession();
+  setStoredSession(session);
+  return session;
 }
 
 // ── Sign in ───────────────────────────────────────────────────────────────────
@@ -77,16 +93,14 @@ export async function signInWithGoogle(): Promise<string> {
 
 // ── Token exchange ────────────────────────────────────────────────────────────
 // POSTs the Google idToken to the backend and returns the app session.
-// On success the caller holds a bearer token in AuthSession.token.
-//
-// TODO (secure storage): after a successful exchange, persist AuthSession
-//   to expo-secure-store so the session survives app restarts. Load it on
-//   startup and skip sign-in if a valid (non-expired) session is found.
+// On success the session is cached in memory AND persisted to secure storage so
+// it survives app restarts (rehydrated at launch by hydrateSession()).
 //
 // TODO (silent refresh): when a protected API call returns 401, call
 //   signInWithGoogle() silently (GoogleSignin.signInSilently()) to get a
 //   fresh idToken, then call exchangeGoogleToken() again and retry the
-//   original request with the new bearer token.
+//   original request with the new bearer token. Wire via registerRefreshHook()
+//   in lib/api-client.ts.
 
 export async function exchangeGoogleToken(idToken: string): Promise<AuthSession> {
   let res: Response;
@@ -111,8 +125,10 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
     throw new AuthError(msg, 'UNKNOWN', res.status);
   }
 
-  setStoredSession(body as AuthSession);
-  return body as AuthSession;
+  const session = body as AuthSession;
+  setStoredSession(session);
+  await persistSession(session);
+  return session;
 }
 
 // ── Sign out ──────────────────────────────────────────────────────────────────
@@ -120,5 +136,5 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
 export async function signOutGoogle(): Promise<void> {
   await GoogleSignin.signOut();
   setStoredSession(null);
-  // TODO (secure storage): clear the persisted AuthSession from expo-secure-store here.
+  await clearPersistedSession();
 }

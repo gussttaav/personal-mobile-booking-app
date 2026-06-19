@@ -88,13 +88,19 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
 ### Key files
 - `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `signOutGoogle`,
-  `AuthSession`/`AuthUser` types, `AuthError` class,
-  `getStoredSession`/`setStoredSession` (in-memory session store)
+  `hydrateSession` (load persisted → in-memory at launch), `AuthSession`/`AuthUser` types,
+  `AuthError` class, `getStoredSession`/`setStoredSession` (synchronous in-memory cache)
+- `lib/token-store.ts` — expo-secure-store wrapper: `loadPersistedSession`/`persistSession`/
+  `clearPersistedSession` (whole session as one JSON blob under `auth.session`)
+- `lib/auth-context.tsx` — `AuthProvider`/`useAuth`: reactive `session`+`isReady` that drive
+  the `<Stack.Protected>` guards and expose `signIn`/`signOut`
 - `types/api.ts` — TypeScript interfaces for all API request/response shapes and domain error codes
 - `lib/api-client.ts` — typed fetch wrapper; use `api.*` methods from here, never call `fetch` directly
+  - reads the bearer synchronously via `getStoredSession()` — no change needed for secure storage
   - `registerRefreshHook(fn)` — wire to silent-refresh when A3 task is done
   - `ApiError` class — `{ status, code, requiresAuth? }`
-- `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` runs here at app init
+- `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` + `SplashScreen.preventAutoHideAsync()`
+  run here at app init; wraps the app in `AuthProvider` and gates routes with `<Stack.Protected>`
 
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later
@@ -107,9 +113,19 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
 ### Auth status
 - Google Sign-In handshake verified end-to-end on physical Android (dev build)
 - Bearer token exchange working against staging backend
-- In-memory session store added to lib/auth.ts (`getStoredSession`/`setStoredSession`)
-- Pending: secure token storage (expo-secure-store) — see TODOs in lib/auth.ts
+- Secure token storage DONE: the full session is persisted to expo-secure-store via
+  `lib/token-store.ts`. lib/auth.ts keeps an in-memory cache (`getStoredSession`,
+  synchronous — what api-client reads) that's write-through on exchange/sign-out and
+  rehydrated at launch by `hydrateSession()`
+- Launch routing DONE: `lib/auth-context.tsx` (`AuthProvider`/`useAuth`) hydrates on
+  mount and holds `session`+`isReady`; `app/_layout.tsx` keeps the native splash up
+  until `isReady`, then gates routes with `<Stack.Protected guard>` (signed-in group
+  vs `login`). No login flash on cold start. Launch is presence-check only — an
+  expired token 401s on first API call (handled by the silent-refresh task)
+- S01 sign-in screen built at `app/login.tsx`; sign-out wired temporarily in
+  `app/(tabs)/(profile)/profile.tsx` (moves into S17 Perfil later)
 - Pending: silent refresh on 401 (A3 task) — `registerRefreshHook` in lib/api-client.ts is the hook point
+- Pending: S02 session-expired re-login screen (reuses this auth logic)
 
 ### Out of scope for now
 - Zoom video integration (last phase)

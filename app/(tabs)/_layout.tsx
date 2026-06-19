@@ -1,9 +1,15 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+
+// Open on the Inicio tab (otherwise expo-router defaults to the first route
+// alphabetically, which is (booking)).
+export const unstable_settings = {
+  initialRouteName: '(home)',
+};
 
 export default function TabLayout() {
   return (
@@ -19,28 +25,36 @@ export default function TabLayout() {
         name="(home)"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons size={26} name={focused ? 'home' : 'home-outline'} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="(booking)"
         options={{
           title: 'Reservar',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="calendar" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons size={26} name={focused ? 'calendar' : 'calendar-outline'} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="(packs)"
         options={{
           title: 'Packs',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="creditcard.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons size={26} name={focused ? 'gift' : 'gift-outline'} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="(profile)"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons size={26} name={focused ? 'account' : 'account-outline'} color={color} />
+          ),
         }}
       />
     </Tabs>

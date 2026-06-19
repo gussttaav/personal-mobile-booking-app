@@ -20,7 +20,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "output": "static",
@@ -40,7 +41,27 @@
           }
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.dev.gustavoai.mobile",
+          "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Permitir que $(PRODUCT_NAME) use Face ID para proteger tu sesión."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "GustavoAI usa tu calendario para añadir tus clases reservadas."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

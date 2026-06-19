@@ -7,6 +7,9 @@ it does NOT have its own backend.
 ### Tech
 - Expo SDK 54, Expo Router (file-based), TypeScript strict
 - npm (NOT pnpm/yarn) — keep package-lock.json authoritative
+- Tests: `npm test` (jest + jest-expo preset, pinned to ~54 to match the SDK).
+  Dev-only devDependencies — NOT a native module, no dev-client rebuild needed.
+  Specs live in `lib/__tests__/`.
 - Now running on a CUSTOM DEV BUILD (expo-dev-client), NOT Expo Go. Any NEW native module
   requires rebuilding the dev client before it will load — adding it to package.json is not
   enough; the running binary won't have it and rendering its views crashes with
@@ -87,7 +90,8 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
 
 ### Key files
 - `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
-- `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `signOutGoogle`,
+- `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `refreshSession`
+  (single-flight silent refresh — see Auth status), `signOutGoogle`,
   `hydrateSession` (load persisted → in-memory at launch), `AuthSession`/`AuthUser` types,
   `AuthError` class, `getStoredSession`/`setStoredSession` (synchronous in-memory cache)
 - `lib/token-store.ts` — expo-secure-store wrapper: `loadPersistedSession`/`persistSession`/
@@ -97,7 +101,8 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
 - `types/api.ts` — TypeScript interfaces for all API request/response shapes and domain error codes
 - `lib/api-client.ts` — typed fetch wrapper; use `api.*` methods from here, never call `fetch` directly
   - reads the bearer synchronously via `getStoredSession()` — no change needed for secure storage
-  - `registerRefreshHook(fn)` — wire to silent-refresh when A3 task is done
+  - `registerRefreshHook(fn)` — wired by lib/auth-context.tsx at init; `fn` returns
+    `Promise<boolean>` (true = refreshed, retry; false = gave up, session cleared)
   - `ApiError` class — `{ status, code, requiresAuth? }`
 - `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` + `SplashScreen.preventAutoHideAsync()`
   run here at app init; wraps the app in `AuthProvider` and gates routes with `<Stack.Protected>`
@@ -124,8 +129,22 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   expired token 401s on first API call (handled by the silent-refresh task)
 - S01 sign-in screen built at `app/login.tsx`; sign-out wired temporarily in
   `app/(tabs)/(profile)/profile.tsx` (moves into S17 Perfil later)
-- Pending: silent refresh on 401 (A3 task) — `registerRefreshHook` in lib/api-client.ts is the hook point
-- Pending: S02 session-expired re-login screen (reuses this auth logic)
+- Silent refresh on 401 DONE (A3): `refreshSession()` in lib/auth.ts re-fetches a
+  Google idToken via `GoogleSignin.signInSilently()` (the cached-credentials path,
+  NO picker) and re-exchanges it. SINGLE-FLIGHT: a module-level `_refreshInFlight`
+  promise collapses concurrent 401s into exactly one refresh; all waiters retry
+  with the one new token. api-client retries at most once (the `isRetry` flag).
+  The hook is wired in lib/auth-context.tsx: on refresh success it mirrors the new
+  session into React state; on failure (no cached credential / network / backend
+  reject) it signs out + `setSession(null)`, which flips the guard → routes to
+  `/login`. Tested in `lib/__tests__/auth-refresh.test.ts` (single-flight, retry
+  discipline, no-refresh-on-non-401, no-loop-on-failure).
+  ANDROID LIMITATION: `signInSilently()` only works while Google still holds a
+  cached credential for this install; if it returns `noSavedCredentialFound` there
+  is no silent path → fallback is sign-out → interactive `/login`.
+- Pending: S02 session-expired re-login screen — currently refresh-failure routes
+  to `/login`; the hook point (the catch in lib/auth-context.tsx) is where S02
+  would route instead. Reactive only — no proactive pre-expiry refresh.
 
 ### Out of scope for now
 - Zoom video integration (last phase)

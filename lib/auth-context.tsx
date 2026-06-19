@@ -4,10 +4,12 @@ import {
   AuthError,
   exchangeGoogleToken,
   hydrateSession,
+  refreshSession,
   signInWithGoogle,
   signOutGoogle,
   type AuthSession,
 } from './auth';
+import { registerRefreshHook } from './api-client';
 
 // ── Auth context ────────────────────────────────────────────────────────────
 // Holds the reactive session state that drives launch-time routing in the root
@@ -33,6 +35,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isReady, setIsReady] = useState(false);
+
+  // Wire the api-client's 401 refresh hook once. On a 401 it silently refreshes
+  // the bearer (single-flight in lib/auth.ts) and mirrors the new session into
+  // React state. If the refresh can't proceed (no cached Google credential,
+  // network error, backend reject), sign out + clear the session — that flips
+  // the <Stack.Protected> guard and routes to /login. (S02 session-expired is a
+  // future hook point: route there instead of /login once that screen is built.)
+  useEffect(() => {
+    registerRefreshHook(async () => {
+      try {
+        const next = await refreshSession();
+        setSession(next);
+        return true;
+      } catch {
+        await signOutGoogle();
+        setSession(null);
+        return false;
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;

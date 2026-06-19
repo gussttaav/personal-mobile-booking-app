@@ -49,11 +49,14 @@ export class ApiError extends Error {
 }
 
 // ── 401 refresh hook ──────────────────────────────────────────────────────────
-// TODO (A3 silent-refresh task): after implementing silent token refresh, call
-//   registerRefreshHook() from the auth context so the client can retry 401s
-//   transparently. The hook must call setStoredSession() before resolving.
+// Wired by the auth context (lib/auth-context.tsx) at app init. On a 401 from a
+// protected route the client invokes this hook, which silently refreshes the
+// bearer (single-flight; see lib/auth.ts refreshSession). It resolves:
+//   true  → a new bearer was written to the in-memory cache; retry the request.
+//   false → refresh gave up (no cached credential / network / backend reject);
+//           the hook has already signed out + routed to login, so surface the 401.
 
-type RefreshHook = () => Promise<void>;
+type RefreshHook = () => Promise<boolean>;
 let _refreshHook: RefreshHook | null = null;
 
 export function registerRefreshHook(fn: RefreshHook): void {
@@ -94,12 +97,12 @@ async function attemptRequest<T>(
       : undefined,
   });
 
-  if (res.status === 401 && !isRetry) {
-    if (_refreshHook) {
-      await _refreshHook();
-      return attemptRequest<T>(method, path, options, true);
-    }
-    // TODO (A3 silent-refresh task): register a refresh hook via registerRefreshHook()
+  // Only a 401 triggers a refresh, and at most once per request (isRetry caps it):
+  // a still-401 after refresh, or any other status (403/429/500…), falls through.
+  if (res.status === 401 && !isRetry && _refreshHook) {
+    const refreshed = await _refreshHook();
+    if (refreshed) return attemptRequest<T>(method, path, options, true);
+    // Refresh gave up — fall through and surface the 401 below.
   }
 
   if (!res.ok) {

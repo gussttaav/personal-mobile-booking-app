@@ -1,4 +1,8 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import {
+  GoogleSignin,
+  isNoSavedCredentialFoundResponse,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { API_BASE } from '../constants/config';
 import { clearPersistedSession, loadPersistedSession, persistSession } from './token-store';
 
@@ -25,6 +29,7 @@ export type AuthErrorCode =
   | 'SIGN_IN_CANCELLED'
   | 'SIGN_IN_IN_PROGRESS'
   | 'PLAY_SERVICES_UNAVAILABLE'
+  | 'NO_SAVED_CREDENTIAL'
   | 'UNKNOWN';
 
 export class AuthError extends Error {
@@ -95,12 +100,7 @@ export async function signInWithGoogle(): Promise<string> {
 // POSTs the Google idToken to the backend and returns the app session.
 // On success the session is cached in memory AND persisted to secure storage so
 // it survives app restarts (rehydrated at launch by hydrateSession()).
-//
-// TODO (silent refresh): when a protected API call returns 401, call
-//   signInWithGoogle() silently (GoogleSignin.signInSilently()) to get a
-//   fresh idToken, then call exchangeGoogleToken() again and retry the
-//   original request with the new bearer token. Wire via registerRefreshHook()
-//   in lib/api-client.ts.
+// Silent refresh (refreshSession, below) re-exchanges through here on a 401.
 
 export async function exchangeGoogleToken(idToken: string): Promise<AuthSession> {
   let res: Response;
@@ -129,6 +129,45 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
   setStoredSession(session);
   await persistSession(session);
   return session;
+}
+
+// ── Silent refresh ──────────────────────────────────────────────────────────
+// Called by the api-client's 401 hook when the bearer has expired. Obtains a
+// fresh Google idToken WITHOUT user interaction (signInSilently — the cached-
+// credentials path, NOT signIn() which shows the account picker), then
+// re-exchanges it for a new bearer (which writes through to the in-memory cache
+// + secure storage, same as the initial exchange).
+//
+// SINGLE-FLIGHT: concurrent 401s (e.g. Home firing /my-bookings and /credits at
+// once) must trigger EXACTLY ONE refresh. The first call starts it and stores
+// the promise in _refreshInFlight; concurrent calls await that same promise.
+// The ref is cleared once it settles, so a later expiry starts a fresh refresh.
+//
+// ANDROID LIMITATION: signInSilently() only succeeds while Google still holds a
+// cached credential for this app+install. If the user revoked access, cleared
+// credentials, or never completed an interactive sign-in, it resolves to
+// `noSavedCredentialFound` and we throw NO_SAVED_CREDENTIAL — there is no silent
+// path in that state. The api-client hook's fallback is sign-out → /login.
+
+let _refreshInFlight: Promise<AuthSession> | null = null;
+
+export function refreshSession(): Promise<AuthSession> {
+  if (_refreshInFlight) return _refreshInFlight;
+  _refreshInFlight = doRefresh().finally(() => {
+    _refreshInFlight = null;
+  });
+  return _refreshInFlight;
+}
+
+async function doRefresh(): Promise<AuthSession> {
+  await GoogleSignin.hasPlayServices();
+  const res = await GoogleSignin.signInSilently();
+  if (isNoSavedCredentialFoundResponse(res)) {
+    throw new AuthError('No cached Google credential for silent refresh', 'NO_SAVED_CREDENTIAL');
+  }
+  const idToken = res.data?.idToken;
+  if (!idToken) throw new AuthError('signInSilently() returned no idToken', 'UNKNOWN');
+  return exchangeGoogleToken(idToken);
 }
 
 // ── Sign out ──────────────────────────────────────────────────────────────────

@@ -356,7 +356,7 @@ function NextClassCard({ booking }: { booking: Booking }) {
     <Card glowing style={styles.nextClassCard}>
       {/* Card header row */}
       <View style={styles.nextClassTop}>
-        <Text style={styles.nextClassOverline}>TU PRÓXIMA{'\n'}CLASE</Text>
+        <Text style={styles.nextClassOverline}>TU PRÓXIMA CLASE</Text>
         {status !== 'upcoming' && (
           <View style={styles.statusChip}>
             <View style={styles.statusDot} />
@@ -388,17 +388,22 @@ function NextClassCard({ booking }: { booking: Booking }) {
         )}
       </View>
 
-      {/* Join button — only when joinable */}
-      {isJoinable && (
-        <TouchableOpacity
-          style={styles.joinBtn}
-          onPress={() => router.push('/video-prejoin')}
-          activeOpacity={0.85}
-        >
-          <MaterialCommunityIcons name="video-outline" size={20} color={Colors.onPrimary} />
-          <Text style={styles.joinBtnText}>Unirse a la clase</Text>
-        </TouchableOpacity>
-      )}
+      {/* Join button — always visible, disabled until the class is joinable */}
+      <TouchableOpacity
+        style={[styles.joinBtn, !isJoinable && styles.joinBtnDisabled]}
+        onPress={() => router.push('/video-prejoin')}
+        disabled={!isJoinable}
+        activeOpacity={0.85}
+      >
+        <MaterialCommunityIcons
+          name="video-outline"
+          size={20}
+          color={isJoinable ? Colors.onPrimary : Colors.textDim}
+        />
+        <Text style={[styles.joinBtnText, !isJoinable && styles.joinBtnTextDisabled]}>
+          Unirse a la clase
+        </Text>
+      </TouchableOpacity>
 
       {/* Secondary actions */}
       <View style={styles.secondaryRow}>
@@ -582,6 +587,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.onPrimary,
     fontSize: 16,
+  },
+  joinBtnDisabled: {
+    backgroundColor: Colors.surfaceHigh,
+    boxShadow: [],
+  },
+  joinBtnTextDisabled: {
+    color: Colors.textDim,
   },
   secondaryRow: {
     flexDirection: 'row',

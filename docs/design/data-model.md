@@ -1,7 +1,7 @@
 # Data Model
 
 Reference for the gustavoai.dev backend data model, synthesised from
-`supabase/migrations/0001–0010` and `src/domain/`. Intended for mobile-client
+`supabase/migrations/0001–0013` and `src/domain/`. Intended for mobile-client
 developers building against the API.
 
 ---
@@ -127,6 +127,73 @@ Transitions are enforced at the service layer: `markCompleted` and `markNoShow` 
 | metadata | JSONB DEFAULT '{}' | Flexible bag for Stripe-supplied metadata |
 
 **Relationships:** One user → many payments.
+
+---
+
+### pricing
+
+**Purpose:** Admin-editable single source of truth for the four product prices (1h/2h sessions and 5/10 packs). Read by `PaymentService` to set the Stripe PaymentIntent amount, by the web UI for display, and by the mobile app via `GET /api/pricing`. Replaces the former hardcoded constants + Stripe price IDs — there are no `STRIPE_PRICE_ID_*` env vars. Added 0011; `original_amount_cents` dropped 0012.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| product_key | TEXT PK | CHECK IN ('session1h','session2h','pack5','pack10') — 0011 |
+| amount_cents | INTEGER NOT NULL | Charge amount in minor units (euro cents); CHECK > 0 — 0011 |
+| currency | TEXT NOT NULL DEFAULT 'eur' | |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT now() | Set in app code (`SupabasePricingRepository.update`) on each admin edit, not via trigger |
+| updated_by | TEXT | Email of the admin who made the last change |
+
+**Invariants:**
+- Exactly four rows — one per `product_key`. The free 15-min intro is not a priced product and has **no** row.
+- Not user-scoped: no `user_id`, no FKs. Standalone configuration. RLS denies the anon role (service-role reads only) — 0011, following the 0007 deny-anon pattern.
+- The pack **original/strikethrough** price is **not stored** — it is derived as `1h session price × pack hours` (e.g. pack5 original = `session1h × 5`), as are the per-class rate and savings %. See `src/lib/pricing-display.ts` (web) and `PricingService.getPublicPricing()` (mobile).
+- Edits go through `PricingService.updatePrice()`, which also writes an `audit_log` row (`action = 'admin_update_price'`) attributed to the admin's email.
+
+**Relationships:** None (standalone config). Logically referenced by `PaymentService` at checkout and surfaced read-only via `GET /api/pricing`.
+
+---
+
+### working_hours
+
+**Purpose:** Admin-editable working-hours blocks — the single source of truth for *when* the teacher is bookable. Each row is one contiguous block on one day of the week; split shifts are multiple rows for the same day. Read by `ScheduleService` (slot generation, min-notice guard), the web booking calendar, and the mobile app via `GET /api/schedule`. Replaces the former hardcoded `DAY_SCHEDULES` in `src/lib/booking-config.ts`. Added 0013.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | BIGINT IDENTITY PK | |
+| day_of_week | SMALLINT NOT NULL | CHECK BETWEEN 0 AND 6 (0 = Sunday … 6 = Saturday) — 0013 |
+| start_minute | INTEGER NOT NULL | Block start as minutes since local midnight; CHECK BETWEEN 0 AND 1439 — 0013 |
+| end_minute | INTEGER NOT NULL | Block end as minutes since local midnight; CHECK BETWEEN 1 AND 1440 — 0013 |
+
+**Invariants:**
+- Row-level CHECK `end_minute > start_minute` — 0013.
+- A day with **zero rows** is a non-working day; there is no separate "enabled" flag.
+- Blocks within a day are kept ordered and non-overlapping (and non-adjacent — touching blocks are merged) — enforced in `ScheduleService` / the `/admin/schedule` Zod schema, not by a DB constraint.
+- Minutes are expressed in the timezone stored in `booking_settings.timezone`, **not** UTC.
+- Not user-scoped: no `user_id`, no FKs. RLS denies the anon role (service-role access only) — 0013, following the 0007 deny-anon pattern.
+- Written via a **replace-all** strategy on each admin save (`SupabaseScheduleRepository.replaceWeeklyHours`): all rows deleted, then the new set inserted.
+
+**Relationships:** None (standalone config). Surfaced read-only via `GET /api/schedule`; consumed by `GET /api/availability` to generate concrete slots.
+
+---
+
+### booking_settings
+
+**Purpose:** Admin-editable singleton holding the two scalar schedule settings: minimum advance booking notice and the schedule timezone. Read alongside `working_hours` by `ScheduleService.getConfig()`. Added 0013.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | SMALLINT PK | CHECK (id = 1) — enforces a single row — 0013 |
+| timezone | TEXT NOT NULL DEFAULT 'Europe/Madrid' | IANA timezone the working hours are expressed in |
+| min_notice_hours | INTEGER NOT NULL DEFAULT 5 | Minimum hours between now and a slot's start for it to be bookable; CHECK >= 0 — 0013 |
+| updated_at | TIMESTAMPTZ NOT NULL DEFAULT now() | Set in app code on each admin edit, not via trigger |
+| updated_by | TEXT | Email of the admin who made the last change |
+
+**Invariants:**
+- Exactly **one row** (`id = 1`), guaranteed by the `CHECK (id = 1)` PK.
+- `min_notice_hours` is enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`).
+- Not user-scoped: no `user_id`, no FKs. RLS denies the anon role — 0013, following the 0007 deny-anon pattern.
+- Edits go through `ScheduleService.updateConfig()`, which also writes an `audit_log` row (`action = 'admin_update_schedule'`) attributed to the admin's email.
+
+**Relationships:** None (standalone config). Combined with `working_hours` into the `ScheduleConfig` returned by `GET /api/schedule`. (The booking window — `bookingWindowWeeks`, currently `8` — is a static code constant, not stored here.)
 
 ---
 

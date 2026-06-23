@@ -116,6 +116,142 @@ Returns the list of bookable time slots for a given date.
 
 ---
 
+## Pricing
+
+### `GET /api/pricing`
+
+Returns the current prices for single sessions and credit packs. Use this to render a
+pricing/services screen. All money values are **integer cents** — format the currency
+on-device. The free 15-min intro is not included (it is not a priced product).
+
+| Property | Value |
+|---|---|
+| Auth required | Yes — 401 if absent |
+| CSRF | No |
+| Rate limit | 60 req/min per IP |
+
+**Success `200`:**
+```json
+{
+  "currency": "eur",
+  "sessions": [
+    { "productKey": "session1h", "amountCents": 1600, "currency": "eur" },
+    { "productKey": "session2h", "amountCents": 3000, "currency": "eur" }
+  ],
+  "packs": [
+    {
+      "productKey":          "pack5",
+      "amountCents":         7500,
+      "currency":            "eur",
+      "hours":               5,
+      "perClassCents":       1500,
+      "originalAmountCents": 8000,
+      "savingsCents":        500,
+      "savingsPct":          6
+    },
+    {
+      "productKey":          "pack10",
+      "amountCents":         14000,
+      "currency":            "eur",
+      "hours":               10,
+      "perClassCents":       1400,
+      "originalAmountCents": 16000,
+      "savingsCents":        2000,
+      "savingsPct":          13
+    }
+  ]
+}
+```
+
+**Field reference:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `currency` | `string` | ISO currency code, lowercase (e.g. `"eur"`). Same for all products |
+| `sessions[]` | array | The two single-session products (`session1h`, `session2h`) |
+| `sessions[].amountCents` | `number` | Charge amount in cents |
+| `packs[]` | array | The two credit packs (`pack5`, `pack10`) |
+| `packs[].hours` | `number` | Total class-hours in the pack (`5` or `10`) |
+| `packs[].perClassCents` | `number` | Price per 1-hour class (`amountCents / hours`) |
+| `packs[].originalAmountCents` | `number \| null` | Cost of the same hours as single 1h sessions (the strikethrough). `null` when the pack is not cheaper |
+| `packs[].savingsCents` | `number \| null` | `originalAmountCents − amountCents`. `null` when no discount |
+| `packs[].savingsPct` | `number \| null` | Whole-percent discount vs. single sessions. `null` when no discount |
+
+> The `originalAmountCents` / `savings*` fields are **derived** server-side from the 1h
+> session price (`1h price × hours`), so they always stay consistent with the live prices.
+
+**Errors:**
+
+| Status | `error` | Condition |
+|---|---|---|
+| 401 | (message) | Not authenticated |
+| 429 | (message) | Rate limit exceeded |
+| 500 | (message) | Unexpected server error |
+
+---
+
+## Schedule
+
+### `GET /api/schedule`
+
+Returns the booking schedule configuration: the teacher's working hours per day, the
+minimum advance notice required before a slot can be booked, and the schedule timezone.
+Use this to render the bookable-hours grid and to gate slot selection client-side. The
+values are **admin-editable** (changed from `/admin/schedule`) — fetch on app start and
+after returning from background; the response reflects edits immediately.
+
+> This is the *raw* schedule. For the concrete bookable slots on a given date (after
+> removing busy times and the min-notice window), use [`GET /api/availability`](#availability).
+
+| Property | Value |
+|---|---|
+| Auth required | Yes — 401 if absent |
+| CSRF | No |
+| Rate limit | 60 req/min per IP |
+
+**Success `200`:**
+```json
+{
+  "weeklyHours": {
+    "0": [{ "startMinute": 660, "endMinute": 900 }],
+    "1": [{ "startMinute": 540, "endMinute": 810 }, { "startMinute": 930, "endMinute": 1050 }],
+    "2": [{ "startMinute": 540, "endMinute": 810 }, { "startMinute": 930, "endMinute": 1110 }],
+    "3": [{ "startMinute": 540, "endMinute": 810 }, { "startMinute": 930, "endMinute": 1050 }],
+    "4": [{ "startMinute": 540, "endMinute": 810 }, { "startMinute": 930, "endMinute": 1110 }],
+    "5": [{ "startMinute": 540, "endMinute": 810 }, { "startMinute": 930, "endMinute": 1110 }],
+    "6": [{ "startMinute": 660, "endMinute": 900 }]
+  },
+  "timezone": "Europe/Madrid",
+  "minNoticeHours": 5,
+  "bookingWindowWeeks": 8
+}
+```
+
+**Field reference:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `weeklyHours` | object | Keyed by day-of-week as a string, `"0"` = Sunday … `"6"` = Saturday. Every key `0`–`6` is always present |
+| `weeklyHours["d"]` | array | Ordered, non-overlapping working blocks for that day. An **empty array** means a non-working day |
+| `weeklyHours["d"][].startMinute` | `number` | Block start as minutes since local midnight (e.g. `540` = 09:00). Range `0`–`1439` |
+| `weeklyHours["d"][].endMinute` | `number` | Block end as minutes since local midnight (e.g. `810` = 13:30). Always `> startMinute`; range `1`–`1440` (`1440` = 24:00) |
+| `timezone` | `string` | IANA timezone the working hours are expressed in (e.g. `"Europe/Madrid"`) |
+| `minNoticeHours` | `number` | Minimum hours between now and a slot's start for it to be bookable. Enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`) |
+| `bookingWindowWeeks` | `number` | How many weeks ahead booking is allowed (currently fixed at `8`) |
+
+> Times are **minutes since midnight in `timezone`**, not UTC — convert for display
+> using `timezone`. Split shifts appear as multiple blocks in the same day's array.
+
+**Errors:**
+
+| Status | `error` | Condition |
+|---|---|---|
+| 401 | (message) | Not authenticated |
+| 429 | (message) | Rate limit exceeded |
+| 500 | (message) | Unexpected server error |
+
+---
+
 ## Booking
 
 ### `POST /api/book`
@@ -811,6 +947,8 @@ Checks whether the authenticated student is subscribed to a given list.
 | Endpoint(s) | Limit | Key |
 |---|---|---|
 | `GET /api/availability` | 60/min | Per IP |
+| `GET /api/pricing` | 60/min | Per IP |
+| `GET /api/schedule` | 60/min | Per IP |
 | `GET /api/credits` | 60/min | Per IP |
 | `POST /api/zoom/token` | 60/min | Per IP |
 | `POST /api/chat` (authenticated) | 20/min | Per user email |

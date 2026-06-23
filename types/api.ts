@@ -81,6 +81,31 @@ export interface PostCancelResponse {
   creditsRestored: boolean;
 }
 
+// ── Pricing ───────────────────────────────────────────────────────────────────
+
+export interface PricingSession {
+  productKey: 'session1h' | 'session2h';
+  amountCents: number;
+  currency: string;
+}
+
+export interface PricingPack {
+  productKey: 'pack5' | 'pack10';
+  amountCents: number;
+  currency: string;
+  hours: number;
+  perClassCents: number;
+  originalAmountCents: number | null;
+  savingsCents: number | null;
+  savingsPct: number | null;
+}
+
+export interface GetPricingResponse {
+  currency: string;
+  sessions: PricingSession[];
+  packs: PricingPack[];
+}
+
 // ── Payment ───────────────────────────────────────────────────────────────────
 
 export type PostStripeCheckoutRequest =

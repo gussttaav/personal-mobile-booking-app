@@ -10,6 +10,7 @@ import type {
   GetMyBookingsResponse,
   GetPaymentConfirmationChannelParams,
   GetPaymentConfirmationChannelResponse,
+  GetPricingResponse,
   GetStripeSessionParams,
   GetStripeSessionResponse,
   GetSubscribeParams,
@@ -187,6 +188,10 @@ export const api = {
 
   getCredits(): Promise<GetCreditsResponse> {
     return request('GET', '/api/credits');
+  },
+
+  getPricing(): Promise<GetPricingResponse> {
+    return request('GET', '/api/pricing');
   },
 
   postLocale(body: PostLocaleRequest): Promise<PostLocaleResponse> {

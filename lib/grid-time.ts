@@ -146,128 +146,173 @@ export function weekColumns(today: CivilDate, weekOffset: number): CivilDate[] {
 
 // ── grid model ──────────────────────────────────────────────────────────────
 
-export type CellState = 'available' | 'booked' | 'unavailable' | 'no-fit-2h';
+export type CellState = 'available' | 'booked' | 'unavailable' | 'no-fit';
 
 export interface GridCell {
-  hour: number; // device-local hour row
+  minute: number; // device-local minutes since midnight (30-min boundary, e.g. 540=09:00, 570=09:30)
   state: CellState;
-  slot: AvailabilitySlot | null; // the 1h slot when available / no-fit-2h
+  slot: AvailabilitySlot | null; // the 30-min slot when state is available or no-fit
 }
 
 export interface GridColumn {
   date: CivilDate;
   key: string; // YYYY-MM-DD (device-local)
   weekday: number; // 0 Sun … 6 Sat (device-local)
-  cells: GridCell[]; // aligned to `hourRows`
+  cells: GridCell[]; // aligned to `slotMinutes`
 }
 
 export interface GridModel {
-  hourRows: number[]; // contiguous device-local hours, min…max
+  slotMinutes: number[]; // sorted device-local minutes at 30-min boundaries
   columns: GridColumn[];
-  hasAnyBookable: boolean; // any cell selectable for the chosen duration
+  hasAnyBookable: boolean; // any cell selectable for the chosen session length
 }
 
 export interface BuildGridArgs {
   columns: CivilDate[]; // 7 device-local civil dates
   deviceTz: string;
   schedule: GetScheduleResponse;
-  /** device-local YYYY-MM-DD → that day's 1h availability slots */
+  /** device-local YYYY-MM-DD → that day's 30-min availability slots */
   availabilityByDate: Record<string, AvailabilitySlot[]>;
   now: Date;
+  /** Session length: determines N cells per block (1h→2, 2h→4). Grid step is always 30 min. */
   duration: '1h' | '2h';
 }
 
-/** True if a 60-min cell starting at `startMinute` (schedule-tz) is fully inside any block. */
+/** True if a 30-min cell starting at `startMinute` (schedule-tz) is fully inside any block. */
 function inWorkingHours(weekday: number, startMinute: number, schedule: GetScheduleResponse): boolean {
   const blocks = schedule.weeklyHours[String(weekday)] ?? [];
-  const endMinute = startMinute + 60;
+  const endMinute = startMinute + 30;
   return blocks.some((b) => b.startMinute <= startMinute && b.endMinute >= endMinute);
 }
 
 /**
- * Compose the schedule frame (which cells exist) with live availability (each
- * existing cell's state) into a renderable grid. Frame from /api/schedule;
- * state from /api/availability — never inferred from schedule alone.
+ * Compose the schedule frame (which 30-min cells exist) with live availability
+ * (each cell's state) into a renderable grid.
+ *
+ * Two-pass approach:
+ *   Pass 1: classify each working-hour cell as unavailable/free/booked.
+ *   Pass 2: for free cells, check N-cell forward and backward blocks to decide
+ *           available vs no-fit (free but can't anchor any valid block).
+ *
+ * Key: Pass 2 checks raw 'free' state, not the final 'available' state, so a
+ * no-fit cell can still be a mid-cell in another cell's forward block.
  */
 export function buildGridModel(args: BuildGridArgs): GridModel {
   const { columns, deviceTz, schedule, availabilityByDate, now, duration } = args;
+  const N = duration === '2h' ? 4 : 2;
   const minNoticeCutoff = now.getTime() + schedule.minNoticeHours * 3_600_000;
 
-  // Per column: cell instants + working-hours membership + availability-by-hour.
-  type DayCompute = {
+  type RawState = 'unavailable' | 'free' | 'booked';
+  type RawCell = { minute: number; instant: Date; raw: RawState; slot: AvailabilitySlot | null };
+
+  type DayData = {
     date: CivilDate;
     key: string;
     weekday: number;
-    instants: Date[]; // index = hour 0..23
-    working: boolean[]; // index = hour
-    availByHour: Map<number, AvailabilitySlot>;
+    rawCells: RawCell[];
   };
 
-  const days: DayCompute[] = columns.map((date) => {
-    const key = dateKey(date);
-    const instants: Date[] = [];
-    const working: boolean[] = [];
-    for (let h = 0; h < 24; h++) {
-      const instant = zonedTimeToUtc({ ...date, hour: h }, deviceTz);
-      instants.push(instant);
-      const schedWeekday = partsInTz(instant, schedule.timezone);
-      const schedMinute = schedWeekday.hour * 60 + schedWeekday.minute;
-      const schedDow = civilWeekday({ year: schedWeekday.year, month: schedWeekday.month, day: schedWeekday.day });
-      working.push(inWorkingHours(schedDow, schedMinute, schedule));
-    }
-    const availByHour = new Map<number, AvailabilitySlot>();
-    for (const slot of availabilityByDate[key] ?? []) {
-      const h = partsInTz(new Date(slot.start), deviceTz).hour;
-      if (!availByHour.has(h)) availByHour.set(h, slot);
-    }
-    return { date, key, weekday: civilWeekday(date), instants, working, availByHour };
-  });
+  // ── Pass 1: build raw cells per column ──────────────────────────────────────
 
-  // Hour-row range = contiguous min…max of device-local hours in working hours.
-  let minHour = Infinity;
-  let maxHour = -Infinity;
-  for (const d of days) {
-    for (let h = 0; h < 24; h++) {
-      if (d.working[h]) {
-        if (h < minHour) minHour = h;
-        if (h > maxHour) maxHour = h;
+  const days: DayData[] = columns.map((date) => {
+    const key = dateKey(date);
+
+    // Map API slots to device-local minutes
+    const availByMinute = new Map<number, AvailabilitySlot>();
+    for (const s of availabilityByDate[key] ?? []) {
+      const m = minutesInTz(new Date(s.start), deviceTz);
+      if (!availByMinute.has(m)) availByMinute.set(m, s);
+    }
+
+    const rawCells: RawCell[] = [];
+
+    for (let m = 0; m < 1440; m += 30) {
+      const instant = zonedTimeToUtc({ ...date, hour: Math.floor(m / 60), minute: m % 60 }, deviceTz);
+      const sp = partsInTz(instant, schedule.timezone);
+      const schedMinute = sp.hour * 60 + sp.minute;
+      const schedDow = civilWeekday({ year: sp.year, month: sp.month, day: sp.day });
+
+      if (!inWorkingHours(schedDow, schedMinute, schedule)) continue;
+
+      if (instant.getTime() < minNoticeCutoff) {
+        rawCells.push({ minute: m, instant, raw: 'unavailable', slot: null });
+      } else {
+        const hit = availByMinute.get(m) ?? null;
+        rawCells.push({ minute: m, instant, raw: hit ? 'free' : 'booked', slot: hit });
       }
     }
+
+    return { date, key, weekday: civilWeekday(date), rawCells };
+  });
+
+  // ── slotMinutes: contiguous range from earliest to latest working minute ────
+  // Filling in gaps (e.g. a lunch break from 13:30–15:30) ensures the grid
+  // shows those in-between rows as unavailable rather than hiding them, so the
+  // user can see the full time context without a visual jump.
+
+  const minuteSet = new Set<number>();
+  for (const d of days) for (const rc of d.rawCells) minuteSet.add(rc.minute);
+  const boundaryMinutes = Array.from(minuteSet).sort((a, b) => a - b);
+  const slotMinutes: number[] = [];
+  if (boundaryMinutes.length > 0) {
+    for (let m = boundaryMinutes[0]; m <= boundaryMinutes[boundaryMinutes.length - 1]; m += 30) {
+      slotMinutes.push(m);
+    }
   }
-  const hourRows: number[] =
-    minHour === Infinity ? [] : Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i);
+
+  // ── Pass 2 + final grid columns ─────────────────────────────────────────────
 
   let hasAnyBookable = false;
 
   const gridColumns: GridColumn[] = days.map((d) => {
-    const cells: GridCell[] = hourRows.map((hour) => {
-      let state: CellState;
-      let slot: AvailabilitySlot | null = null;
+    // Index raw cells by minute for O(1) lookup
+    const rawByMinute = new Map<number, RawCell>();
+    for (const rc of d.rawCells) rawByMinute.set(rc.minute, rc);
 
-      if (!d.working[hour]) {
-        state = 'unavailable';
-      } else if (d.instants[hour].getTime() < minNoticeCutoff) {
-        state = 'unavailable';
-      } else {
-        const hit = d.availByHour.get(hour) ?? null;
-        if (hit) {
-          slot = hit;
-          if (duration === '2h') {
-            const next = d.availByHour.get(hour + 1);
-            state = next ? 'available' : 'no-fit-2h';
-          } else {
-            state = 'available';
-          }
-        } else {
-          state = 'booked';
+    // Classify free cells: available or no-fit (N-cell block check)
+    const finalState = new Map<number, CellState>();
+    const freeCells = d.rawCells.filter((rc) => rc.raw === 'free');
+
+    for (let i = 0; i < freeCells.length; i++) {
+      const base = freeCells[i].minute;
+
+      // Forward block: N consecutive free cells starting at i
+      let forwardOk = i + N <= freeCells.length;
+      if (forwardOk) {
+        for (let k = 1; k < N; k++) {
+          if (freeCells[i + k].minute !== base + k * 30) { forwardOk = false; break; }
         }
       }
 
-      if (state === 'available') hasAnyBookable = true;
-      return { hour, state, slot };
+      // Backward block: N consecutive free cells ending at i
+      let backwardOk = i >= N - 1;
+      if (backwardOk) {
+        const blockStart = freeCells[i - (N - 1)].minute;
+        for (let k = 0; k < N; k++) {
+          if (freeCells[i - (N - 1) + k].minute !== blockStart + k * 30) { backwardOk = false; break; }
+        }
+      }
+
+      finalState.set(base, forwardOk || backwardOk ? 'available' : 'no-fit');
+    }
+
+    const cells: GridCell[] = slotMinutes.map((minute) => {
+      const rc = rawByMinute.get(minute);
+      if (!rc) return { minute, state: 'unavailable', slot: null };
+
+      switch (rc.raw) {
+        case 'unavailable': return { minute, state: 'unavailable', slot: null };
+        case 'booked':      return { minute, state: 'booked', slot: null };
+        case 'free': {
+          const state = finalState.get(minute) ?? 'no-fit';
+          if (state === 'available') hasAnyBookable = true;
+          return { minute, state, slot: rc.slot };
+        }
+      }
     });
+
     return { date: d.date, key: d.key, weekday: d.weekday, cells };
   });
 
-  return { hourRows, columns: gridColumns, hasAnyBookable };
+  return { slotMinutes, columns: gridColumns, hasAnyBookable };
 }

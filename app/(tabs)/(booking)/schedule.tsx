@@ -30,15 +30,15 @@ import {
 import type { AvailabilitySlot, GetScheduleResponse } from '@/types/api';
 
 // ── Grid geometry ───────────────────────────────────────────────────────────
-// Cells stay ~60px wide for comfortable touch (resolved design decision).
+// Cells are 60px wide (comfortable touch), 40px tall (compact for 30-min rows).
 
 const HOURS_COL_W = 48;
 const HEADER_H = 54;
 const CELL_W = 60;
-const CELL_H = 54;
+const CELL_H = 40;
 const COL_GAP = 5;
 const ROW_GAP = 5;
-const LOADING_ROWS = 6;
+const LOADING_ROWS = 8;
 
 // ── Cell-state colors (web continuity; mapped onto theme where present) ───────
 
@@ -46,7 +46,7 @@ const CELL_COLORS = {
   available: { bg: Colors.successBg, border: Colors.successBorder, text: '#7ff0c2' },
   booked: { bg: 'rgba(255, 128, 120, 0.10)', border: 'rgba(255, 128, 120, 0.24)', text: '#ffb3af' },
   unavailable: { bg: 'rgba(255, 255, 255, 0.02)', border: Colors.border, text: '#54545a' },
-  noFit2h: { bg: 'rgba(78, 222, 163, 0.045)', border: 'rgba(78, 222, 163, 0.32)', text: '#8a9990' },
+  noFit: { bg: 'rgba(78, 222, 163, 0.045)', border: 'rgba(78, 222, 163, 0.32)', text: '#8a9990' },
 } as const;
 
 // ── Spanish date labels ───────────────────────────────────────────────────────
@@ -58,8 +58,10 @@ const MONTHS_FULL_ES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, '0')}:00`;
+function slotLabel(minute: number): string {
+  const h = Math.floor(minute / 60);
+  const m = minute % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
 function parseKey(key: string): CivilDate {
@@ -78,7 +80,14 @@ function weekRangeLabel(cols: CivilDate[]): string {
 
 type Duration = '1h' | '2h';
 type ScreenState = 'loading' | 'ready' | 'error';
-type Selection = { key: string; hour: number; slot: AvailabilitySlot };
+
+type Selection = {
+  dateKey: string;             // YYYY-MM-DD
+  startMinute: number;         // device-local start of block
+  endMinute: number;           // exclusive end = startMinute + N*30
+  startSlot: AvailabilitySlot; // first cell's slot (startIso for POST /api/book)
+  endSlot: AvailabilitySlot;   // last cell's slot (.end = block end ISO)
+};
 
 // ── Top glow ──────────────────────────────────────────────────────────────────
 
@@ -203,9 +212,7 @@ function GridCell({
 }) {
   if (selected) {
     return (
-      <Pressable onPress={onPress} style={[styles.cell, styles.cellSelected]}>
-        <Text style={styles.cellTextSelected}>{hourLabel(cell.hour)}</Text>
-      </Pressable>
+      <Pressable onPress={onPress} style={[styles.cell, styles.cellSelected]} />
     );
   }
 
@@ -215,25 +222,20 @@ function GridCell({
         <Pressable
           onPress={onPress}
           style={[styles.cell, { backgroundColor: CELL_COLORS.available.bg, borderColor: CELL_COLORS.available.border }]}
-        >
-          <Text style={[styles.cellText, { color: CELL_COLORS.available.text }]}>{hourLabel(cell.hour)}</Text>
-        </Pressable>
+        />
       );
-    case 'no-fit-2h':
+    case 'no-fit':
       return (
         <View
           style={[
             styles.cell,
             {
-              backgroundColor: CELL_COLORS.noFit2h.bg,
-              borderColor: CELL_COLORS.noFit2h.border,
+              backgroundColor: CELL_COLORS.noFit.bg,
+              borderColor: CELL_COLORS.noFit.border,
               borderStyle: 'dashed',
             },
           ]}
-        >
-          <Text style={[styles.cellText, { color: CELL_COLORS.noFit2h.text }]}>{hourLabel(cell.hour)}</Text>
-          <Text style={styles.noFitBadge}>1 h</Text>
-        </View>
+        />
       );
     case 'booked':
       return (
@@ -255,39 +257,41 @@ function GridCell({
 // Frozen hours column (left) + a single horizontal ScrollView that holds BOTH the
 // days header and the cells, so they scroll sideways together and stay aligned
 // with no manual sync. The whole grid sits inside the screen's vertical page
-// scroll (see ScheduleScreen), which provides vertical scrolling — so there is no
-// nested perpendicular ScrollView with an ambiguous height, and the last row is
-// always reachable. The horizontal scroll is given an explicit height so the page
-// can measure it.
+// scroll (see ScheduleScreen), which provides vertical scrolling.
 
 function Grid({
   model,
   today,
   selected,
+  duration,
   onSelect,
 }: {
   model: GridModel;
   today: CivilDate;
   selected: Selection | null;
+  duration: Duration;
   onSelect: (s: Selection) => void;
 }) {
+  const N = duration === '2h' ? 4 : 2;
   const todayKey = dateKey(today);
-  const rows = model.hourRows.length;
+  const rows = model.slotMinutes.length;
   const rowsHeight = ROW_GAP + rows * (CELL_H + ROW_GAP);
   const scrollHeight = HEADER_H + rowsHeight;
 
   return (
     <View style={styles.gridCard}>
       <View style={styles.gridRow}>
-        {/* Frozen hours column: corner + hour labels */}
+        {/* Frozen hours column: corner + slot labels */}
         <View style={styles.hoursColumn}>
           <View style={styles.corner}>
             <MaterialCommunityIcons name="clock-outline" size={15} color={Colors.textDim} />
           </View>
           <View style={styles.hoursList}>
-            {model.hourRows.map((h) => (
-              <View key={h} style={styles.hourLabelCell}>
-                <Text style={styles.hourLabel}>{hourLabel(h)}</Text>
+            {model.slotMinutes.map((m) => (
+              <View key={m} style={styles.hourLabelCell}>
+                <Text style={m % 60 === 0 ? styles.hourLabel : styles.halfHourLabel}>
+                  {slotLabel(m)}
+                </Text>
               </View>
             ))}
           </View>
@@ -315,18 +319,57 @@ function Grid({
             <View style={styles.cellsRow}>
               {model.columns.map((col) => (
                 <View key={col.key} style={styles.bodyColumn}>
-                  {col.cells.map((cell) => (
-                    <GridCell
-                      key={cell.hour}
-                      cell={cell}
-                      selected={selected?.key === col.key && selected?.hour === cell.hour}
-                      onPress={() => {
-                        if (cell.state === 'available' && cell.slot) {
-                          onSelect({ key: col.key, hour: cell.hour, slot: cell.slot });
-                        }
-                      }}
-                    />
-                  ))}
+                  {col.cells.map((cell) => {
+                    const isSelected =
+                      selected !== null &&
+                      selected.dateKey === col.key &&
+                      cell.minute >= selected.startMinute &&
+                      cell.minute < selected.endMinute;
+
+                    return (
+                      <GridCell
+                        key={cell.minute}
+                        cell={cell}
+                        selected={isSelected}
+                        onPress={() => {
+                          if (isSelected) {
+                            // Tapping a selected cell deselects the block
+                            onSelect({ dateKey: '', startMinute: -1, endMinute: -1, startSlot: cell.slot!, endSlot: cell.slot! });
+                            return;
+                          }
+                          if (cell.state !== 'available') return;
+
+                          // Use slot !== null (includes no-fit mid-cells with slots)
+                          const freeCells = col.cells.filter((c) => c.slot !== null);
+                          const idx = freeCells.findIndex((c) => c.minute === cell.minute);
+                          if (idx === -1) return;
+
+                          // Try forward block first
+                          let forwardOk = idx + N <= freeCells.length;
+                          if (forwardOk) {
+                            for (let k = 1; k < N; k++) {
+                              if (freeCells[idx + k].minute !== cell.minute + k * 30) {
+                                forwardOk = false;
+                                break;
+                              }
+                            }
+                          }
+
+                          // Backward fallback (guaranteed valid if forward fails, per buildGridModel)
+                          const startIdx = forwardOk ? idx : idx - N + 1;
+                          const block = freeCells.slice(startIdx, startIdx + N);
+
+                          onSelect({
+                            dateKey: col.key,
+                            startMinute: block[0].minute,
+                            endMinute: block[0].minute + N * 30,
+                            startSlot: block[0].slot!,
+                            endSlot: block[block.length - 1].slot!,
+                          });
+                        }}
+                      />
+                    );
+                  })}
                 </View>
               ))}
             </View>
@@ -339,9 +382,9 @@ function Grid({
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-const LEGEND: { label: string; swatch: 'available' | 'noFit2h' | 'booked' | 'unavailable' }[] = [
+const LEGEND: { label: string; swatch: 'available' | 'noFit' | 'booked' | 'unavailable' }[] = [
   { label: 'Disponible', swatch: 'available' },
-  { label: 'No válido', swatch: 'noFit2h' },
+  { label: 'No válido', swatch: 'noFit' },
   { label: 'Reservado', swatch: 'booked' },
   { label: 'No disponible', swatch: 'unavailable' },
 ];
@@ -353,10 +396,10 @@ function Legend() {
         let swatchStyle;
         if (item.swatch === 'available') {
           swatchStyle = { backgroundColor: CELL_COLORS.available.bg, borderColor: CELL_COLORS.available.border };
-        } else if (item.swatch === 'noFit2h') {
+        } else if (item.swatch === 'noFit') {
           swatchStyle = {
-            backgroundColor: CELL_COLORS.noFit2h.bg,
-            borderColor: CELL_COLORS.noFit2h.border,
+            backgroundColor: CELL_COLORS.noFit.bg,
+            borderColor: CELL_COLORS.noFit.border,
             borderStyle: 'dashed' as const,
           };
         } else if (item.swatch === 'booked') {
@@ -493,8 +536,11 @@ export default function ScheduleScreen() {
   const [now, setNow] = useState(() => new Date());
   const [selected, setSelected] = useState<Selection | null>(null);
   const [stale, setStale] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
 
   const scheduleRef = useRef<GetScheduleResponse | null>(null);
+  // Ref-level guard: catches rapid double-taps before the state update lands.
+  const continuingRef = useRef(false);
 
   const cols = useMemo(() => weekColumns(today, weekOffset), [today, weekOffset]);
 
@@ -511,7 +557,7 @@ export default function ScheduleScreen() {
         const weekCols = weekColumns(today, offset);
         const entries = await Promise.all(
           weekCols.map(async (c) => {
-            const r = await api.getAvailability({ date: dateKey(c), duration: 60, tz: deviceTz });
+            const r = await api.getAvailability({ date: dateKey(c), duration: 30, tz: deviceTz });
             return [dateKey(c), r.slots] as const;
           }),
         );
@@ -546,34 +592,54 @@ export default function ScheduleScreen() {
     router.setParams({ duration: d });
   }, []);
 
-  // "Hueco tomado": revalidate the picked slot at the decision point.
+  // "Hueco tomado": revalidate the picked block at the decision point.
   const onContinue = useCallback(async () => {
-    if (!selected) return;
+    if (!selected || selected.dateKey === '' || continuingRef.current) return;
+    continuingRef.current = true;
+    setIsContinuing(true);
+
+    const N = duration === '2h' ? 4 : 2;
     try {
-      const r = await api.getAvailability({ date: selected.key, duration: 60, tz: deviceTz });
-      setAvailByDate((prev) => ({ ...prev, [selected.key]: r.slots }));
+      const r = await api.getAvailability({ date: selected.dateKey, duration: 30, tz: deviceTz });
+      setAvailByDate((prev) => ({ ...prev, [selected.dateKey]: r.slots }));
       setNow(new Date());
-      const stillThere = r.slots.some((s) => s.start === selected.slot.start);
-      if (!stillThere) {
+
+      // Verify all N 30-min slots in the block are still present
+      const startMs = new Date(selected.startSlot.start).getTime();
+      const allPresent = Array.from({ length: N }, (_, k) => {
+        const expectedIso = new Date(startMs + k * 1_800_000).toISOString();
+        return r.slots.some((s) => s.start === expectedIso);
+      }).every(Boolean);
+
+      if (!allPresent) {
         setStale(true);
         setSelected(null);
+        continuingRef.current = false;
+        setIsContinuing(false);
         return;
       }
     } catch {
       // Network hiccup — let confirm revalidate rather than block the user.
     }
+
     router.push({
       pathname: '/(tabs)/(booking)/confirm',
-      params: { duration, start: selected.slot.start, end: selected.slot.end },
+      params: { duration, start: selected.startSlot.start, end: selected.endSlot.end },
     });
+    // Reset so the button is usable again if the user comes back from S06.
+    continuingRef.current = false;
+    setIsContinuing(false);
   }, [selected, deviceTz, duration]);
 
   const selectionLabel = useMemo(() => {
-    if (!selected) return null;
-    const cd = parseKey(selected.key);
+    if (!selected || selected.dateKey === '') return null;
+    const cd = parseKey(selected.dateKey);
     const day = `${WEEKDAYS_ES[civilWeekday(cd)]} ${cd.day} ${MONTHS_SHORT_ES[cd.month - 1]}`;
-    return `${day} · ${hourLabel(selected.hour)}–${hourLabel(selected.hour + 1)}`;
+    return `${day} · ${slotLabel(selected.startMinute)}–${slotLabel(selected.endMinute)}`;
   }, [selected]);
+
+  // Normalise: a deselect sentinel (dateKey='') should not show as selected
+  const hasSelection = selected !== null && selected.dateKey !== '';
 
   const showEmpty = state === 'ready' && gridModel != null && !gridModel.hasAnyBookable;
 
@@ -620,7 +686,18 @@ export default function ScheduleScreen() {
         )}
 
         {state === 'ready' && !showEmpty && gridModel && (
-          <Grid model={gridModel} today={today} selected={selected} onSelect={setSelected} />
+          <Grid
+            model={gridModel}
+            today={today}
+            selected={hasSelection ? selected : null}
+            duration={duration}
+            onSelect={(s) => {
+              // A sentinel with dateKey='' means deselect
+              if (s.dateKey === '') { setSelected(null); return; }
+              setSelected(s);
+              setStale(false);
+            }}
+          />
         )}
       </ScrollView>
 
@@ -630,15 +707,15 @@ export default function ScheduleScreen() {
       {/* Bottom dock — selected-slot summary above a full-width Continuar */}
       <View style={[styles.dock, { paddingBottom: insets.bottom + Spacing[2] }]}>
         <View style={styles.dockInfo}>
-          <View style={[styles.dockIcon, !selected && styles.dockIconIdle]}>
+          <View style={[styles.dockIcon, !hasSelection && styles.dockIconIdle]}>
             <MaterialCommunityIcons
               name="calendar-check"
               size={18}
-              color={selected ? Colors.primary : Colors.textDim}
+              color={hasSelection ? Colors.primary : Colors.textDim}
             />
           </View>
           <View style={styles.dockText}>
-            {selected ? (
+            {hasSelection ? (
               <>
                 <Text style={styles.dockTime}>{selectionLabel}</Text>
                 <Text style={styles.dockSub}>{duration === '2h' ? 'Sesión de 2 horas' : 'Sesión de 1 hora'}</Text>
@@ -649,12 +726,16 @@ export default function ScheduleScreen() {
           </View>
         </View>
         <TouchableOpacity
-          style={[styles.continueBtn, !selected && styles.continueBtnDisabled]}
+          style={[styles.continueBtn, !hasSelection && styles.continueBtnDisabled]}
           onPress={onContinue}
-          disabled={!selected}
+          disabled={!hasSelection || isContinuing}
           activeOpacity={0.85}
         >
-          <Text style={[styles.continueText, !selected && styles.continueTextDisabled]}>Continuar</Text>
+          {isContinuing ? (
+            <ActivityIndicator size="small" color={Colors.onPrimary} />
+          ) : (
+            <Text style={[styles.continueText, !hasSelection && styles.continueTextDisabled]}>Continuar</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -848,13 +929,21 @@ const styles = StyleSheet.create({
     height: CELL_H,
     marginBottom: ROW_GAP,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 5,
   },
   hourLabel: {
     fontSize: 10,
     fontWeight: '500',
     fontFamily: FontFamily.body,
     color: Colors.textDim,
+  },
+  halfHourLabel: {
+    fontSize: 8.5,
+    fontWeight: '400',
+    fontFamily: FontFamily.body,
+    color: Colors.textDim,
+    opacity: 0.55,
   },
 
   // Days header (inside the horizontal scroll)
@@ -913,27 +1002,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
   },
-  cellText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    fontFamily: FontFamily.body,
-  },
   cellSelected: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
     boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 14, spreadDistance: 0, color: 'rgba(78, 222, 163, 0.45)' }],
-  },
-  cellTextSelected: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    fontFamily: FontFamily.body,
-    color: Colors.onPrimary,
-  },
-  noFitBadge: {
-    fontSize: 8,
-    fontWeight: '700',
-    fontFamily: FontFamily.body,
-    color: CELL_COLORS.noFit2h.text,
   },
 
   // Legend (pinned above the dock)

@@ -21,7 +21,9 @@ it does NOT have its own backend.
   (plugin: configureAndroidBackup), expo-calendar (plugin: calendarPermission; auto-adds
   READ/WRITE_CALENDAR), expo-notifications (no plugin yet — add it when a custom notification
   icon/sound exists; POST_NOTIFICATIONS is declared in android.permissions).
-  Integration code for Stripe/secure-store/notifications/calendar is NOT written yet — only
+  Stripe integration IS written: StripeProvider in app/_layout.tsx (card-only, Google Pay
+  off for now); PaymentSheet wired in app/(tabs)/(booking)/confirm.tsx (S06 Pass A).
+  secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
   "invalid config plugin" warnings — ignore those).

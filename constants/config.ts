@@ -1,1 +1,2 @@
 export const API_BASE = 'https://staging.gustavoai.dev';
+export const STRIPE_PUBLISHABLE_KEY = 'pk_test_51T7ZmQ35RmDZD7yYQK0xaxnuHglSh61bwhx64I1VDpC851fjrrAY3G5NnzZx3eJ3rLHXPed2IgYuZft0Vgm3uJDG007tSchQ4a';

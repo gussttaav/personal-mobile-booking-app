@@ -1,5 +1,6 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +8,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
 
 // Hold the native splash until the bootstrap resolves the session, so the login
 // screen never flashes before we know whether a token exists (see RootNavigator).
@@ -56,7 +58,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DarkTheme}>
       <AuthProvider>
-        <RootNavigator />
+        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
+          <RootNavigator />
+        </StripeProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </ThemeProvider>

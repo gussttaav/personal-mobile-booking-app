@@ -106,6 +106,10 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   - `ApiError` class — `{ status, code, requiresAuth? }`
 - `app/_layout.tsx` — `GoogleSignin.configure({ webClientId })` + `SplashScreen.preventAutoHideAsync()`
   run here at app init; wraps the app in `AuthProvider` and gates routes with `<Stack.Protected>`
+- `lib/grid-time.ts` — pure tz/grid math for S05 (booking grid): converts the schedule-tz
+  `weeklyHours` frame into device-tz hour rows (DST-correct via `Intl.DateTimeFormat`),
+  and `buildGridModel()` composes schedule frame + live availability into the four cell
+  states. Unit-tested in `lib/__tests__/grid-time.test.ts`
 
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later

@@ -49,6 +49,23 @@ export interface GetAvailabilityResponse {
   timezone: string;
 }
 
+// ── Schedule (structural weekly frame) ──────────────────────────────────────────
+// The raw working-hours envelope. Defines WHICH cells exist in the grid; pair it
+// with /api/availability (live per-slot state) — a working hour is NOT necessarily
+// bookable.
+
+export interface ScheduleBlock {
+  startMinute: number; // minutes since LOCAL midnight in `timezone` (0–1439)
+  endMinute: number;   // minutes since LOCAL midnight in `timezone` (1–1440)
+}
+
+export interface GetScheduleResponse {
+  weeklyHours: Record<string, ScheduleBlock[]>; // keys "0"(Sun)–"6"(Sat); empty array = non-working day
+  timezone: string;          // IANA, e.g. "Europe/Madrid"
+  minNoticeHours: number;    // hours before a slot starts to be bookable
+  bookingWindowWeeks: number;// weeks ahead booking is allowed
+}
+
 // ── Booking ───────────────────────────────────────────────────────────────────
 
 export interface PostBookRequest {

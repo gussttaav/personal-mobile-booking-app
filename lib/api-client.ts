@@ -11,6 +11,7 @@ import type {
   GetPaymentConfirmationChannelParams,
   GetPaymentConfirmationChannelResponse,
   GetPricingResponse,
+  GetScheduleResponse,
   GetStripeSessionParams,
   GetStripeSessionResponse,
   GetSubscribeParams,
@@ -142,6 +143,10 @@ function buildHeaders(method: HttpMethod): Record<string, string> {
 // ── Typed endpoint methods ────────────────────────────────────────────────────
 
 export const api = {
+  getSchedule(): Promise<GetScheduleResponse> {
+    return request('GET', '/api/schedule');
+  },
+
   getAvailability(params: GetAvailabilityParams): Promise<GetAvailabilityResponse> {
     return request('GET', '/api/availability', { params });
   },

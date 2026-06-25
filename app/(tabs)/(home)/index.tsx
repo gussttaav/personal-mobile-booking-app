@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,8 +98,12 @@ export default function InicioScreen() {
     userName: '',
   });
 
-  const load = useCallback(async () => {
-    setState('loading');
+  // Tracks the first load so we only show the skeleton on cold mount; later
+  // focus refreshes (e.g. returning from a completed booking) update silently.
+  const hasLoadedRef = useRef(false);
+
+  const load = useCallback(async (showLoading: boolean) => {
+    if (showLoading) setState('loading');
     try {
       const [bookingsRes, creditsRes] = await Promise.all([
         api.getMyBookings(),
@@ -136,7 +140,13 @@ export default function InicioScreen() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // Reload whenever the tab gains focus so a freshly-made booking shows up.
+  useFocusEffect(
+    useCallback(() => {
+      load(!hasLoadedRef.current);
+      hasLoadedRef.current = true;
+    }, [load]),
+  );
 
   if (state === 'loading') return <LoadingSkeleton />;
   if (state === 'empty') return <EmptyState userName={data.userName} />;

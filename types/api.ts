@@ -152,13 +152,32 @@ export interface GetPaymentConfirmationChannelParams {
   payment_intent_id: string;
 }
 
-export interface GetPaymentConfirmationChannelResponse {
-  channelName: string;
-  confirmed: boolean;
-  credits: number | null;
-  name: string;
-  packSize: number | null;
+export interface ConfirmedBooking {
+  eventId: string;
+  startIso: string;
+  endIso: string;
+  sessionType: SessionType;
+  joinToken: string;
 }
+
+// Discriminated on `checkoutType`. The pack branch (legacy) omits the
+// discriminant; the single-session branch (SINGLE-SESSION-CONFIRM-01) sets it
+// to 'single' and carries a terminal `status` (+ `booking` once confirmed).
+export type GetPaymentConfirmationChannelResponse =
+  | {
+      checkoutType?: 'pack';
+      channelName: string;
+      confirmed: boolean;
+      credits: number | null;
+      name: string;
+      packSize: number | null;
+    }
+  | {
+      checkoutType: 'single';
+      channelName: string;
+      status: 'pending' | 'confirmed' | 'slot_taken' | 'failed';
+      booking?: ConfirmedBooking;
+    };
 
 // ── Zoom ──────────────────────────────────────────────────────────────────────
 

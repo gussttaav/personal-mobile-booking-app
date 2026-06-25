@@ -23,6 +23,14 @@ it does NOT have its own backend.
   icon/sound exists; POST_NOTIFICATIONS is declared in android.permissions).
   Stripe integration IS written: StripeProvider in app/_layout.tsx (card-only, Google Pay
   off for now); PaymentSheet wired in app/(tabs)/(booking)/confirm.tsx (S06 Pass A).
+  S06 Pass B confirms the booking by AUTHORITATIVE POLLING of
+  /api/payment-confirmation/channel (status is total) — NO Supabase/Realtime client
+  was added (the web's useSSECredits Realtime path is intentionally not mirrored on
+  mobile). See lib/payment-confirmation.ts. On 'confirmed' it navigates to S08
+  (app/(tabs)/(booking)/success.tsx) with the booking as params (success.tsx is still
+  a placeholder that just receives them); slot_taken/failed/timeout resolve to
+  on-screen terminal states. types/api.ts GetPaymentConfirmationChannelResponse is now
+  a union discriminated on checkoutType (pack | single).
   secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
@@ -112,6 +120,11 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   `weeklyHours` frame into device-tz hour rows (DST-correct via `Intl.DateTimeFormat`),
   and `buildGridModel()` composes schedule frame + live availability into the four cell
   states. Unit-tested in `lib/__tests__/grid-time.test.ts`
+- `lib/payment-confirmation.ts` — pure S06 Pass B confirmation poller:
+  `pollPaymentConfirmation()` polls /api/payment-confirmation/channel until a terminal
+  status (confirmed/slot_taken/failed) or a 30s ceiling (timeout), swallowing transient
+  errors. `now`/`sleep` are injectable; resolves exactly once. Unit-tested in
+  `lib/__tests__/payment-confirmation.test.ts`
 
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later

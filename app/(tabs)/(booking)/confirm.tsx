@@ -19,6 +19,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
+import { pollPaymentConfirmation, PollAbortedError } from '@/lib/payment-confirmation';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import type { GetPricingResponse } from '@/types/api';
@@ -56,7 +57,20 @@ function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ScreenState = 'loading' | 'load_error' | 'summary' | 'initiating' | 'confirmando' | 'rejected';
+// 'confirmando' holds while the poller resolves the backend outcome (Pass B).
+// Terminal-but-on-screen states: 'slot_taken' (hueco tomado durante el pago),
+// 'failed' (DLQ — manual contact), 'limbo' (30s timeout — couldn't tell).
+// 'confirmed' has no resting state: it navigates straight to S08.
+type ScreenState =
+  | 'loading'
+  | 'load_error'
+  | 'summary'
+  | 'initiating'
+  | 'confirmando'
+  | 'rejected'
+  | 'slot_taken'
+  | 'failed'
+  | 'limbo';
 
 // ── TopGlow ───────────────────────────────────────────────────────────────────
 
@@ -229,7 +243,69 @@ function ConfirmandoOverlay({ priceCents, insetBottom }: { priceCents: number; i
         <MaterialCommunityIcons name="lock-outline" size={13} color={Colors.textDim} />
         <Text style={styles.payCaptionText}>{formatEur(priceCents)} · Stripe</Text>
       </View>
-      {/* TODO(PassB): subscribe to Realtime channel here; on confirmation navigate to S08 */}
+    </View>
+  );
+}
+
+// ── TerminalView ──────────────────────────────────────────────────────────────
+// Full-screen resolution view shared by slot_taken / failed / limbo.
+
+interface TerminalAction {
+  label: string;
+  onPress: () => void;
+  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
+}
+
+interface TerminalViewProps {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  tint: string;
+  tintBg: string;
+  tintBorder: string;
+  title: string;
+  body: string;
+  primary: TerminalAction;
+  secondary?: TerminalAction;
+  insetBottom: number;
+}
+
+function TerminalView({
+  icon,
+  tint,
+  tintBg,
+  tintBorder,
+  title,
+  body,
+  primary,
+  secondary,
+  insetBottom,
+}: TerminalViewProps) {
+  return (
+    <View style={[styles.terminalRoot, { paddingBottom: Math.max(insetBottom, Spacing[4]) }]}>
+      <View style={styles.terminalCenter}>
+        <View style={[styles.terminalIcon, { backgroundColor: tintBg, borderColor: tintBorder }]}>
+          <MaterialCommunityIcons name={icon} size={32} color={tint} />
+        </View>
+        <Text style={styles.terminalTitle}>{title}</Text>
+        <Text style={styles.terminalBody}>{body}</Text>
+      </View>
+
+      <View style={styles.terminalActions}>
+        <TouchableOpacity style={styles.payBtn} onPress={primary.onPress} activeOpacity={0.85}>
+          {primary.icon && (
+            <MaterialCommunityIcons name={primary.icon} size={17} color={Colors.onPrimary} />
+          )}
+          <Text style={styles.payBtnText}>{primary.label}</Text>
+        </TouchableOpacity>
+        {secondary && (
+          <TouchableOpacity
+            style={styles.terminalSecondaryBtn}
+            onPress={secondary.onPress}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.terminalSecondaryText}>{secondary.label}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -252,12 +328,59 @@ export default function ConfirmScreen() {
   const [priceCents, setPriceCents] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  // PassB reads this to call /api/payment-confirmation after Realtime confirms the booking.
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+  // Captured on Stripe authorization; the confirmation poller (below) keys off it.
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
 
   // Prevent stale state updates after unmount.
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
+  // ── Confirmation poller (Pass B) ──────────────────────────────────────────
+  // While 'confirmando', poll the authoritative channel endpoint until a terminal
+  // status or the 30s ceiling. Re-runs if 'limbo' → 'confirmando' (manual retry).
+  // A transient drop is swallowed inside the poller — the screen never errors out.
+  useEffect(() => {
+    if (state !== 'confirmando' || !paymentIntentId) return;
+    const controller = new AbortController();
+
+    pollPaymentConfirmation({ paymentIntentId, signal: controller.signal })
+      .then((outcome) => {
+        if (!mountedRef.current || controller.signal.aborted) return;
+        switch (outcome.kind) {
+          case 'confirmed': {
+            const b = outcome.booking;
+            // Option (b): hand S08 the full booking so it renders without a round trip.
+            router.replace({
+              pathname: '/(tabs)/(booking)/success',
+              params: {
+                eventId: b.eventId,
+                startIso: b.startIso,
+                endIso: b.endIso,
+                sessionType: b.sessionType,
+                joinToken: b.joinToken,
+              },
+            });
+            break;
+          }
+          case 'slot_taken':
+            setState('slot_taken');
+            break;
+          case 'failed':
+            setState('failed');
+            break;
+          case 'timeout':
+            setState('limbo');
+            break;
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof PollAbortedError || !mountedRef.current) return;
+        // Unexpected error — fall to limbo rather than spin or fake success.
+        setState('limbo');
+      });
+
+    return () => controller.abort();
+  }, [state, paymentIntentId]);
 
   const loadPricing = useCallback(async () => {
     setState('loading');
@@ -344,16 +467,32 @@ export default function ConfirmScreen() {
     setState('summary');
   }, []);
 
+  const goHome = useCallback(() => {
+    router.replace('/(tabs)/(home)');
+  }, []);
+
+  const chooseAnotherSlot = useCallback(() => {
+    // Back to S05 with a fresh mount so availability re-fetches.
+    router.replace({ pathname: '/(tabs)/(booking)/schedule', params: { duration } });
+  }, [duration]);
+
+  const recheck = useCallback(() => {
+    setState('confirmando');
+  }, []);
+
   const isConfirmando = state === 'confirmando';
+  const isTerminal = state === 'slot_taken' || state === 'failed' || state === 'limbo';
   const showStickyBar = state === 'summary' || state === 'initiating' || state === 'rejected';
 
   return (
     <View style={styles.screen}>
       <TopGlow error={state === 'rejected'} />
 
-      {/* Header — always rendered, back disabled while confirmando */}
+      {/* Header — always rendered. Back is disabled once payment is authorized
+          (confirmando) and through every terminal state; those resolve via their
+          own actions, never the back stack. */}
       <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
-        <Header backDisabled={isConfirmando} />
+        <Header backDisabled={isConfirmando || isTerminal} />
       </View>
 
       {/* ── Loading ─────────────────────────────────────────────────────────── */}
@@ -425,6 +564,50 @@ export default function ConfirmScreen() {
           </ScrollView>
           <ConfirmandoOverlay priceCents={priceCents} insetBottom={insets.bottom} />
         </>
+      )}
+
+      {/* ── Slot taken during payment ───────────────────────────────────────── */}
+      {state === 'slot_taken' && (
+        <TerminalView
+          icon="clock-alert-outline"
+          tint={Colors.warning}
+          tintBg={Colors.warningBg}
+          tintBorder={Colors.warningBorder}
+          title="Ese horario se acaba de ocupar"
+          body="Mientras pagabas, otra persona reservó ese hueco. No se te ha cobrado nada. Elige otra hora para continuar."
+          primary={{ label: 'Elegir otra hora', icon: 'calendar-clock', onPress: chooseAnotherSlot }}
+          secondary={{ label: 'Cancelar', onPress: goHome }}
+          insetBottom={insets.bottom}
+        />
+      )}
+
+      {/* ── Failed → dead-letter, MANUAL contact (no automated email promise) ── */}
+      {state === 'failed' && (
+        <TerminalView
+          icon="progress-clock"
+          tint={Colors.textMuted}
+          tintBg={Colors.surfaceHigh}
+          tintBorder={Colors.border}
+          title="Estamos finalizando tu reserva"
+          body="Hemos recibido tu pago. Tu reserva se está finalizando y te contactaremos."
+          primary={{ label: 'Volver a inicio', onPress: goHome }}
+          insetBottom={insets.bottom}
+        />
+      )}
+
+      {/* ── Limbo → 30s timeout, couldn't tell (manual re-check) ─────────────── */}
+      {state === 'limbo' && (
+        <TerminalView
+          icon="timer-sand"
+          tint={Colors.textMuted}
+          tintBg={Colors.surfaceHigh}
+          tintBorder={Colors.border}
+          title="No hemos podido confirmar todavía"
+          body="Tu pago se ha recibido. Si no se confirma en unos minutos te contactaremos."
+          primary={{ label: 'Comprobar de nuevo', icon: 'refresh', onPress: recheck }}
+          secondary={{ label: 'Volver a inicio', onPress: goHome }}
+          insetBottom={insets.bottom}
+        />
       )}
 
       {/* ── Sticky pay bar ──────────────────────────────────────────────────── */}
@@ -854,5 +1037,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: Spacing[4],
+  },
+
+  // Terminal views (slot_taken / failed / limbo)
+  terminalRoot: {
+    flex: 1,
+    paddingHorizontal: Spacing[5],
+    paddingTop: Spacing[8],
+  },
+  terminalCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing[3],
+  },
+  terminalIcon: {
+    width: 66,
+    height: 66,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing[2],
+  },
+  terminalTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    letterSpacing: -0.42,
+    lineHeight: 26,
+    fontFamily: FontFamily.headline,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  terminalBody: {
+    fontSize: 13.5,
+    fontWeight: '400',
+    lineHeight: 20,
+    fontFamily: FontFamily.body,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  terminalActions: {
+    gap: Spacing[2] + 2,
+  },
+  terminalSecondaryBtn: {
+    height: 48,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  terminalSecondaryText: {
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: FontFamily.body,
+    color: Colors.textMuted,
   },
 });

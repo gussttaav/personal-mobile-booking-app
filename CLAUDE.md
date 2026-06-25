@@ -27,10 +27,21 @@ it does NOT have its own backend.
   /api/payment-confirmation/channel (status is total) — NO Supabase/Realtime client
   was added (the web's useSSECredits Realtime path is intentionally not mirrored on
   mobile). See lib/payment-confirmation.ts. On 'confirmed' it navigates to S08
-  (app/(tabs)/(booking)/success.tsx) with the booking as params (success.tsx is still
-  a placeholder that just receives them); slot_taken/failed/timeout resolve to
+  (app/(tabs)/(booking)/success.tsx, built — renders booking summary + join card
+  from the params it receives); slot_taken/failed/timeout resolve to
   on-screen terminal states. types/api.ts GetPaymentConfirmationChannelResponse is now
   a union discriminated on checkoutType (pack | single).
+  CREDIT booking path (S07, app/(tabs)/(booking)/confirm-credit.tsx) IS built and is
+  SEPARATE from the Stripe flow: it is SYNCHRONOUS — POST /api/book with
+  sessionType:'pack' returns the completed booking in one call (no Stripe, no poll,
+  no Realtime). Entered from Home's "Reservar con crédito" → grid in mode:'credit'
+  (always 1h, session-type skipped) → S07. S07 fetches getCredits for the balance,
+  guards against double-submit (submittingRef), and routes outcomes by ApiError.code
+  (NOT status — the contract documents INSUFFICIENT_CREDITS as 400, robust either way):
+  success→S08 (sessionType:'pack' renders as 1h), INSUFFICIENT_CREDITS→sin-créditos
+  cross-sell (Ver packs / Pagar esta clase reusing the slot in S06), SLOT_UNAVAILABLE→
+  back to grid, 429/400/500/network→inline retry banner. Device tz comes from
+  getDeviceTimeZone() in lib/grid-time.ts.
   secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
@@ -75,9 +86,10 @@ app/
     │   └── reschedule.tsx — S13 Reprogramar reserva
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
     │   ├── session-type.tsx   — S04 Tipo de sesión  (stack initial route → /(tabs)/(booking)/session-type)
-    │   ├── schedule.tsx   — S05 Cuadrícula semanal
-    │   ├── confirm.tsx    — S06 Confirmar y pagar
-    │   ├── confirm-credit.tsx — S07 Confirmar con crédito
+    │   ├── schedule.tsx   — S05 Cuadrícula semanal (carries a `mode` param: 'pay' from S04 →
+    │   │                     S06; 'credit' from Home → S07, always 1h, duration toggle hidden)
+    │   ├── confirm.tsx    — S06 Confirmar y pagar (Stripe, async)
+    │   ├── confirm-credit.tsx — S07 Confirmar con crédito (synchronous POST /api/book, no Stripe)
     │   └── success.tsx    — S08 Reserva confirmada
     ├── (packs)/           — Tab: Packs (gift-outline / gift)
     │   ├── packs.tsx      — S09 Packs  (stack initial route → /(tabs)/(packs)/packs)

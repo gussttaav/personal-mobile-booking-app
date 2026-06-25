@@ -305,11 +305,13 @@ function WithClasses({ data }: { data: HomeData }) {
         {/* Next class card */}
         {nextClass != null && <NextClassCard booking={nextClass} />}
 
-        {/* Credits balance */}
-        {credits != null && credits.credits > 0 && (
+        {/* Credits balance — shown for anyone who has owned a pack (packSize != null),
+            including a depleted 0-credit pack so the repurchase nudge stays visible.
+            The 0-credits-AND-no-classes case never reaches here (it's the 'empty' branch). */}
+        {credits != null && credits.packSize != null && (
           <CreditBalanceCard
             data={credits}
-            onReserve={() => router.push('/(tabs)/(booking)/session-type')}
+            onReserve={() => router.push({ pathname: '/(tabs)/(booking)/schedule', params: { mode: 'credit' } })}
             onBuyMore={() => router.push('/(tabs)/(packs)/packs')}
           />
         )}

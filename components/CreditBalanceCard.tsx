@@ -18,14 +18,20 @@ export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceC
   const { credits, packSize } = data;
   const packName = packSize != null ? (PACK_NAME[packSize] ?? `Pack ×${packSize}`) : null;
   const progressRatio = packSize != null && packSize > 0 ? credits / packSize : null;
+  // Depleted: the user owns a pack (this card only renders when packSize != null) but
+  // has spent every credit. Swap the reserve CTA for a repurchase nudge, and drop the
+  // redundant top-right "Comprar más" link (the button already does it).
+  const depleted = credits === 0;
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.overline}>SALDO DE CRÉDITOS</Text>
-        <TouchableOpacity onPress={onBuyMore} hitSlop={8}>
-          <Text style={styles.buyMore}>Comprar más</Text>
-        </TouchableOpacity>
+        {!depleted && (
+          <TouchableOpacity onPress={onBuyMore} hitSlop={8}>
+            <Text style={styles.buyMore}>Comprar más</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.statRow}>
@@ -42,8 +48,20 @@ export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceC
         </View>
       )}
 
-      <TouchableOpacity style={styles.reserveBtn} onPress={onReserve} activeOpacity={0.8}>
-        <Text style={styles.reserveBtnText}>Reservar con crédito →</Text>
+      {depleted && (
+        <Text style={styles.depletedHint}>
+          Te has quedado sin créditos. Compra un pack para seguir reservando.
+        </Text>
+      )}
+
+      <TouchableOpacity
+        style={styles.reserveBtn}
+        onPress={depleted ? onBuyMore : onReserve}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.reserveBtnText}>
+          {depleted ? 'Comprar más créditos' : 'Reservar con crédito →'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -103,6 +121,11 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: Radius.full,
     backgroundColor: Colors.primary,
+  },
+  depletedHint: {
+    ...TypeScale.caption,
+    fontFamily: FontFamily.body,
+    color: Colors.textDim,
   },
   reserveBtn: {
     backgroundColor: Colors.primaryDim,

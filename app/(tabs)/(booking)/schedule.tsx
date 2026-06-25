@@ -523,8 +523,11 @@ function ErrorCard({ onRetry }: { onRetry: () => void }) {
 
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ duration?: string }>();
-  const duration: Duration = params.duration === '2h' ? '2h' : '1h';
+  const params = useLocalSearchParams<{ duration?: string; mode?: string }>();
+  // Credit mode (pack credits) is always a 1h class — the duration param/toggle
+  // is irrelevant and the toggle is hidden. Pay mode keeps the S04-chosen duration.
+  const mode: 'pay' | 'credit' = params.mode === 'credit' ? 'credit' : 'pay';
+  const duration: Duration = mode === 'credit' ? '1h' : params.duration === '2h' ? '2h' : '1h';
 
   const deviceTz = useMemo(() => getDeviceTimeZone(), []);
   const today = useMemo(() => civilDateInTz(new Date(), deviceTz), [deviceTz]);
@@ -622,14 +625,22 @@ export default function ScheduleScreen() {
       // Network hiccup — let confirm revalidate rather than block the user.
     }
 
-    router.push({
-      pathname: '/(tabs)/(booking)/confirm',
-      params: { duration, start: selected.startSlot.start, end: selected.endSlot.end },
-    });
-    // Reset so the button is usable again if the user comes back from S06.
+    if (mode === 'credit') {
+      // Credit path is synchronous (S07 → POST /api/book), always 1h — no duration.
+      router.push({
+        pathname: '/(tabs)/(booking)/confirm-credit',
+        params: { start: selected.startSlot.start, end: selected.endSlot.end },
+      });
+    } else {
+      router.push({
+        pathname: '/(tabs)/(booking)/confirm',
+        params: { duration, start: selected.startSlot.start, end: selected.endSlot.end },
+      });
+    }
+    // Reset so the button is usable again if the user comes back from S06/S07.
     continuingRef.current = false;
     setIsContinuing(false);
-  }, [selected, deviceTz, duration]);
+  }, [selected, deviceTz, duration, mode]);
 
   const selectionLabel = useMemo(() => {
     if (!selected || selected.dateKey === '') return null;
@@ -648,7 +659,7 @@ export default function ScheduleScreen() {
       <TopGlow />
       <View style={[styles.chrome, { paddingTop: insets.top + Spacing[2] }]}>
         <Header />
-        <DurationToggle duration={duration} onChange={switchDuration} />
+        {mode !== 'credit' && <DurationToggle duration={duration} onChange={switchDuration} />}
         <WeekNav
           cols={cols}
           timezone={schedule?.timezone ?? deviceTz}

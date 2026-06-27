@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { api } from '@/lib/api-client';
+import { rescheduleFlag } from '@/lib/reschedule-flag';
 import {
   buildGridModel,
   civilDateInTz,
@@ -103,7 +104,7 @@ function TopGlow() {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-function Header() {
+function Header({ title, subtitle }: { title?: string; subtitle?: string }) {
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -115,8 +116,34 @@ function Header() {
         <MaterialCommunityIcons name="chevron-left" size={24} color={Colors.text} />
       </TouchableOpacity>
       <View style={styles.headerText}>
-        <Text style={styles.headerTitle}>Reservar</Text>
-        <Text style={styles.headerSubtitle}>Paso 2 de 3 · elige fecha y hora</Text>
+        <Text style={styles.headerTitle}>{title ?? 'Reservar'}</Text>
+        <Text style={styles.headerSubtitle}>{subtitle ?? 'Paso 2 de 3 · elige fecha y hora'}</Text>
+      </View>
+    </View>
+  );
+}
+
+// ── Reschedule "from" banner ──────────────────────────────────────────────────
+
+const WEEKDAYS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+function RescheduleBanner({ origStartsAt, duration }: { origStartsAt: string; duration: Duration }) {
+  const d = new Date(origStartsAt);
+  const h = d.getHours().toString().padStart(2, '0');
+  const m = d.getMinutes().toString().padStart(2, '0');
+  const label = `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT_ES[d.getMonth()]} · ${h}:${m}`;
+  const durationLabel = duration === '2h' ? '2 horas' : '1 hora';
+  return (
+    <View style={styles.rescheduleBanner}>
+      <View style={styles.rescheduleBannerFrom}>
+        <MaterialCommunityIcons name="calendar-arrow-right" size={15} color={Colors.primary} />
+        <Text style={styles.rescheduleBannerLabel} numberOfLines={1}>
+          Moviendo desde: <Text style={styles.rescheduleBannerDate}>{label}</Text>
+        </Text>
+      </View>
+      <View style={styles.rescheduleLockPill}>
+        <MaterialCommunityIcons name="lock-outline" size={11} color={Colors.textDim} />
+        <Text style={styles.rescheduleLockText}>{durationLabel} · mismo tipo · sin cargo</Text>
       </View>
     </View>
   );
@@ -426,12 +453,14 @@ function EmptyState({
   canNext,
   onNextWeek,
   onSwitch1h,
+  onBack,
 }: {
   duration: Duration;
   minNoticeHours: number;
   canNext: boolean;
   onNextWeek: () => void;
   onSwitch1h: () => void;
+  onBack?: () => void;
 }) {
   return (
     <View style={styles.emptyCard}>
@@ -450,11 +479,15 @@ function EmptyState({
           <MaterialCommunityIcons name="arrow-right" size={16} color={Colors.onPrimary} />
         </TouchableOpacity>
       )}
-      {duration === '2h' && (
+      {onBack ? (
+        <TouchableOpacity style={styles.emptySecondaryBtn} onPress={onBack} activeOpacity={0.85}>
+          <Text style={styles.emptySecondaryText}>Mantener la hora actual</Text>
+        </TouchableOpacity>
+      ) : duration === '2h' ? (
         <TouchableOpacity style={styles.emptySecondaryBtn} onPress={onSwitch1h} activeOpacity={0.85}>
           <Text style={styles.emptySecondaryText}>Probar con 1 hora</Text>
         </TouchableOpacity>
-      )}
+      ) : null}
       <View style={styles.emptyNote}>
         <MaterialCommunityIcons name="information-outline" size={13} color={Colors.textDim} />
         <Text style={styles.emptyNoteText}>
@@ -523,11 +556,27 @@ function ErrorCard({ onRetry }: { onRetry: () => void }) {
 
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ duration?: string; mode?: string }>();
-  // Credit mode (pack credits) is always a 1h class — the duration param/toggle
-  // is irrelevant and the toggle is hidden. Pay mode keeps the S04-chosen duration.
-  const mode: 'pay' | 'credit' = params.mode === 'credit' ? 'credit' : 'pay';
-  const duration: Duration = mode === 'credit' ? '1h' : params.duration === '2h' ? '2h' : '1h';
+  const params = useLocalSearchParams<{
+    duration?: string;
+    mode?: string;
+    rescheduleToken?: string;
+    lockedSessionType?: string;
+    origStartsAt?: string;
+  }>();
+  // Credit mode: always 1h (toggle hidden). Reschedule mode: locked to original
+  // sessionType — no payment, no duration change. Pay mode: S04-chosen duration.
+  const mode: 'pay' | 'credit' | 'reschedule' =
+    params.mode === 'credit' ? 'credit'
+    : params.mode === 'reschedule' ? 'reschedule'
+    : 'pay';
+  const isReschedule = mode === 'reschedule';
+  const rescheduleToken = params.rescheduleToken;
+  const lockedSessionType = params.lockedSessionType;
+  const origStartsAt = params.origStartsAt;
+  const duration: Duration = isReschedule
+    ? (lockedSessionType === 'session2h' ? '2h' : '1h')
+    : mode === 'credit' ? '1h'
+    : params.duration === '2h' ? '2h' : '1h';
 
   const deviceTz = useMemo(() => getDeviceTimeZone(), []);
   const today = useMemo(() => civilDateInTz(new Date(), deviceTz), [deviceTz]);
@@ -593,10 +642,16 @@ export default function ScheduleScreen() {
         didInitialFocusRef.current = true;
         return;
       }
+      // Reschedule completed: reset Booking tab to its normal root so the
+      // user doesn't see the stale reschedule grid when they tap this tab.
+      if (isReschedule && rescheduleFlag.consume()) {
+        router.replace('/(tabs)/(booking)/session-type');
+        return;
+      }
       setSelected(null);
       setStale(false);
       loadWeek(weekOffset);
-    }, [loadWeek, weekOffset]),
+    }, [loadWeek, weekOffset, isReschedule]),
   );
 
   const gridModel = useMemo(() => {
@@ -643,7 +698,19 @@ export default function ScheduleScreen() {
       // Network hiccup — let confirm revalidate rather than block the user.
     }
 
-    if (mode === 'credit') {
+    if (isReschedule) {
+      // Reschedule path: POST /api/book with rescheduleToken — no new payment.
+      router.push({
+        pathname: '/(tabs)/(home)/reschedule-confirm',
+        params: {
+          rescheduleToken: rescheduleToken ?? '',
+          sessionType: lockedSessionType ?? 'session1h',
+          newStartIso: selected.startSlot.start,
+          newEndIso: selected.endSlot.end,
+          origStartsAt: origStartsAt ?? '',
+        },
+      });
+    } else if (mode === 'credit') {
       // Credit path is synchronous (S07 → POST /api/book), always 1h — no duration.
       router.push({
         pathname: '/(tabs)/(booking)/confirm-credit',
@@ -655,10 +722,10 @@ export default function ScheduleScreen() {
         params: { duration, start: selected.startSlot.start, end: selected.endSlot.end },
       });
     }
-    // Reset so the button is usable again if the user comes back from S06/S07.
+    // Reset so the button is usable again if the user comes back from S06/S07/reschedule-confirm.
     continuingRef.current = false;
     setIsContinuing(false);
-  }, [selected, deviceTz, duration, mode]);
+  }, [selected, deviceTz, duration, mode, isReschedule, rescheduleToken, lockedSessionType, origStartsAt]);
 
   const selectionLabel = useMemo(() => {
     if (!selected || selected.dateKey === '') return null;
@@ -676,8 +743,14 @@ export default function ScheduleScreen() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.chrome, { paddingTop: insets.top + Spacing[2] }]}>
-        <Header />
-        {mode !== 'credit' && <DurationToggle duration={duration} onChange={switchDuration} />}
+        <Header
+          title={isReschedule ? 'Reprogramar' : undefined}
+          subtitle={isReschedule ? 'Elige un nuevo hueco · sin cargo' : undefined}
+        />
+        {!isReschedule && mode !== 'credit' && <DurationToggle duration={duration} onChange={switchDuration} />}
+        {isReschedule && origStartsAt ? (
+          <RescheduleBanner origStartsAt={origStartsAt} duration={duration} />
+        ) : null}
         <WeekNav
           cols={cols}
           timezone={schedule?.timezone ?? deviceTz}
@@ -711,6 +784,7 @@ export default function ScheduleScreen() {
             canNext={canNext}
             onNextWeek={() => setWeekOffset((w) => w + 1)}
             onSwitch1h={() => switchDuration('1h')}
+            onBack={isReschedule ? () => router.back() : undefined}
           />
         )}
 
@@ -763,7 +837,9 @@ export default function ScheduleScreen() {
           {isContinuing ? (
             <ActivityIndicator size="small" color={Colors.onPrimary} />
           ) : (
-            <Text style={[styles.continueText, !hasSelection && styles.continueTextDisabled]}>Continuar</Text>
+            <Text style={[styles.continueText, !hasSelection && styles.continueTextDisabled]}>
+            {isReschedule ? 'Confirmar cambio' : 'Continuar'}
+          </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -1246,6 +1322,44 @@ const styles = StyleSheet.create({
     color: Colors.onPrimary,
   },
   continueTextDisabled: {
+    color: Colors.textDim,
+  },
+
+  // Reschedule "from" banner (shown in chrome when mode === 'reschedule')
+  rescheduleBanner: {
+    backgroundColor: Colors.primaryDim,
+    borderWidth: 1,
+    borderColor: Colors.successBorder,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing[2] + 2,
+    paddingHorizontal: Spacing[3],
+    gap: Spacing[1] + 2,
+  },
+  rescheduleBannerFrom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[2],
+  },
+  rescheduleBannerLabel: {
+    flex: 1,
+    ...TypeScale.caption,
+    fontSize: 12,
+    fontFamily: FontFamily.body,
+    color: Colors.textMuted,
+  },
+  rescheduleBannerDate: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  rescheduleLockPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rescheduleLockText: {
+    ...TypeScale.caption,
+    fontSize: 11,
+    fontFamily: FontFamily.body,
     color: Colors.textDim,
   },
 });

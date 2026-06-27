@@ -72,9 +72,26 @@ it does NOT have its own backend.
   (Calendario stub→Alert TODO(S19), Reprogramar→S13, Cancelar→S12 danger style).
   Data comes from params passed by Home (token, joinToken, sessionType, startsAt,
   endsAt, packSize) — no API fetch in S11. Home's two router.push calls to S11 now
-  pass the full Booking object fields. S13 remains a stub; S11 routes to it with
-  { token, startsAt, sessionType }. The S08→S11 path (goDetail) is NOT yet wired —
-  S08 passes eventId not token; deferred to a future build.
+  pass the full Booking object fields. S11 routes to S13 with { token, startsAt,
+  sessionType }. The S08→S11 path (goDetail) is NOT yet wired — S08 passes eventId
+  not token; deferred to a future build.
+  S13 (app/(tabs)/(home)/reschedule.tsx + reschedule-confirm.tsx) IS built: 3-file
+  architecture. reschedule.tsx is the 2h gatekeeper — synchronous check on mount,
+  shows blocked bottom-sheet if < 2h before original start, otherwise router.replace
+  → S05 with mode:'reschedule' (rescheduleToken, lockedSessionType, origStartsAt).
+  S05 in reschedule mode locks duration to the original sessionType, hides the duration
+  toggle, shows a "Moviendo desde" banner, and on "Confirmar cambio" → reschedule-
+  confirm.tsx. reschedule-confirm.tsx: 7-phase state machine (confirm/submitting/
+  success/slot_taken/err_invalid_token/err_outside_window/err_generic). Confirm sheet:
+  before→after card + 2h reassurance + consequence note. POSTs api.postBook({...,
+  rescheduleToken}) — payment-free (server bypasses REQUIRES_PAYMENT). Double-submit
+  guarded by submittingRef. Success: full-screen "Clase reprogramada" with before→after
+  comparison. SLOT_UNAVAILABLE→slot_taken (back to grid); INVALID_RESCHEDULE_TOKEN /
+  SESSION_TYPE_MISMATCH / RESCHEDULE_TOKEN_CONSUMED→err_invalid_token (→Home);
+  OUTSIDE_RESCHEDULE_WINDOW→err_outside_window (→Home); 500/network→err_generic
+  (Reintentar resets to confirm). S05 mode:'reschedule' is a third mode alongside
+  'pay' and 'credit'; EmptyState shows "Mantener la hora actual" (router.back) instead
+  of "Probar con 1 hora" in reschedule mode.
   S12 (app/(tabs)/(home)/cancel.tsx) IS built: destructive-action confirmation with
   7-phase state machine (confirm/blocked/submitting/success/err_generic/
   err_invalid_token/err_outside_window). Bottom-sheet layout for confirm/blocked/
@@ -127,14 +144,19 @@ app/
     ├── (home)/            — Tab: Inicio (home-outline / home)
     │   ├── index.tsx      — S03 Inicio   ← the ONLY route at "/" (see note below)
     │   ├── booking-detail.tsx — S11 Detalle de la reserva
-    │   ├── cancel.tsx     — S12 Cancelar reserva
-    │   └── reschedule.tsx — S13 Reprogramar reserva
+    │   ├── cancel.tsx         — S12 Cancelar reserva
+    │   ├── reschedule.tsx     — S13 Reprogramar reserva · 2h gate (blocked state or
+    │   │                        router.replace → S05 mode:'reschedule')
+    │   └── reschedule-confirm.tsx — S13 confirm sheet + terminal states (slot_taken,
+    │                        success, err_invalid_token, err_outside_window, err_generic)
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
     │   ├── session-type.tsx   — S04 Tipo de sesión  (stack initial route → /(tabs)/(booking)/session-type)
-    │   ├── schedule.tsx   — S05 Cuadrícula semanal (carries a `mode` param: 'pay' from S04 →
-    │   │                     S06; 'credit' from Home → S07, always 1h, duration toggle hidden.
-    │   │                     Refetches availability on REGAINED focus via useFocusEffect —
-    │   │                     skips the first focus — so a just-booked slot shows as taken)
+    │   ├── schedule.tsx   — S05 Cuadrícula semanal (mode param: 'pay' → S06; 'credit'
+    │   │                     → S07 always 1h, toggle hidden; 'reschedule' → reschedule-
+    │   │                     confirm.tsx — locked sessionType, "Confirmar cambio" CTA,
+    │   │                     "Moviendo desde" banner, no duration toggle, rescheduleToken
+    │   │                     forwarded. Refetches availability on REGAINED focus via
+    │   │                     useFocusEffect — skips first focus — so booked slots show taken)
     │   ├── confirm.tsx    — S06 Confirmar y pagar (Stripe, async)
     │   ├── confirm-credit.tsx — S07 Confirmar con crédito (synchronous POST /api/book, no Stripe)
     │   └── success.tsx    — S08 Reserva confirmada

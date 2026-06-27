@@ -247,7 +247,8 @@ export default function ConfirmCreditScreen() {
       });
 
       // Success — hand S08 the completed booking. sessionType 'pack' renders as
-      // "1 hora" via success.tsx's durationFromSessionType.
+      // "1 hora" via success.tsx's durationFromSessionType. Pass the post-booking
+      // balance so S08 can flag when this was the last credit of the pack.
       router.replace({
         pathname: '/(tabs)/(booking)/success',
         params: {
@@ -257,6 +258,7 @@ export default function ConfirmCreditScreen() {
           sessionType: 'pack',
           joinToken: res.joinToken,
           emailFailed: String(res.emailFailed),
+          remainingCredits: String(Math.max(0, credits - 1)),
         },
       });
       return; // navigated away — leave the submit guard engaged
@@ -283,7 +285,7 @@ export default function ConfirmCreditScreen() {
       if (mountedRef.current) setIsSubmitting(false);
       submittingRef.current = false;
     }
-  }, [start, end, note]);
+  }, [start, end, note, credits]);
 
   const goPacks = useCallback(() => {
     router.replace('/(tabs)/(packs)/packs');

@@ -84,6 +84,10 @@ interface HomeData {
   nextClass: Booking | null;
   upcomingList: Booking[];
   credits: GetCreditsResponse | null;
+  // True if the user owns/owned a pack — drives the depleted-credit nudge.
+  // Derived robustly: GET /api/credits nulls `packSize` once a pack is fully
+  // consumed, so we ALSO infer ownership from any pack booking on record.
+  ownedPack: boolean;
   userName: string;
 }
 
@@ -95,6 +99,7 @@ export default function InicioScreen() {
     nextClass: null,
     upcomingList: [],
     credits: null,
+    ownedPack: false,
     userName: '',
   });
 
@@ -125,17 +130,23 @@ export default function InicioScreen() {
 
       const userName = creditsRes.name || getStoredSession()?.user.name || '';
 
+      // Pack ownership: live packSize OR any pack booking (the credits endpoint
+      // nulls packSize once the pack is depleted, so bookings are the backstop).
+      const ownedPack =
+        creditsRes.packSize != null ||
+        bookingsRes.bookings.some((b) => b.sessionType === 'pack' || b.packSize != null);
+
       if (futureOrActive.length === 0 && creditsRes.credits === 0) {
-        setData({ nextClass: null, upcomingList: [], credits: creditsRes, userName });
+        setData({ nextClass: null, upcomingList: [], credits: creditsRes, ownedPack, userName });
         setState('empty');
       } else {
-        setData({ nextClass, upcomingList, credits: creditsRes, userName });
+        setData({ nextClass, upcomingList, credits: creditsRes, ownedPack, userName });
         setState('with-classes');
       }
     } catch {
       // On error, fall to empty state so the screen never crashes
       const fallbackName = getStoredSession()?.user.name ?? '';
-      setData({ nextClass: null, upcomingList: [], credits: null, userName: fallbackName });
+      setData({ nextClass: null, upcomingList: [], credits: null, ownedPack: false, userName: fallbackName });
       setState('empty');
     }
   }, []);
@@ -281,7 +292,7 @@ function EmptyState({ userName }: { userName: string }) {
 
 function WithClasses({ data }: { data: HomeData }) {
   const insets = useSafeAreaInsets();
-  const { nextClass, upcomingList, credits, userName } = data;
+  const { nextClass, upcomingList, credits, ownedPack, userName } = data;
   const firstName = userName.split(' ')[0] || '';
 
   return (
@@ -305,10 +316,12 @@ function WithClasses({ data }: { data: HomeData }) {
         {/* Next class card */}
         {nextClass != null && <NextClassCard booking={nextClass} />}
 
-        {/* Credits balance — shown for anyone who has owned a pack (packSize != null),
-            including a depleted 0-credit pack so the repurchase nudge stays visible.
+        {/* Credits balance — shown for anyone who has owned a pack, including a
+            depleted 0-credit pack so the repurchase nudge stays visible. Ownership
+            is `ownedPack` (live packSize OR a pack booking) because the credits
+            endpoint nulls packSize once the pack is fully consumed.
             The 0-credits-AND-no-classes case never reaches here (it's the 'empty' branch). */}
-        {credits != null && credits.packSize != null && (
+        {credits != null && ownedPack && (
           <CreditBalanceCard
             data={credits}
             onReserve={() => router.push({ pathname: '/(tabs)/(booking)/schedule', params: { mode: 'credit' } })}

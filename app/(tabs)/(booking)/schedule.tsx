@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -544,6 +544,8 @@ export default function ScheduleScreen() {
   const scheduleRef = useRef<GetScheduleResponse | null>(null);
   // Ref-level guard: catches rapid double-taps before the state update lands.
   const continuingRef = useRef(false);
+  // Skip the first focus — the mount effect ([weekOffset]) already loads then.
+  const didInitialFocusRef = useRef(false);
 
   const cols = useMemo(() => weekColumns(today, weekOffset), [today, weekOffset]);
 
@@ -580,6 +582,22 @@ export default function ScheduleScreen() {
     setStale(false);
     loadWeek(weekOffset);
   }, [weekOffset, loadWeek]);
+
+  // Refetch availability whenever the grid REGAINS focus (e.g. returning here
+  // after completing a booking) so a freshly-booked slot shows as taken rather
+  // than still-available. The first focus is the initial mount — skip it, the
+  // effect above already loaded.
+  useFocusEffect(
+    useCallback(() => {
+      if (!didInitialFocusRef.current) {
+        didInitialFocusRef.current = true;
+        return;
+      }
+      setSelected(null);
+      setStale(false);
+      loadWeek(weekOffset);
+    }, [loadWeek, weekOffset]),
+  );
 
   const gridModel = useMemo(() => {
     if (!schedule) return null;

@@ -20,6 +20,15 @@ export type ConfirmationOutcome =
   | { kind: 'failed' }
   | { kind: 'timeout' };
 
+// Pack purchase confirmation (S10). The pack branch reserves no slot, so there is
+// no slot_taken outcome. `error` is a LOUD mismatch: the channel returned a shape
+// that is NOT the pack shape (e.g. the single-session branch) for a flow we KNOW
+// we initiated as a pack — surfaced as a terminal error, never a silent success.
+export type PackConfirmationOutcome =
+  | { kind: 'confirmed'; credits: number; packSize: number; name: string }
+  | { kind: 'timeout' }
+  | { kind: 'error' };
+
 export class PollAbortedError extends Error {
   constructor() {
     super('payment confirmation poll aborted');
@@ -94,6 +103,70 @@ export async function pollPaymentConfirmation(
         if (res.status === 'slot_taken') return { kind: 'slot_taken' };
         if (res.status === 'failed') return { kind: 'failed' };
         // 'pending' (or 'confirmed' without a booking yet) → keep polling.
+      }
+    } catch (err) {
+      if (err instanceof PollAbortedError) throw err;
+      // Transient failure (network blip, 5xx, refresh churn): swallow and retry.
+    }
+
+    if (now() - start >= timeoutMs) return { kind: 'timeout' };
+
+    await sleep(intervalMs, signal);
+  }
+}
+
+export interface PollPackConfirmationOptions {
+  paymentIntentId: string;
+  signal: AbortSignal;
+  intervalMs?: number;
+  timeoutMs?: number;
+  now?: () => number;
+  sleep?: (ms: number, signal: AbortSignal) => Promise<void>;
+}
+
+/**
+ * Polls the payment-confirmation channel for a PACK purchase until the credits are
+ * active (`confirmed`) or the 30s ceiling. Mirrors {@link pollPaymentConfirmation}:
+ * resolves exactly once, swallows transient fetch failures, throws
+ * {@link PollAbortedError} on abort. The pack branch carries `confirmed: boolean`
+ * (not a `status` enum) — we parse it positively and fail loud on a non-pack shape.
+ */
+export async function pollPackConfirmation(
+  opts: PollPackConfirmationOptions,
+): Promise<PackConfirmationOutcome> {
+  const {
+    paymentIntentId,
+    signal,
+    intervalMs = DEFAULT_INTERVAL_MS,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    now = Date.now,
+    sleep = defaultSleep,
+  } = opts;
+
+  const start = now();
+
+  // First iteration runs immediately: covers the webhook-before-poll race, where the
+  // credits are already active before we ever poll a second time.
+  for (;;) {
+    if (signal.aborted) throw new PollAbortedError();
+
+    try {
+      const res = await api.getPaymentConfirmationChannel({
+        payment_intent_id: paymentIntentId,
+      });
+
+      // The single-session branch always carries `status`; the pack branch never
+      // does. Either that, or an explicit checkoutType:'single', means the contract
+      // gave us the wrong shape for a flow we initiated as a pack → fail loud.
+      if ('status' in res) return { kind: 'error' };
+      if ((res as { checkoutType?: string }).checkoutType === 'single') {
+        return { kind: 'error' };
+      }
+
+      // Pack shape. Treat confirmed-without-credits as not-yet-terminal (keep polling)
+      // — same race guard as the single poller's confirmed-without-booking case.
+      if (res.confirmed && res.credits != null && res.packSize != null) {
+        return { kind: 'confirmed', credits: res.credits, packSize: res.packSize, name: res.name };
       }
     } catch (err) {
       if (err instanceof PollAbortedError) throw err;

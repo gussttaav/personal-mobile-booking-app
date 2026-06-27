@@ -41,7 +41,30 @@ it does NOT have its own backend.
   success→S08 (sessionType:'pack' renders as 1h), INSUFFICIENT_CREDITS→sin-créditos
   cross-sell (Ver packs / Pagar esta clase reusing the slot in S06), SLOT_UNAVAILABLE→
   back to grid, 429/400/500/network→inline retry banner. Device tz comes from
-  getDeviceTimeZone() in lib/grid-time.ts.
+  getDeviceTimeZone() in lib/grid-time.ts. On success S07 passes remainingCredits to
+  S08; when it hits 0 on a pack booking, S08 shows a "Has usado tu último crédito"
+  repurchase nudge (→ Packs).
+  DEPLETED-PACK SIGNAL: GET /api/credits NULLS packSize once a pack is fully consumed
+  (despite the contract wording), so "owns/owned a pack" must NOT be derived from
+  credits.packSize alone. Home computes ownedPack = credits.packSize != null OR any
+  booking has sessionType:'pack' (Booking.packSize/sessionType) and gates the depleted
+  CreditBalanceCard nudge on that — otherwise the 0-credit repurchase card vanishes.
+  PACKS TAB (S09 app/(tabs)/(packs)/packs.tsx + S10 .../pay.tsx) IS built. S09 is the
+  catalog: loads getPricing (required) + getCredits (best-effort) in parallel; renders
+  the two packs (pack10 featured "Recomendado", pack5) with price/per-class/savings ALL
+  from pricing.packs (never hardcoded); "con pack activo" shows a glowing balance card,
+  "sin pack" shows value-props + convert. EXPIRY is omitted — GetCreditsResponse has no
+  expiry field yet (TODO in BalanceCard). "Comprar" → S10 with packSize (5|10). S10
+  REUSES the S06 Stripe path but SIMPLER (no slot → no slot_taken): POST /api/stripe/
+  checkout {type:'pack',packSize} → initPaymentSheet/presentPaymentSheet (card), then
+  holds at "Confirmando pago…" (PRODUCT RULE: never show credits before they exist).
+  Confirmation is POLL-ONLY via pollPackConfirmation() (NOT a Realtime subscription —
+  same authoritative-poll choice as S06): resolves on the pack branch's confirmed===true,
+  fails LOUD (kind:'error'→limbo) if the channel returns the single-session shape, 30s
+  timeout→limbo (manual recheck). On confirmed→in-screen success state showing the NEW
+  balance (credits) + "Reservar ahora" (→Home) / "Volver a Packs". Declined/other Stripe
+  error→rejected (Reintentar); sheet cancel→silent back to summary. Double-submit guarded
+  by submittingRef + state. No S08 reuse — S10 has its own success layout.
   secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
@@ -87,7 +110,9 @@ app/
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
     │   ├── session-type.tsx   — S04 Tipo de sesión  (stack initial route → /(tabs)/(booking)/session-type)
     │   ├── schedule.tsx   — S05 Cuadrícula semanal (carries a `mode` param: 'pay' from S04 →
-    │   │                     S06; 'credit' from Home → S07, always 1h, duration toggle hidden)
+    │   │                     S06; 'credit' from Home → S07, always 1h, duration toggle hidden.
+    │   │                     Refetches availability on REGAINED focus via useFocusEffect —
+    │   │                     skips the first focus — so a just-booked slot shows as taken)
     │   ├── confirm.tsx    — S06 Confirmar y pagar (Stripe, async)
     │   ├── confirm-credit.tsx — S07 Confirmar con crédito (synchronous POST /api/book, no Stripe)
     │   └── success.tsx    — S08 Reserva confirmada
@@ -132,11 +157,14 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   `weeklyHours` frame into device-tz hour rows (DST-correct via `Intl.DateTimeFormat`),
   and `buildGridModel()` composes schedule frame + live availability into the four cell
   states. Unit-tested in `lib/__tests__/grid-time.test.ts`
-- `lib/payment-confirmation.ts` — pure S06 Pass B confirmation poller:
-  `pollPaymentConfirmation()` polls /api/payment-confirmation/channel until a terminal
-  status (confirmed/slot_taken/failed) or a 30s ceiling (timeout), swallowing transient
-  errors. `now`/`sleep` are injectable; resolves exactly once. Unit-tested in
-  `lib/__tests__/payment-confirmation.test.ts`
+- `lib/payment-confirmation.ts` — pure confirmation pollers (no React/timers baked in):
+  `pollPaymentConfirmation()` (S06 single) polls /api/payment-confirmation/channel until a
+  terminal status (confirmed/slot_taken/failed) or a 30s ceiling (timeout);
+  `pollPackConfirmation()` (S10 pack) polls the SAME endpoint's pack branch until
+  confirmed===true (returns credits/packSize/name) or 30s timeout — no slot_taken, and
+  fails LOUD (kind:'error') if the channel returns the single-session shape for a flow we
+  initiated as a pack. Both swallow transient errors; `now`/`sleep` injectable; resolve
+  exactly once. Unit-tested in `lib/__tests__/payment-confirmation.test.ts`
 
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later

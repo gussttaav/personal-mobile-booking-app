@@ -43,6 +43,7 @@ export default function BookingSuccessScreen() {
     sessionType?: string;
     joinToken?: string;
     emailFailed?: string;
+    remainingCredits?: string;
   }>();
 
   const eventId = params.eventId ?? '';
@@ -52,6 +53,9 @@ export default function BookingSuccessScreen() {
   const joinToken = params.joinToken ?? '';
   const emailFailed = params.emailFailed === 'true';
   const duration = durationFromSessionType(sessionType);
+  // Credit (pack) bookings pass the post-booking balance. 0 → that was the last
+  // credit of the pack; surface a gentle nudge to repurchase.
+  const spentLastCredit = sessionType === 'pack' && params.remainingCredits === '0';
 
   // Land on Inicio without leaving the completed booking stack behind: collapse
   // it to its root first, then switch tabs. (S08 sits atop the full flow.)
@@ -70,6 +74,10 @@ export default function BookingSuccessScreen() {
     // S11 detalle is still a placeholder; route toward it with what we have.
     router.push({ pathname: '/(tabs)/(home)/booking-detail', params: { eventId } });
   }, [eventId]);
+
+  const goPacks = useCallback(() => {
+    router.push('/(tabs)/(packs)/packs');
+  }, []);
 
   const addToCalendar = useCallback(() => {
     // TODO(S19): shared add-to-calendar sheet (used by S08 + S11); expo-calendar.
@@ -149,6 +157,26 @@ export default function BookingSuccessScreen() {
             <Text style={styles.summaryTz}>Europe/Madrid</Text>
           </View>
         </View>
+
+        {/* ── Last-credit nudge (pack depleted by this booking) ────────────── */}
+        {spentLastCredit && (
+          <View style={styles.depletedCard}>
+            <View style={styles.depletedIcon}>
+              <MaterialCommunityIcons name="timer-off-outline" size={20} color={Colors.warning} />
+            </View>
+            <View style={styles.depletedText}>
+              <Text style={styles.depletedTitle}>Has usado tu último crédito</Text>
+              <Text style={styles.depletedBody}>
+                Tu pack se ha agotado con esta reserva. Compra otro pack para seguir reservando con
+                crédito.
+              </Text>
+              <TouchableOpacity onPress={goPacks} activeOpacity={0.7} style={styles.depletedLink}>
+                <Text style={styles.depletedLinkText}>Ver packs</Text>
+                <MaterialCommunityIcons name="arrow-right" size={15} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* ── How to join ──────────────────────────────────────────────────── */}
         <View style={styles.joinCard}>
@@ -400,6 +428,57 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: FontFamily.body,
     color: Colors.textDim,
+  },
+
+  // Last-credit nudge
+  depletedCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing[3],
+    borderRadius: 14,
+    backgroundColor: Colors.warningBg,
+    borderWidth: 1,
+    borderColor: Colors.warningBorder,
+    padding: Spacing[4],
+  },
+  depletedIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius['2xl'] - 2,
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  depletedText: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  depletedTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    lineHeight: 18,
+    fontFamily: FontFamily.headline,
+    color: Colors.text,
+  },
+  depletedBody: {
+    fontSize: 12.5,
+    fontWeight: '400',
+    lineHeight: 19,
+    fontFamily: FontFamily.body,
+    color: Colors.textMuted,
+  },
+  depletedLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacing[2],
+  },
+  depletedLinkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: FontFamily.body,
+    color: Colors.primary,
   },
 
   // Join card

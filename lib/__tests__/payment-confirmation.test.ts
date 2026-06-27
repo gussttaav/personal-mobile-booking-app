@@ -4,7 +4,11 @@ jest.mock('../api-client', () => ({
 }));
 
 import { api } from '../api-client';
-import { pollPaymentConfirmation, PollAbortedError } from '../payment-confirmation';
+import {
+  pollPaymentConfirmation,
+  pollPackConfirmation,
+  PollAbortedError,
+} from '../payment-confirmation';
 import type { ConfirmedBooking } from '../../types/api';
 
 const channelMock = api.getPaymentConfirmationChannel as jest.Mock;
@@ -19,6 +23,10 @@ const BOOKING: ConfirmedBooking = {
 
 function single(status: string, booking?: ConfirmedBooking) {
   return { checkoutType: 'single', channelName: 'pay:deadbeef', status, booking };
+}
+
+function pack(confirmed: boolean, credits: number | null, packSize: number | null) {
+  return { channelName: 'pay:cafe', confirmed, credits, name: 'Lucía', packSize };
 }
 
 // A `now`/`sleep` pair where sleep advances virtual time — no real timers.
@@ -174,5 +182,115 @@ describe('pollPaymentConfirmation', () => {
       }),
     ).rejects.toBeInstanceOf(PollAbortedError);
     expect(channelMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('pollPackConfirmation', () => {
+  it('resolves confirmed on the first poll (webhook-before-poll race) without sleeping', async () => {
+    channelMock.mockResolvedValue(pack(true, 15, 10));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'confirmed', credits: 15, packSize: 10, name: 'Lucía' });
+    expect(channelMock).toHaveBeenCalledTimes(1);
+    expect(channelMock).toHaveBeenCalledWith({ payment_intent_id: 'pi_1' });
+    expect(clock.sleep).not.toHaveBeenCalled();
+  });
+
+  it('keeps polling while not yet confirmed, then resolves confirmed (and stops)', async () => {
+    channelMock
+      .mockResolvedValueOnce(pack(false, null, null))
+      .mockResolvedValueOnce(pack(false, null, null))
+      .mockResolvedValueOnce(pack(true, 10, 10));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'confirmed', credits: 10, packSize: 10, name: 'Lucía' });
+    expect(channelMock).toHaveBeenCalledTimes(3);
+    expect(clock.sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats confirmed-without-credits as not-yet-terminal and keeps polling', async () => {
+    channelMock
+      .mockResolvedValueOnce(pack(true, null, null))
+      .mockResolvedValueOnce(pack(true, 5, 5));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'confirmed', credits: 5, packSize: 5, name: 'Lucía' });
+    expect(channelMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('swallows a transient fetch error and recovers on a later poll', async () => {
+    channelMock
+      .mockRejectedValueOnce(new Error('network blip'))
+      .mockResolvedValueOnce(pack(false, null, null))
+      .mockResolvedValueOnce(pack(true, 10, 10));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'confirmed', credits: 10, packSize: 10, name: 'Lucía' });
+    expect(channelMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('fails loud (error) when the channel returns the single-session shape', async () => {
+    channelMock.mockResolvedValue(single('pending'));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'error' });
+    expect(channelMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves timeout when credits never activate', async () => {
+    channelMock.mockResolvedValue(pack(false, null, null));
+    const clock = virtualClock();
+
+    const outcome = await pollPackConfirmation({
+      paymentIntentId: 'pi_1',
+      signal: new AbortController().signal,
+      intervalMs: 1000,
+      timeoutMs: 5000,
+      ...clock,
+    });
+
+    expect(outcome).toEqual({ kind: 'timeout' });
+    expect(channelMock).toHaveBeenCalledTimes(6);
+  });
+
+  it('throws PollAbortedError without polling when the signal is already aborted', async () => {
+    const ctrl = new AbortController();
+    ctrl.abort();
+    const clock = virtualClock();
+
+    await expect(
+      pollPackConfirmation({ paymentIntentId: 'pi_1', signal: ctrl.signal, ...clock }),
+    ).rejects.toBeInstanceOf(PollAbortedError);
+    expect(channelMock).not.toHaveBeenCalled();
   });
 });

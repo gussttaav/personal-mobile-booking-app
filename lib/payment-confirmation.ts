@@ -86,7 +86,7 @@ export async function pollPaymentConfirmation(
   const start = now();
 
   // First iteration runs immediately: covers the webhook-before-poll race, where
-  // the status is already terminal before we ever subscribe/poll a second time.
+  // the status is already terminal before we ever poll a second time.
   for (;;) {
     if (signal.aborted) throw new PollAbortedError();
 

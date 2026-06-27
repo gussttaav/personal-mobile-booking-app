@@ -166,7 +166,7 @@ export interface ConfirmedBooking {
 export type GetPaymentConfirmationChannelResponse =
   | {
       checkoutType?: 'pack';
-      channelName: string;
+      channelName: string; // web-only (Realtime); UNUSED on mobile, which is poll-only
       confirmed: boolean;
       credits: number | null;
       name: string;
@@ -174,7 +174,7 @@ export type GetPaymentConfirmationChannelResponse =
     }
   | {
       checkoutType: 'single';
-      channelName: string;
+      channelName: string; // web-only (Realtime); UNUSED on mobile, which is poll-only
       status: 'pending' | 'confirmed' | 'slot_taken' | 'failed';
       booking?: ConfirmedBooking;
     };

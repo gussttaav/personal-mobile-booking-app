@@ -345,7 +345,14 @@ function WithClasses({ data }: { data: HomeData }) {
                 onPress={() =>
                   router.push({
                     pathname: '/(tabs)/(home)/booking-detail',
-                    params: { token: b.token },
+                    params: {
+                      token: b.token,
+                      joinToken: b.joinToken,
+                      sessionType: b.sessionType,
+                      startsAt: b.startsAt,
+                      endsAt: b.endsAt,
+                      ...(b.packSize !== undefined ? { packSize: String(b.packSize) } : {}),
+                    },
                   })
                 }
               />
@@ -437,7 +444,14 @@ function NextClassCard({ booking }: { booking: Booking }) {
           onPress={() =>
             router.push({
               pathname: '/(tabs)/(home)/booking-detail',
-              params: { token: booking.token },
+              params: {
+                token: booking.token,
+                joinToken: booking.joinToken,
+                sessionType: booking.sessionType,
+                startsAt: booking.startsAt,
+                endsAt: booking.endsAt,
+                ...(booking.packSize !== undefined ? { packSize: String(booking.packSize) } : {}),
+              },
             })
           }
           activeOpacity={0.7}

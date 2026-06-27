@@ -65,6 +65,16 @@ it does NOT have its own backend.
   balance (credits) + "Reservar ahora" (→Home) / "Volver a Packs". Declined/other Stripe
   error→rejected (Reintentar); sheet cancel→silent back to summary. Double-submit guarded
   by submittingRef + state. No S08 reuse — S10 has its own success layout.
+  S11 (app/(tabs)/(home)/booking-detail.tsx) IS built: renders hero card (date/time
+  prominent, pulsing "Empieza en N min" chip when imminent/active), details card
+  (Fecha, Horario, Pago rows), cancel-policy banner, and a sticky action bar with
+  JOIN (primary+glowing when imminent/active, idle otherwise) + secondary row
+  (Calendario stub→Alert TODO(S19), Reprogramar→S13, Cancelar→S12 danger style).
+  Data comes from params passed by Home (token, joinToken, sessionType, startsAt,
+  endsAt, packSize) — no API fetch in S11. Home's two router.push calls to S11 now
+  pass the full Booking object fields. S12/S13 remain stubs; S11 routes to them with
+  { token, startsAt, sessionType }. The S08→S11 path (goDetail) is NOT yet wired —
+  S08 passes eventId not token; deferred to S12 build.
   secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false

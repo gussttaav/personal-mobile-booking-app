@@ -72,9 +72,21 @@ it does NOT have its own backend.
   (Calendario stub→Alert TODO(S19), Reprogramar→S13, Cancelar→S12 danger style).
   Data comes from params passed by Home (token, joinToken, sessionType, startsAt,
   endsAt, packSize) — no API fetch in S11. Home's two router.push calls to S11 now
-  pass the full Booking object fields. S12/S13 remain stubs; S11 routes to them with
+  pass the full Booking object fields. S13 remains a stub; S11 routes to it with
   { token, startsAt, sessionType }. The S08→S11 path (goDetail) is NOT yet wired —
-  S08 passes eventId not token; deferred to S12 build.
+  S08 passes eventId not token; deferred to a future build.
+  S12 (app/(tabs)/(home)/cancel.tsx) IS built: destructive-action confirmation with
+  7-phase state machine (confirm/blocked/submitting/success/err_generic/
+  err_invalid_token/err_outside_window). Bottom-sheet layout for confirm/blocked/
+  error states; full-screen for success. Calls api.postCancel({token}) — no auth
+  bearer needed, Origin header already sent by api-client. 2h window check is
+  synchronous (initialises phase state on mount, no useEffect). isPack drives copy
+  fork (credit vs paid), but PostCancelResponse.creditsRestored is the authoritative
+  signal for the success variant. Success→router.replace('/(tabs)/(home)') triggers
+  Home's useFocusEffect refetch, removing the cancelled booking. All error codes
+  (INVALID_CANCEL_TOKEN, CANCEL_TOKEN_CONSUMED, OUTSIDE_CANCEL_WINDOW) have
+  dedicated phases. 403/500/network → err_generic (retryable). "Avisar a Gustavo"
+  and "Escribir a Gustavo" are Alert stubs (TODO: wire to contact flow).
   secure-store/notifications/calendar integration code is NOT written yet — only
   app.json/build config is in place. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false

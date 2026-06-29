@@ -104,8 +104,31 @@ it does NOT have its own backend.
   (INVALID_CANCEL_TOKEN, CANCEL_TOKEN_CONSUMED, OUTSIDE_CANCEL_WINDOW) have
   dedicated phases. 403/500/network → err_generic (retryable). "Avisar a Gustavo"
   and "Escribir a Gustavo" are Alert stubs (TODO: wire to contact flow).
-  secure-store/notifications/calendar integration code is NOT written yet — only
-  app.json/build config is in place. Validate app.json plugin changes with
+  S17 (app/(tabs)/(profile)/profile.tsx) + S18 (app/(tabs)/(profile)/settings.tsx)
+  IS built — the Perfil tab is complete and both screens are FULLY localized
+  (useT()). S17 Perfil: Google identity from the auth session (image with initials
+  fallback, name, email, "vinculada con Google" badge — read-only, no name edit / no
+  account deletion), credit balance via api.getCredits() on focus (renders
+  CreditBalanceCard only when packSize != null; depleted-pack edge not surfaced here
+  since Perfil doesn't fetch bookings — see Home's ownedPack), an Ajustes entry, and
+  the REAL home for sign-out (the temp profile.tsx stub graduated here). S18 Ajustes:
+  push-notification PREFERENCE (RN core <Switch> + 5/10/15/30/60-min lead-time pills,
+  default 10) persisted LOCAL-ONLY via new lib/notification-store.ts (no backend);
+  calendar access; language ES/EN (reuses setLocale); sign-out. PERMISSIONS are wired
+  for real (expo-notifications + expo-calendar are in the dev client): enabling
+  notifications calls Notifications.requestPermissionsAsync() — granted reveals the
+  lead-time row, denied keeps the toggle OFF (never on-without-permission) and shows a
+  recovery banner → Linking.openSettings(); calendar "Conectar" calls
+  Calendar.requestCalendarPermissionsAsync() with the same granted/denied-recovery
+  paths. Live permission status is read on mount (getPermissionsAsync /
+  getCalendarPermissionsAsync) so the UI reflects the real OS state. NOTIFICATION
+  SCHEDULING IS DEFERRED — S18 only captures the preference; actual reminder
+  scheduling (Notifications.scheduleNotificationAsync synced to the booking lifecycle
+  using leadTimeMinutes) is a marked TODO in settings.tsx. No app.json/plugin change
+  and NO dev-client rebuild were needed (only permission requests, no custom
+  notification icon/sound, so the expo-notifications config plugin stays unadded).
+  Remaining secure-store integration is done for prefs; no other native integration
+  code pending here. Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
   "invalid config plugin" warnings — ignore those).
 - Colored glows/shadows: use the RN `boxShadow` style prop (works on Android via SDK 54's
@@ -209,6 +232,11 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   fails LOUD (kind:'error') if the channel returns the single-session shape for a flow we
   initiated as a pack. Both swallow transient errors; `now`/`sleep` injectable; resolve
   exactly once. Unit-tested in `lib/__tests__/payment-confirmation.test.ts`
+- `lib/notification-store.ts` — expo-secure-store wrapper (mirrors locale-store.ts)
+  for the S18 notification PREFERENCE (`{ enabled, leadTimeMinutes }`) under
+  `app.notification-prefs`. Local-only (no backend); `loadNotificationPrefs()` returns
+  `DEFAULT_NOTIFICATION_PREFS` (enabled:false, leadTimeMinutes:10) when unset/corrupt.
+  Preference only — scheduling is deferred (see S18 note).
 
 ### Conventions
 - Build screens one at a time against stubbed data first; wire real API later
@@ -230,8 +258,8 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   until `isReady`, then gates routes with `<Stack.Protected guard>` (signed-in group
   vs `login`). No login flash on cold start. Launch is presence-check only — an
   expired token 401s on first API call (handled by the silent-refresh task)
-- S01 sign-in screen built at `app/login.tsx`; sign-out wired temporarily in
-  `app/(tabs)/(profile)/profile.tsx` (moves into S17 Perfil later)
+- S01 sign-in screen built at `app/login.tsx`; sign-out now lives in its real home
+  on S17 Perfil (and is also reachable from S18 Ajustes) — the temporary stub is gone
 - Silent refresh on 401 DONE (A3): `refreshSession()` in lib/auth.ts re-fetches a
   Google idToken via `GoogleSignin.signInSilently()` (the cached-credentials path,
   NO picker) and re-exchanges it. SINGLE-FLIGHT: a module-level `_refreshInFlight`
@@ -276,13 +304,13 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   derive from device, apply, and POST /api/locale once to SEED the DB (emails
   default 'es' until seeded — fire early). `AuthUser.locale` (Locale | null) is
   now captured from /api/auth/mobile and persisted in the session blob.
-- PROOF STRINGS wired so far (everything else is still hardcoded Spanish):
-  the 4 tab labels (app/(tabs)/_layout.tsx) and the Home empty-state title +
-  subtitle (app/(tabs)/(home)/index.tsx EmptyState). S18 (settings.tsx) has a
-  minimal ES/EN segmented toggle that exercises setLocale end-to-end, reachable
-  via an "Ajustes" row in S17 Perfil (profile.tsx → router.push settings); S18
-  shows its own header (the (profile) stack is headerShown:false) for the back
-  button.
+- LOCALIZED so far (everything else is still hardcoded Spanish): the 4 tab labels
+  (app/(tabs)/_layout.tsx), the Home empty-state title + subtitle
+  (app/(tabs)/(home)/index.tsx EmptyState), and the WHOLE Perfil tab — S17
+  profile.tsx (`profile.*` keys) and S18 settings.tsx (`settings.*` keys). S18's
+  ES/EN segmented control exercises setLocale end-to-end, reachable via the "Ajustes"
+  row in S17 (profile.tsx → router.push settings); S18 shows its own header (the
+  (profile) stack is headerShown:false) for the back button.
 - Translate remaining screens incrementally via `useT()`/`t()` — add the keys to
   lib/i18n/strings.ts (both languages, enforced by the type) as you go.
 

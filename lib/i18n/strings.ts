@@ -25,14 +25,43 @@ const es = {
   },
   settings: {
     title: 'Ajustes',
+    notifications: {
+      title: 'Notificaciones',
+      pushLabel: 'Notificaciones push',
+      pushDesc: 'Avisos de tus próximas clases',
+      leadLabel: 'Antelación del recordatorio',
+      leadDesc: 'Cuánto antes te avisamos',
+      waiting: 'Esperando permiso…',
+      blockedTitle: 'Notificaciones bloqueadas',
+      blockedDesc:
+        'Están bloqueadas en el sistema. Actívalas para recibir avisos de tus clases.',
+      openSystemSettings: 'Abrir ajustes del sistema',
+    },
+    calendar: {
+      title: 'Calendario',
+      label: 'Acceso al calendario',
+      notConnected: 'No conectado · Google Calendar',
+      connected: 'Conectado',
+      connect: 'Conectar',
+      blocked: 'Bloqueado · ábrelo en ajustes',
+      helper: 'Añade automáticamente tus clases reservadas a tu calendario.',
+    },
     language: {
       title: 'Idioma',
+      label: 'Idioma de la app',
       es: 'Español',
       en: 'English',
     },
+    signOut: 'Cerrar sesión',
   },
   profile: {
+    title: 'Perfil',
     settingsRow: 'Ajustes',
+    settingsRowDesc: 'Notificaciones, idioma y privacidad',
+    googleLinked: 'Cuenta vinculada con Google',
+    creditsOverline: 'Saldo de créditos',
+    signOut: 'Cerrar sesión',
+    signingOut: 'Cerrando sesión…',
   },
 };
 
@@ -56,14 +85,43 @@ const en: Dictionary = {
   },
   settings: {
     title: 'Settings',
+    notifications: {
+      title: 'Notifications',
+      pushLabel: 'Push notifications',
+      pushDesc: 'Reminders for your upcoming classes',
+      leadLabel: 'Reminder lead time',
+      leadDesc: 'How far ahead we remind you',
+      waiting: 'Waiting for permission…',
+      blockedTitle: 'Notifications blocked',
+      blockedDesc:
+        'They are blocked in your system settings. Turn them on to get class reminders.',
+      openSystemSettings: 'Open system settings',
+    },
+    calendar: {
+      title: 'Calendar',
+      label: 'Calendar access',
+      notConnected: 'Not connected · Google Calendar',
+      connected: 'Connected',
+      connect: 'Connect',
+      blocked: 'Blocked · open in settings',
+      helper: 'Automatically add your booked classes to your calendar.',
+    },
     language: {
       title: 'Language',
+      label: 'App language',
       es: 'Español',
       en: 'English',
     },
+    signOut: 'Sign out',
   },
   profile: {
+    title: 'Profile',
     settingsRow: 'Settings',
+    settingsRowDesc: 'Notifications, language and privacy',
+    googleLinked: 'Account linked with Google',
+    creditsOverline: 'Credit balance',
+    signOut: 'Sign out',
+    signingOut: 'Signing out…',
   },
 };
 

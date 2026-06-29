@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { LocaleProvider } from '@/lib/i18n/locale-context';
 import { STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
 
 // Hold the native splash until the bootstrap resolves the session, so the login
@@ -58,9 +59,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DarkTheme}>
       <AuthProvider>
-        <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
-          <RootNavigator />
-        </StripeProvider>
+        <LocaleProvider>
+          <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
+            <RootNavigator />
+          </StripeProvider>
+        </LocaleProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </ThemeProvider>

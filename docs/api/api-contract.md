@@ -11,13 +11,18 @@
 All paths are relative to `NEXT_PUBLIC_BASE_URL` (e.g. `https://gustavoai.dev`).
 
 ### Authentication
-The server uses **NextAuth v5** with a signed JWT stored in a `HttpOnly` session cookie
-(`authjs.session-token`). Every protected endpoint calls `auth()` internally and returns
-**401** when the cookie is absent, expired, or invalid.
+The server supports two authentication mechanisms:
 
-A mobile client must:
-1. Initiate Google OAuth via the standard NextAuth flow (see [Auth](#auth)).
-2. Store and send the session cookie on every subsequent request (standard `Cookie` header).
+**Cookie session (web/WebView):** NextAuth v5 with a signed JWT stored in a `HttpOnly`
+session cookie (`authjs.session-token`). Every protected endpoint calls `auth()`
+internally and returns **401** when the cookie is absent, expired, or invalid.
+
+**Bearer token (native mobile):** Exchange a native Google Sign-In ID token for a
+short-lived bearer credential via `POST /api/auth/mobile`. Send it as
+`Authorization: Bearer <token>` on subsequent requests. The bearer expires after **1 hour**;
+the app must silently re-exchange a fresh Google ID token to get a new one.
+`auth()` reads both mechanisms, so all other endpoints work the same way regardless
+of which is used.
 
 ### CSRF Protection
 Every **state-mutating POST** that is not a Stripe webhook requires two things:
@@ -67,7 +72,66 @@ use the NextAuth-standard OAuth dance:
 | CSRF | Handled internally by NextAuth |
 | Rate limiting | None |
 
-There is no token-based or API-key auth — the app is **cookie-session only**.
+---
+
+### `POST /api/auth/mobile`
+
+Native-app bearer exchange. Verifies a Google Sign-In ID token obtained client-side
+(e.g. via `GoogleSignIn` on iOS / `Credential Manager` on Android) and returns a
+short-lived bearer credential. Call this on initial sign-in **and** after each expiry
+to silently refresh the token (re-exchange a fresh Google ID token — no refresh-token
+flow exists).
+
+| Property | Value |
+|---|---|
+| Auth required | No (this is the auth endpoint) |
+| CSRF | No — bearer exchange, no browser session created |
+| Rate limit | 10 req/min per IP |
+| Feature flag | Returns **404** unless `MOBILE_AUTH_ENABLED=true` on the server |
+
+**Request body:**
+```json
+{
+  "idToken": "google-id-token-from-native-sdk"
+}
+```
+
+**Success `200`:**
+```json
+{
+  "token":     "eyJ...",
+  "expiresIn": 3600,
+  "user": {
+    "email":   "student@example.com",
+    "name":    "Student Name",
+    "image":   "https://lh3.googleusercontent.com/...",
+    "isAdmin": false,
+    "locale":  "es"
+  }
+}
+```
+
+**Field reference:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `token` | `string` | Signed bearer credential; send as `Authorization: Bearer <token>` |
+| `expiresIn` | `number` | Token lifetime in **seconds** (currently `3600` = 1 hour) |
+| `user.email` | `string` | Normalized (lowercased) account email |
+| `user.name` | `string \| null` | Display name from Google profile |
+| `user.image` | `string \| null` | Avatar URL from Google profile |
+| `user.isAdmin` | `boolean` | `true` when the account has the `admin` role |
+| `user.locale` | `"es" \| "en" \| null` | Stored account-level locale preference. `null` means no preference has been saved yet — the app should derive the locale from device language and persist it via `POST /api/locale`. `"es"` or `"en"` means an explicit preference is already on file; use it directly. Returned identically on initial exchange and on refresh. |
+
+**Errors:**
+
+| Status | `error` | Condition |
+|---|---|---|
+| 400 | `INVALID_REQUEST` | Missing or empty `idToken` |
+| 401 | `INVALID_GOOGLE_TOKEN` | Token failed signature/issuer/expiry/audience verification |
+| 403 | `EMAIL_NOT_VERIFIED` | Google account email is not verified |
+| 404 | (message) | `MOBILE_AUTH_ENABLED` is not `true` |
+| 429 | (message) | Rate limit exceeded |
 
 ---
 

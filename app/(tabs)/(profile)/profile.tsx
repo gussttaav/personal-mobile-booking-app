@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useAuth } from '@/lib/auth-context';
+import { useT } from '@/lib/i18n/locale-context';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { session, signOut } = useAuth();
+  const t = useT();
   const [signingOut, setSigningOut] = useState(false);
 
   // TEMP: sign-out lives here until S17 Perfil is built. Once the real Perfil
@@ -25,6 +28,16 @@ export default function ProfileScreen() {
     <View style={styles.root}>
       <Text style={styles.label}>S17 · Perfil</Text>
       {session != null && <Text style={styles.email}>{session.user.email}</Text>}
+
+      <TouchableOpacity
+        style={styles.settingsBtn}
+        onPress={() => router.push('/(tabs)/(profile)/settings')}
+        activeOpacity={0.8}
+      >
+        <MaterialCommunityIcons name="cog-outline" size={18} color={Colors.text} />
+        <Text style={styles.settingsText}>{t('profile.settingsRow')}</Text>
+        <MaterialCommunityIcons name="chevron-right" size={18} color={Colors.textDim} />
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.signOutBtn}
@@ -55,6 +68,24 @@ const styles = StyleSheet.create({
     ...TypeScale.bodySm,
     fontFamily: FontFamily.body,
     color: Colors.textMuted,
+  },
+  settingsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[2],
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceContainer,
+    paddingHorizontal: Spacing[5],
+    paddingVertical: Spacing[3],
+    marginTop: Spacing[2],
+  },
+  settingsText: {
+    ...TypeScale.label,
+    fontFamily: FontFamily.body,
+    fontWeight: '600',
+    color: Colors.text,
   },
   signOutBtn: {
     flexDirection: 'row',

@@ -46,7 +46,7 @@ function makeSession(token: string): AuthSession {
   return {
     token,
     expiresIn: 3600,
-    user: { email: 'a@b.com', name: 'A', image: null, isAdmin: false },
+    user: { email: 'a@b.com', name: 'A', image: null, isAdmin: false, locale: null },
   };
 }
 

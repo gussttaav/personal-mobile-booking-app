@@ -4,6 +4,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { API_BASE } from '../constants/config';
+import type { Locale } from '../types/api';
 import { clearPersistedSession, loadPersistedSession, persistSession } from './token-store';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -13,6 +14,10 @@ export type AuthUser = {
   name: string;
   image: string | null;
   isAdmin: boolean;
+  /** The user's stored UI/email language as the backend knows it. `null` for a
+   *  brand-new user the backend never seeded — the i18n layer derives + seeds it
+   *  on sign-in (see lib/i18n/locale-context.tsx). */
+  locale: Locale | null;
 };
 
 export type AuthSession = {
@@ -57,6 +62,24 @@ export function getStoredSession(): AuthSession | null {
 
 export function setStoredSession(session: AuthSession | null): void {
   _session = session;
+}
+
+// ── Auth-exchange listeners ───────────────────────────────────────────────────
+// Fires after a FRESH token exchange (interactive sign-in OR silent refresh) —
+// the only paths that produce a session straight from the backend, so its
+// user.locale is authoritative. hydrateSession() (persisted launch) deliberately
+// does NOT fire this, so the i18n layer can apply its reconcile policy only on a
+// real sign-in and otherwise trust the device-persisted locale. (Mirrors the
+// registerRefreshHook pattern in api-client.ts.)
+
+type AuthExchangeListener = (session: AuthSession) => void;
+const _exchangeListeners = new Set<AuthExchangeListener>();
+
+export function onAuthExchange(fn: AuthExchangeListener): () => void {
+  _exchangeListeners.add(fn);
+  return () => {
+    _exchangeListeners.delete(fn);
+  };
 }
 
 // ── Launch-time hydration ─────────────────────────────────────────────────────
@@ -128,6 +151,7 @@ export async function exchangeGoogleToken(idToken: string): Promise<AuthSession>
   const session = body as AuthSession;
   setStoredSession(session);
   await persistSession(session);
+  _exchangeListeners.forEach((fn) => fn(session));
   return session;
 }
 

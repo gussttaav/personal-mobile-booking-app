@@ -18,6 +18,7 @@ import { Card } from '@/components/Card';
 import { CreditBalanceCard } from '@/components/CreditBalanceCard';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useT } from '@/lib/i18n/locale-context';
 import type { Booking, GetCreditsResponse } from '@/types/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -211,6 +212,7 @@ function LoadingSkeleton() {
 
 function EmptyState({ userName }: { userName: string }) {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const name = userName.split(' ')[0] || '';
 
   return (
@@ -238,10 +240,8 @@ function EmptyState({ userName }: { userName: string }) {
           <View style={styles.emptyIconCircle}>
             <MaterialCommunityIcons name="calendar-plus" size={30} color={Colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>Aún no tienes clases</Text>
-          <Text style={styles.emptySubtext}>
-            Reserva tu primera tutoría 1:1 con Gustavo y empieza a avanzar en lo que más te cuesta.
-          </Text>
+          <Text style={styles.emptyTitle}>{t('home.empty.title')}</Text>
+          <Text style={styles.emptySubtext}>{t('home.empty.subtitle')}</Text>
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() => router.push('/(tabs)/(booking)/session-type')}

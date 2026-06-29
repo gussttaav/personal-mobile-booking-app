@@ -249,6 +249,43 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   to `/login`; the hook point (the catch in lib/auth-context.tsx) is where S02
   would route instead. Reactive only — no proactive pre-expiry refresh.
 
+### Internationalization (i18n)
+- ES/EN FOUNDATION is built — machinery only, NOT a full translation. Pure JS,
+  NO native dep / NO rebuild: device language via the `Intl` API (mirrors
+  getDeviceTimeZone), persistence via the already-compiled expo-secure-store
+  (NOT AsyncStorage/expo-localization). Module lives in `lib/i18n/`:
+  - `device-locale.ts` — `getDeviceLanguage()` (Intl.DateTimeFormat().resolved
+    Options().locale) + `deriveLocale(lang)` (Spanish→'es', else 'en').
+  - `strings.ts` — keyed ES/EN dictionaries (`es` canonical, `en` typed against
+    it so TS enforces matching keys); `translate(locale, key)` resolves dotted
+    paths ('home.empty.title'), returns the key itself if missing. Add keys here
+    as screens are localized.
+  - `locale-store.ts` — secure-store wrapper under `app.locale`.
+  - `locale-context.tsx` — `LocaleProvider` (mounted in app/_layout.tsx INSIDE
+    AuthProvider, outside StripeProvider) + `useLocale()` ({locale, setLocale, t})
+    + `useT()`. `setLocale(l)` (S18) switches UI + persists to device + POSTs
+    /api/locale (api.postLocale already existed). Internal `applyLocale` skips
+    the POST (used when adopting a value the backend already holds).
+- INITIALIZATION POLICY (strict ordering): the reconcile runs ONLY on a fresh
+  token exchange — interactive sign-in OR silent refresh — via `onAuthExchange`
+  in lib/auth.ts (a listener set notified at the end of exchangeGoogleToken;
+  hydrateSession deliberately does NOT fire it, so persisted launches keep the
+  device-stored choice and never re-derive from device language). On exchange:
+  `user.locale != null` → adopt it (backend/stored preference ALWAYS wins, even
+  over device language, no POST); `null` (new user, mobile auth never seeds) →
+  derive from device, apply, and POST /api/locale once to SEED the DB (emails
+  default 'es' until seeded — fire early). `AuthUser.locale` (Locale | null) is
+  now captured from /api/auth/mobile and persisted in the session blob.
+- PROOF STRINGS wired so far (everything else is still hardcoded Spanish):
+  the 4 tab labels (app/(tabs)/_layout.tsx) and the Home empty-state title +
+  subtitle (app/(tabs)/(home)/index.tsx EmptyState). S18 (settings.tsx) has a
+  minimal ES/EN segmented toggle that exercises setLocale end-to-end, reachable
+  via an "Ajustes" row in S17 Perfil (profile.tsx → router.push settings); S18
+  shows its own header (the (profile) stack is headerShown:false) for the back
+  button.
+- Translate remaining screens incrementally via `useT()`/`t()` — add the keys to
+  lib/i18n/strings.ts (both languages, enforced by the type) as you go.
+
 ### Out of scope for now
 - Zoom video integration (last phase)
 

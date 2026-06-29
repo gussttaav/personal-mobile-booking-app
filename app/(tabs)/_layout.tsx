@@ -4,6 +4,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
+import { useT } from '@/lib/i18n/locale-context';
 
 // Open on the Inicio tab (otherwise expo-router defaults to the first route
 // alphabetically, which is (booking)).
@@ -12,6 +13,7 @@ export const unstable_settings = {
 };
 
 export default function TabLayout() {
+  const t = useT();
   return (
     <Tabs
       screenOptions={{
@@ -24,7 +26,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(home)"
         options={{
-          title: 'Inicio',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons size={26} name={focused ? 'home' : 'home-outline'} color={color} />
           ),
@@ -33,7 +35,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(booking)"
         options={{
-          title: 'Reservar',
+          title: t('tabs.booking'),
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons size={26} name={focused ? 'calendar' : 'calendar-outline'} color={color} />
           ),
@@ -42,7 +44,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(packs)"
         options={{
-          title: 'Packs',
+          title: t('tabs.packs'),
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons size={26} name={focused ? 'gift' : 'gift-outline'} color={color} />
           ),
@@ -51,7 +53,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(profile)"
         options={{
-          title: 'Perfil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons size={26} name={focused ? 'account' : 'account-outline'} color={color} />
           ),

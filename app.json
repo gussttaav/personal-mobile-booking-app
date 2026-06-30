@@ -69,6 +69,14 @@
         {
           "calendarPermission": "GustavoAI usa tu calendario para añadir tus clases reservadas."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 28
+          }
+        }
       ]
     ],
     "experiments": {

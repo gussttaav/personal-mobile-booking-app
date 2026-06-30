@@ -25,7 +25,12 @@ it does NOT have its own backend.
   CONFIGURED in app.json BUT NOT YET COMPILED INTO a dev client — it is the native dep
   forcing the next EAS build (until that build runs, rendering its video views will crash
   with IllegalViewOperationException). NO config plugin (Zoom ships none; autolinking
-  handles the native module), NO Gradle/minSdkVersion bump (not needed for Expo 54). It is
+  handles the native module). REQUIRES minSdkVersion 28 (Android 9): Zoom 2.5.10 declares
+  minSdk 28, so the Expo-54 default of 24 fails manifest merge (processDebugMainManifest) —
+  bumped via the expo-build-properties plugin (android.minSdkVersion:28) added to app.json.
+  This DROPS support for Android 7.0–8.1 (API 24–27); accepted as the only viable path for
+  this Zoom version (override/downgrade rejected). expo-build-properties is a config plugin
+  only (no runtime native module; takes effect at prebuild). It is
   a LEGACY-ARCH SDK running through RN's New-Arch interop shim (the app is New Arch for
   Reanimated 4) — verify its video views once the build exists. Camera/mic permissions
   added for it: iOS infoPlist NSCameraUsageDescription / NSMicrophoneUsageDescription

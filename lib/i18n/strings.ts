@@ -10,6 +10,28 @@ import type { Locale } from '../../types/api';
 // Add keys here as screens are localized incrementally.
 
 const es = {
+  addToCalendar: {
+    title: 'Añadir al calendario',
+    eventTitle1h: 'Sesión de 1 hora con Gustavo Torres',
+    eventTitle2h: 'Sesión de 2 horas con Gustavo Torres',
+    eventTitle15: 'Sesión gratuita de 15 min con Gustavo Torres',
+    joinLine: 'Únete a tu clase:',
+    checking: 'Comprobando acceso…',
+    requestTitle: 'Acceso al calendario',
+    requestDesc: 'Necesitamos acceder a tu calendario para guardar la clase.',
+    requestBtn: 'Conceder acceso',
+    adding: 'Añadiendo al calendario…',
+    successTitle: 'Añadido al calendario',
+    successDesc: 'Tu clase se ha guardado en tu calendario.',
+    done: 'Listo',
+    deniedTitle: 'Acceso denegado',
+    deniedDesc: 'Para añadir clases, activa el permiso de calendario en los ajustes del sistema.',
+    openSettings: 'Abrir ajustes',
+    dismiss: 'Cerrar',
+    errorTitle: 'Error al añadir',
+    errorDesc: 'No se pudo guardar la clase en el calendario.',
+    retry: 'Reintentar',
+  },
   tabs: {
     home: 'Inicio',
     booking: 'Reservar',
@@ -70,6 +92,28 @@ const es = {
 type Dictionary = typeof es;
 
 const en: Dictionary = {
+  addToCalendar: {
+    title: 'Add to calendar',
+    eventTitle1h: '1-hour session with Gustavo Torres',
+    eventTitle2h: '2-hour session with Gustavo Torres',
+    eventTitle15: 'Free 15-min session with Gustavo Torres',
+    joinLine: 'Join your class:',
+    checking: 'Checking access…',
+    requestTitle: 'Calendar access',
+    requestDesc: 'We need calendar access to save the class.',
+    requestBtn: 'Grant access',
+    adding: 'Adding to calendar…',
+    successTitle: 'Added to calendar',
+    successDesc: 'Your class has been saved to your calendar.',
+    done: 'Done',
+    deniedTitle: 'Access denied',
+    deniedDesc: 'To add classes, enable the calendar permission in your system settings.',
+    openSettings: 'Open settings',
+    dismiss: 'Close',
+    errorTitle: 'Failed to add',
+    errorDesc: "The class couldn't be saved to your calendar.",
+    retry: 'Retry',
+  },
   tabs: {
     home: 'Home',
     booking: 'Book',

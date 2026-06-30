@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import {
-  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -137,8 +136,10 @@ export default function BookingDetailScreen() {
   };
 
   const addToCalendar = () => {
-    // TODO(S19): wire shared add-to-calendar sheet (expo-calendar).
-    Alert.alert('Próximamente', 'Añadir al calendario estará disponible pronto.');
+    router.push({
+      pathname: '/add-to-calendar',
+      params: { startIso: startsAt, endIso: endsAt, sessionType, joinToken },
+    });
   };
 
   return (

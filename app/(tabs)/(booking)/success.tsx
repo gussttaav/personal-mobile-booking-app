@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -80,9 +80,11 @@ export default function BookingSuccessScreen() {
   }, []);
 
   const addToCalendar = useCallback(() => {
-    // TODO(S19): shared add-to-calendar sheet (used by S08 + S11); expo-calendar.
-    Alert.alert('Próximamente', 'Añadir al calendario estará disponible pronto.');
-  }, []);
+    router.push({
+      pathname: '/add-to-calendar',
+      params: { startIso: start, endIso: end, sessionType, joinToken },
+    });
+  }, [start, end, sessionType, joinToken]);
 
   return (
     <View style={styles.screen}>

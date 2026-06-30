@@ -69,7 +69,7 @@ it does NOT have its own backend.
   prominent, pulsing "Empieza en N min" chip when imminent/active), details card
   (Fecha, Horario, Pago rows), cancel-policy banner, and a sticky action bar with
   JOIN (primary+glowing when imminent/active, idle otherwise) + secondary row
-  (Calendario stub→Alert TODO(S19), Reprogramar→S13, Cancelar→S12 danger style).
+  (Calendario→S19 add-to-calendar modal, Reprogramar→S13, Cancelar→S12 danger style).
   Data comes from params passed by Home (token, joinToken, sessionType, startsAt,
   endsAt, packSize) — no API fetch in S11. Home's two router.push calls to S11 now
   pass the full Booking object fields. S11 routes to S13 with { token, startsAt,
@@ -128,7 +128,23 @@ it does NOT have its own backend.
   and NO dev-client rebuild were needed (only permission requests, no custom
   notification icon/sound, so the expo-notifications config plugin stays unadded).
   Remaining secure-store integration is done for prefs; no other native integration
-  code pending here. Validate app.json plugin changes with
+  code pending here.
+  S19 (app/add-to-calendar.tsx) IS built: shared modal sheet reached from S08
+  ("Añadir al calendario" primary button) and S11 ("Calendario" secondary button).
+  4-phase state machine: checking→requesting→adding→success (or denied/error).
+  Permission flow: reads Calendar.getCalendarPermissionsAsync() on mount; if
+  undetermined shows a request screen and calls requestCalendarPermissionsAsync();
+  if denied shows recovery state with Linking.openSettings(); granted → writes
+  event immediately. Calendar event: localized title via `addToCalendar.eventTitle*`
+  keys (e.g. "Sesión de 1 hora con Gustavo Torres" / "1-hour session with Gustavo
+  Torres"); start/end from ISO params; device timezone via Intl; notes + location
+  hold the join URL (`${API_BASE}/${locale}/sesion/${joinToken}`). Cross-platform
+  calendar picker: iOS uses Calendar.getDefaultCalendarAsync(); Android finds the
+  first local writable calendar via Calendar.getCalendarsAsync(). No dev-client
+  rebuild needed — expo-calendar was already compiled in. Entry points pass params
+  {startIso, endIso, sessionType, joinToken}. S08's Alert stub removed; S11's Alert
+  stub removed. All user-facing strings in addToCalendar.* i18n namespace (ES + EN).
+  Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
   "invalid config plugin" warnings — ignore those).
 - Colored glows/shadows: use the RN `boxShadow` style prop (works on Android via SDK 54's

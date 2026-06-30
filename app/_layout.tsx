@@ -24,7 +24,7 @@ export const unstable_settings = {
 };
 
 function RootNavigator() {
-  const { session, isReady } = useAuth();
+  const { session, isReady, expired } = useAuth();
 
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();
@@ -38,13 +38,18 @@ function RootNavigator() {
   return (
     <Stack>
       {/* Authenticated experiences — gated on a present (not yet validated) token. */}
-      <Stack.Protected guard={isSignedIn}>
+      <Stack.Protected guard={isSignedIn && !expired}>
         <Stack.Screen name="(tabs)"           options={{ headerShown: false }} />
-        <Stack.Screen name="session-expired"  options={{ headerShown: false }} />
         <Stack.Screen name="video-prejoin"    options={{ headerShown: false }} />
         <Stack.Screen name="video-room"       options={{ headerShown: false }} />
         <Stack.Screen name="review"           options={{ headerShown: false }} />
         <Stack.Screen name="add-to-calendar"  options={{ headerShown: false, presentation: 'modal' }} />
+      </Stack.Protected>
+
+      {/* S02 re-login — a present session lapsed beyond silent refresh. Tab bar
+          hides automatically (this route lives outside (tabs)). */}
+      <Stack.Protected guard={isSignedIn && expired}>
+        <Stack.Screen name="session-expired"  options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Sign-in. Flipping the guard re-routes automatically on sign-in/out. */}

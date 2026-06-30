@@ -282,16 +282,32 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   promise collapses concurrent 401s into exactly one refresh; all waiters retry
   with the one new token. api-client retries at most once (the `isRetry` flag).
   The hook is wired in lib/auth-context.tsx: on refresh success it mirrors the new
-  session into React state; on failure (no cached credential / network / backend
-  reject) it signs out + `setSession(null)`, which flips the guard → routes to
-  `/login`. Tested in `lib/__tests__/auth-refresh.test.ts` (single-flight, retry
+  session into React state. On failure the catch FORKS by AuthError code:
+  `NO_SAVED_CREDENTIAL` (the ~30-day Google credential lapsed, no silent path) →
+  KEEP the session + set the new `expired` flag, routing to S02 (session-expired)
+  while preserving the user's identity for the "Continuar como" card; any other
+  failure (network / backend reject) → sign out + `setSession(null)` → `/login`.
+  Tested in `lib/__tests__/auth-refresh.test.ts` (single-flight, retry
   discipline, no-refresh-on-non-401, no-loop-on-failure).
   ANDROID LIMITATION: `signInSilently()` only works while Google still holds a
   cached credential for this install; if it returns `noSavedCredentialFound` there
-  is no silent path → fallback is sign-out → interactive `/login`.
-- Pending: S02 session-expired re-login screen — currently refresh-failure routes
-  to `/login`; the hook point (the catch in lib/auth-context.tsx) is where S02
-  would route instead. Reactive only — no proactive pre-expiry refresh.
+  is no silent path → that's the NO_SAVED_CREDENTIAL → S02 path above.
+- S02 session-expired re-login screen (app/session-expired.tsx) IS built —
+  re-entry framing (icon badge + "Tu sesión ha caducado" + "Continuar como"
+  identity card from session.user + the same native Google button as S01),
+  fully localized via `sessionExpired.*` i18n keys; reuses `useAuth().signIn`
+  (no auth reimplemented) with idle/connecting/error/offline states mirroring
+  S01. REACHABILITY: auth-context now holds an `expired` boolean exposed via
+  useAuth; app/_layout.tsx splits the signed-in guard into
+  `isSignedIn && !expired` (tabs + full-screen experiences) vs
+  `isSignedIn && expired` (session-expired only), so the lapsed-session route is
+  reachable without clearing the session. On successful re-auth signIn() sets a
+  fresh session + clears `expired` → guard flips back to the app. RETURN-TO-
+  CONTEXT is land-on-Inicio (the (tabs) group remounts at its initial route): the
+  routing captures no prior route, so true return-to-context is a marked TODO at
+  the refresh hook in lib/auth-context.tsx. Reactive only — no proactive
+  pre-expiry refresh. Cold restart self-heals (stale persisted session → first
+  401 → refresh hook → expired again).
 
 ### Internationalization (i18n)
 - ES/EN FOUNDATION is built — machinery only, NOT a full translation. Pure JS,

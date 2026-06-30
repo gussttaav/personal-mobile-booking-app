@@ -24,6 +24,10 @@ import { registerRefreshHook } from './api-client';
 type AuthContextValue = {
   session: AuthSession | null;
   isReady: boolean;
+  /** True when a present session lapsed beyond silent recovery (the 401 refresh
+   *  hook hit NO_SAVED_CREDENTIAL). The session is kept so S02 can show the
+   *  user's identity; the root layout routes to /session-expired while it's set. */
+  expired: boolean;
   /** Runs the native Google flow + token exchange. Re-throws AuthError so the
    *  sign-in screen can render error / offline states. */
   signIn: () => Promise<void>;
@@ -35,20 +39,30 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   // Wire the api-client's 401 refresh hook once. On a 401 it silently refreshes
   // the bearer (single-flight in lib/auth.ts) and mirrors the new session into
-  // React state. If the refresh can't proceed (no cached Google credential,
-  // network error, backend reject), sign out + clear the session — that flips
-  // the <Stack.Protected> guard and routes to /login. (S02 session-expired is a
-  // future hook point: route there instead of /login once that screen is built.)
+  // React state. The hook only ever fires for an existing (signed-in) session.
+  // - NO_SAVED_CREDENTIAL: the ~30-day Google credential lapsed and silent
+  //   sign-in can't recover it → route to S02 (session-expired). Keep `session`
+  //   so the guard stays signed-in and S02 can show the user's identity
+  //   ("Continuar como …"); set the `expired` flag to flip routing.
+  //   TODO(return-to-context): no captured route to restore — re-auth lands on
+  //   Inicio (the (tabs) group remounts at its initial route).
+  // - Any other failure (network, backend reject): sign out + clear the session,
+  //   which flips the guard to /login.
   useEffect(() => {
     registerRefreshHook(async () => {
       try {
         const next = await refreshSession();
         setSession(next);
         return true;
-      } catch {
+      } catch (e) {
+        if (e instanceof AuthError && e.code === 'NO_SAVED_CREDENTIAL') {
+          setExpired(true);
+          return false;
+        }
         await signOutGoogle();
         setSession(null);
         return false;
@@ -78,11 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       isReady,
+      expired,
       async signIn() {
         try {
           const idToken = await signInWithGoogle();
           const restored = await exchangeGoogleToken(idToken);
           setSession(restored);
+          setExpired(false);
         } catch (e) {
           // A cancelled account picker is not an error — leave state untouched.
           if (e instanceof AuthError && e.code === 'SIGN_IN_CANCELLED') return;
@@ -92,9 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         await signOutGoogle();
         setSession(null);
+        setExpired(false);
       },
     }),
-    [session, isReady],
+    [session, isReady, expired],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

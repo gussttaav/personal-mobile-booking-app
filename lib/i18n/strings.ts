@@ -85,6 +85,18 @@ const es = {
     signOut: 'Cerrar sesión',
     signingOut: 'Cerrando sesión…',
   },
+  sessionExpired: {
+    badge: 'Sesión caducada',
+    title: 'Tu sesión ha caducado',
+    description:
+      'Por seguridad cerramos tu sesión tras un tiempo. Vuelve a entrar para continuar.',
+    continueAsLabel: 'Continuar como',
+    googleSignIn: 'Iniciar sesión con Google',
+    signingIn: 'Iniciando sesión…',
+    appleComingSoon: 'Próximamente en iOS',
+    errorMessage: 'No pudimos volver a iniciar sesión. Inténtalo de nuevo.',
+    offlineMessage: 'Sin conexión. Comprueba tu red e inténtalo de nuevo.',
+  },
 };
 
 // `es` is canonical; leaves widen to `string` (no `as const`) so `en` may hold
@@ -166,6 +178,18 @@ const en: Dictionary = {
     creditsOverline: 'Credit balance',
     signOut: 'Sign out',
     signingOut: 'Signing out…',
+  },
+  sessionExpired: {
+    badge: 'Session expired',
+    title: 'Your session has expired',
+    description:
+      'For your security we signed you out after a while. Sign back in to continue.',
+    continueAsLabel: 'Continue as',
+    googleSignIn: 'Sign in with Google',
+    signingIn: 'Signing in…',
+    appleComingSoon: 'Coming soon on iOS',
+    errorMessage: "We couldn't sign you back in. Try again.",
+    offlineMessage: 'No connection. Check your network and try again.',
   },
 };
 

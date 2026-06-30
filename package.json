@@ -21,6 +21,8 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@stripe/stripe-react-native": "0.50.3",
+    "@supabase/supabase-js": "2.110.0",
+    "@zoom/react-native-videosdk": "2.5.10",
     "expo": "~54.0.34",
     "expo-calendar": "~15.0.8",
     "expo-constants": "~18.0.13",

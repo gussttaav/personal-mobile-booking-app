@@ -21,12 +21,28 @@ it does NOT have its own backend.
   (plugin: configureAndroidBackup), expo-calendar (plugin: calendarPermission; auto-adds
   READ/WRITE_CALENDAR), expo-notifications (no plugin yet — add it when a custom notification
   icon/sound exists; POST_NOTIFICATIONS is declared in android.permissions).
+  ZOOM VIDEO (S14/S15): @zoom/react-native-videosdk pinned EXACT 2.5.10 is INSTALLED &
+  CONFIGURED in app.json BUT NOT YET COMPILED INTO a dev client — it is the native dep
+  forcing the next EAS build (until that build runs, rendering its video views will crash
+  with IllegalViewOperationException). NO config plugin (Zoom ships none; autolinking
+  handles the native module), NO Gradle/minSdkVersion bump (not needed for Expo 54). It is
+  a LEGACY-ARCH SDK running through RN's New-Arch interop shim (the app is New Arch for
+  Reanimated 4) — verify its video views once the build exists. Camera/mic permissions
+  added for it: iOS infoPlist NSCameraUsageDescription / NSMicrophoneUsageDescription
+  (Spanish), Android CAMERA + RECORD_AUDIO (alongside POST_NOTIFICATIONS). The iOS
+  ONLY_ACTIVE_ARCH Podfile tweak is DEFERRED — iOS-only TODO for whenever iOS ships
+  (current target is Android). @supabase/supabase-js pinned EXACT 2.110.0 is also installed
+  but is JS-ONLY (no native build impact, rides into the bundle): lib/supabase.ts is a
+  shared client SCOPED TO in-session chat Realtime (S15) ONLY — explicitly NOT for payment
+  confirmation, which stays poll-only (scope fence comment in the file). Auth session
+  persistence is disabled there (chat uses no Supabase auth), avoiding an AsyncStorage dep.
   Stripe integration IS written: StripeProvider in app/_layout.tsx (card-only, Google Pay
   off for now); PaymentSheet wired in app/(tabs)/(booking)/confirm.tsx (S06 Pass A).
   S06 Pass B confirms the booking by AUTHORITATIVE POLLING of
-  /api/payment-confirmation/channel (status is total) — NO Supabase/Realtime client
-  was added (the web's useSSECredits Realtime path is intentionally not mirrored on
-  mobile). See lib/payment-confirmation.ts. On 'confirmed' it navigates to S08
+  /api/payment-confirmation/channel (status is total) — NO Supabase/Realtime is used for
+  PAYMENTS (the web's useSSECredits Realtime path is intentionally not mirrored on mobile;
+  the lib/supabase.ts client exists but is fenced to chat only). See
+  lib/payment-confirmation.ts. On 'confirmed' it navigates to S08
   (app/(tabs)/(booking)/success.tsx, built — renders booking summary + join card
   from the params it receives); slot_taken/failed/timeout resolve to
   on-screen terminal states. types/api.ts GetPaymentConfirmationChannelResponse is now

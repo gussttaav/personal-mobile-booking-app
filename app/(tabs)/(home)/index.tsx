@@ -348,6 +348,7 @@ function WithClasses({ data }: { data: HomeData }) {
                     params: {
                       token: b.token,
                       joinToken: b.joinToken,
+                      eventId: b.eventId,
                       sessionType: b.sessionType,
                       startsAt: b.startsAt,
                       endsAt: b.endsAt,
@@ -423,7 +424,16 @@ function NextClassCard({ booking }: { booking: Booking }) {
       {/* Join button — always visible, disabled until the class is joinable */}
       <TouchableOpacity
         style={[styles.joinBtn, !isJoinable && styles.joinBtnDisabled]}
-        onPress={() => router.push('/video-prejoin')}
+        onPress={() =>
+          router.push({
+            pathname: '/video-prejoin',
+            params: {
+              eventId: booking.eventId,
+              startsAt: booking.startsAt,
+              sessionType: booking.sessionType,
+            },
+          })
+        }
         disabled={!isJoinable}
         activeOpacity={0.85}
       >
@@ -447,6 +457,7 @@ function NextClassCard({ booking }: { booking: Booking }) {
               params: {
                 token: booking.token,
                 joinToken: booking.joinToken,
+                eventId: booking.eventId,
                 sessionType: booking.sessionType,
                 startsAt: booking.startsAt,
                 endsAt: booking.endsAt,

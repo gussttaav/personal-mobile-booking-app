@@ -65,10 +65,10 @@ export default function BookingSuccessScreen() {
   }, []);
 
   const goJoin = useCallback(() => {
-    // S14 pre-join is still a placeholder; the real Zoom exchange is a later
-    // phase. Hand it the joinToken to exchange at class time.
-    router.push({ pathname: '/video-prejoin', params: { joinToken } });
-  }, [joinToken]);
+    // S14 exchanges the eventId for a Zoom join token on "Entrar". Pass the
+    // timing so it can render the start-time chip before the token is fetched.
+    router.push({ pathname: '/video-prejoin', params: { eventId, startsAt: start, sessionType } });
+  }, [eventId, start, sessionType]);
 
   const goDetail = useCallback(() => {
     // S11 detalle is still a placeholder; route toward it with what we have.

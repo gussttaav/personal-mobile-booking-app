@@ -79,6 +79,7 @@ export default function BookingDetailScreen() {
   const params = useLocalSearchParams<{
     token: string;
     joinToken: string;
+    eventId: string;
     sessionType: string;
     startsAt: string;
     endsAt: string;
@@ -87,6 +88,7 @@ export default function BookingDetailScreen() {
 
   const token = params.token ?? '';
   const joinToken = params.joinToken ?? '';
+  const eventId = params.eventId ?? '';
   const sessionType = params.sessionType ?? 'session1h';
   const startsAt = params.startsAt ?? '';
   const endsAt = params.endsAt ?? '';
@@ -118,7 +120,7 @@ export default function BookingDetailScreen() {
   const goBack = () => router.back();
 
   const goJoin = () => {
-    router.push({ pathname: '/video-prejoin', params: { joinToken } });
+    router.push({ pathname: '/video-prejoin', params: { eventId, startsAt, sessionType } });
   };
 
   const goCancel = () => {

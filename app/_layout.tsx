@@ -1,6 +1,7 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import { ZoomVideoSdkProvider } from '@zoom/react-native-videosdk';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -18,6 +19,10 @@ SplashScreen.preventAutoHideAsync();
 GoogleSignin.configure({
   webClientId: '676995776728-cj85r0hoia2rmtcllodmiqci0nbs3bkc.apps.googleusercontent.com',
 });
+
+// Zoom Video SDK init config. Stable module-level object so the provider doesn't
+// see a new reference every render. domain defaults to 'zoom.us' in the library.
+const ZOOM_CONFIG = { enableLog: __DEV__ };
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -40,8 +45,10 @@ function RootNavigator() {
       {/* Authenticated experiences — gated on a present (not yet validated) token. */}
       <Stack.Protected guard={isSignedIn && !expired}>
         <Stack.Screen name="(tabs)"           options={{ headerShown: false }} />
-        <Stack.Screen name="video-prejoin"    options={{ headerShown: false }} />
-        <Stack.Screen name="video-room"       options={{ headerShown: false }} />
+        {/* Video screens (S14 pre-join + S15 room) live in the (video) group so
+            the Zoom SDK provider is scoped to them — see app/(video)/_layout.tsx.
+            The group is parenthesized, so URLs stay /video-prejoin, /video-room. */}
+        <Stack.Screen name="(video)"          options={{ headerShown: false }} />
         <Stack.Screen name="review"           options={{ headerShown: false }} />
         <Stack.Screen name="add-to-calendar"  options={{ headerShown: false, presentation: 'modal' }} />
       </Stack.Protected>
@@ -66,7 +73,15 @@ export default function RootLayout() {
       <AuthProvider>
         <LocaleProvider>
           <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
-            <RootNavigator />
+            {/* Zoom SDK provider is mounted ONCE here (app-session singleton) so the
+                native SDK inits exactly once. It must NOT live in the (video) group:
+                that layout remounts on every entry, and the library re-calls initSdk
+                with no unmount cleanup — a second init on the already-initialized SDK
+                returns an error the native module rejects with a null userInfo, which
+                NPE-crashes the app (RNZoomVideoSdkModule.initSdk). */}
+            <ZoomVideoSdkProvider config={ZOOM_CONFIG}>
+              <RootNavigator />
+            </ZoomVideoSdkProvider>
           </StripeProvider>
         </LocaleProvider>
       </AuthProvider>

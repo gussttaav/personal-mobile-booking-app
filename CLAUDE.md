@@ -36,6 +36,48 @@ it does NOT have its own backend.
   userName/role despite the contract doc (get the join display name from the auth session);
   and Booking (my-bookings item) now carries eventId. The temporary smoke-test screen has
   been deleted now that video render is verified.
+  S14 (app/(video)/video-prejoin.tsx) IS built — the pre-join camera/mic test.
+  PROVIDER WIRING: ZoomVideoSdkProvider is an APP-SESSION SINGLETON mounted ONCE at the
+  root (app/_layout.tsx, inside StripeProvider around RootNavigator, config
+  enableLog:__DEV__). It MUST NOT be scoped to the (video) group: that layout remounts on
+  every entry and the library re-calls initSdk with NO unmount cleanup — a second init on
+  the already-initialized native SDK returns an error the native module rejects with a
+  null userInfo, NPE-crashing the app (RNZoomVideoSdkModule.initSdk). Init-at-launch is
+  the accepted tradeoff (native lib init only; no camera/mic access, no launch prompt).
+  The (video) group still exists (app/(video)/_layout.tsx = a plain <Stack>) to hold the
+  tab-bar-hidden video routes; parenthesized so URLs stay /video-prejoin, /video-room
+  (app/_layout.tsx registers the "(video)" group in place of the two flat screens). PREVIEW = Option A: ZoomView has a
+  `preview?: boolean` prop, so S14 renders <ZoomView userId="" preview /> for a
+  DEVICE-ONLY local preview with NO session joined — join happens later in S15.
+  GOTCHA (hit + fixed on-device): userId MUST be "" (empty string), NOT null — the
+  native RNZoomViewManager.setUserId() does newUserId.equals(userId) and throws a
+  NullPointerException on a null userId (crashes the whole dev build with
+  JSApplicationIllegalArgumentException at RNZoomViewManager.setUserId). "" matches the
+  native default and `preview` renders via startVideoCanvasPreview independent of userId.
+  The TS type says `string | null` but null is a trap. Option A preview VERIFIED to
+  render live local video through the New-Arch interop shim on-device (2026-07-01).
+  ROTATION: the preview renders sideways because the native refreshRotation() bails when
+  !isInSession(), so no display-rotation correction runs pre-join — S14 calls
+  videoHelper.rotateMyVideo(0) itself ~250ms after the canvas starts (app is
+  portrait-locked → Surface.ROTATION_0; re-applied after switchCamera). See memory
+  zoom-preview-userid-null-crash. If preview ever regresses, the fallback is Option B for
+  S14 only (join with videoOptions.localVideoOn + audioOptions.mute, show the
+  joined-session view, pass the live session to S15).
+  PERMISSIONS: camera+mic via react-native core
+  PermissionsAndroid (no expo-camera; Android-only — iOS request is a marked TODO,
+  deferred): check on mount → requestMultiple → NEVER_ASK_AGAIN routes to a recovery
+  state with Linking.openSettings(). Never previews/joins without both granted. CONTROLS:
+  camera on/off (mount/unmount preview), mic mute (intent only, forwarded to S15 as
+  startMuted), camera flip via videoHelper.switchCamera() (best-effort, may only take
+  effect in-session). ENTRY POINTS now pass eventId (not joinToken) to /video-prejoin —
+  success.tsx (S08), booking-detail.tsx (S11, +eventId param; Home forwards b.eventId),
+  and Home's next-class join button — because /api/zoom/token takes { eventId }. On
+  "Entrar" S14 calls api.postZoomToken({eventId}); errors (401→errorAuth, else generic)
+  show on S14, no navigation; success pushes to /video-room with the token payload +
+  userName (from auth session) + startMuted/startVideoOff intent. Strings live in the
+  prejoin.* i18n namespace (ES+EN). REMINDER: whenever joinSession() is called (S15 or
+  Option-B), audioOptions MUST include autoAdjustSpeakerVolume (see
+  zoom-join-audiooptions-gotcha).
   NO config plugin (Zoom ships none; autolinking
   handles the native module). REQUIRES minSdkVersion 28 (Android 9): Zoom 2.5.10 declares
   minSdk 28, so the Expo-54 default of 24 fails manifest merge (processDebugMainManifest) —
@@ -207,10 +249,15 @@ app/
 ├── _layout.tsx            — root Stack; registers (tabs) + full-screen experiences
 ├── login.tsx              — S01 Bienvenida / Iniciar sesión
 ├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
-├── video-prejoin.tsx      — S14 Pre-unión                    (tab bar hidden)
-├── video-room.tsx         — S15 Sala · en clase              (tab bar hidden)
 ├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
 ├── add-to-calendar.tsx    — S19 Añadir al calendario         (modal)
+├── (video)/               — route group holding the tab-bar-hidden video routes;
+│   │                        _layout is a plain <Stack>. (ZoomVideoSdkProvider is an
+│   │                        app-session singleton at the ROOT, not here — re-init on
+│   │                        group re-entry crashes.) Parenthesized → URLs stay
+│   │                        /video-prejoin, /video-room
+│   ├── video-prejoin.tsx  — S14 Pre-unión · prueba de cámara/micro
+│   └── video-room.tsx     — S15 Sala · en clase (still a placeholder)
 └── (tabs)/
     ├── _layout.tsx        — 4-tab Tabs navigator (MaterialCommunityIcons, outline/filled by focus)
     ├── (home)/            — Tab: Inicio (home-outline / home)

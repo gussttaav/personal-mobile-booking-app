@@ -37,6 +37,37 @@ it does NOT have its own backend.
   and Booking (my-bookings item) now carries eventId. The temporary smoke-test screen has
   been deleted now that video render is verified.
   S14 (app/(video)/video-prejoin.tsx) IS built — the pre-join camera/mic test.
+  S15 PASS A (app/(video)/video-room.tsx) IS built — the LIVE video session (video +
+  controls + lifecycle + teardown; CHAT is Pass B, not built — a DISABLED placeholder
+  chat control holds the layout). Joins a FRESH session on mount from the S14 params
+  (joinSession with audioOptions.autoAdjustSpeakerVolume ALWAYS set — the gotcha).
+  EVENT-DRIVEN phase machine: connecting → waiting → inClass → error, driven by SDK
+  events (onSessionJoin/onUserJoin/onUserLeave/onSessionLeave/onError + on{Audio,Video}
+  StatusChanged), NOT assumptions. 1:1 tutoring ⇒ ANY remote user IS the tutor, so
+  waiting↔inClass is driven purely by the remoteUsers count (onUserJoin/Leave carry the
+  full remoteUsers list; verified from RNZoomVideoSdkModule.java). Tutor leaving →
+  calm 'waiting' (not a crash); rejoining → 'inClass'. REMOTE INDICATORS: the tutor's
+  camera-off state shows an avatar placeholder instead of a black frame, and a live
+  mic-muted indicator sits in a bottom-left tutor chip — both reconciled from
+  getRemoteUsers()[0].videoStatus.isOn()/audioStatus.isMuted() on the status events.
+  Controls (mic/camera/leave) are
+  OPTIMISTIC then RECONCILED from SDK truth via session.getMySelf().audioStatus.isMuted()
+  / videoStatus.isOn() on the status-changed events. First REMOTE ZoomView render — same
+  New-Arch interop path as S14's local preview. In-session rotation self-corrects (native
+  refreshRotation runs when isInSession), so NO manual rotateMyVideo here (S14 needed it
+  only because preview isn't in-session). TEARDOWN is idempotent (leftRef guard +
+  isInSession() check) and fires on EVERY exit path: Leave button (confirm dialog →
+  router.replace /review with eventId), OS back gesture / unmount (useEffect cleanup),
+  and unexpected onSessionLeave (idle-timeout / tutor ended → also → /review). Android
+  HARDWARE BACK is intercepted (BackHandler) to run the SAME confirm→/review flow as the
+  Leave button — not a silent pop back to pre-join. NEVER calls zoom.cleanup() (that kills
+  the root singleton) — teardown = leaveSession(false) only. App BACKGROUNDING keeps the
+  session ALIVE (a brief notification check must not drop the class) but RELEASES THE
+  CAMERA for privacy: AppState 'background' → videoHelper.stopVideo() (audio stays
+  connected, like a call); on 'active' return, videoHelper.startVideo() resumes ONLY if
+  the camera was on when backgrounded (cameraOnRef captured synchronously). Strings live
+  in the room.* i18n namespace (ES+EN). No native dep / no rebuild (Zoom already
+  compiled in).
   PROVIDER WIRING: ZoomVideoSdkProvider is an APP-SESSION SINGLETON mounted ONCE at the
   root (app/_layout.tsx, inside StripeProvider around RootNavigator, config
   enableLog:__DEV__). It MUST NOT be scoped to the (video) group: that layout remounts on
@@ -257,7 +288,8 @@ app/
 │   │                        group re-entry crashes.) Parenthesized → URLs stay
 │   │                        /video-prejoin, /video-room
 │   ├── video-prejoin.tsx  — S14 Pre-unión · prueba de cámara/micro
-│   └── video-room.tsx     — S15 Sala · en clase (still a placeholder)
+│   └── video-room.tsx     — S15 Sala · en clase (Pass A built: live video +
+│                             controls + lifecycle + teardown; chat is Pass B)
 └── (tabs)/
     ├── _layout.tsx        — 4-tab Tabs navigator (MaterialCommunityIcons, outline/filled by focus)
     ├── (home)/            — Tab: Inicio (home-outline / home)
@@ -422,7 +454,8 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   profile.tsx (`profile.*` keys) and S18 settings.tsx (`settings.*` keys). S18's
   ES/EN segmented control exercises setLocale end-to-end, reachable via the "Ajustes"
   row in S17 (profile.tsx → router.push settings); S18 shows its own header (the
-  (profile) stack is headerShown:false) for the back button.
+  (profile) stack is headerShown:false) for the back button. Also localized: S14 pre-join
+  (`prejoin.*`), S19 add-to-calendar (`addToCalendar.*`), and S15 video room (`room.*`).
 - Translate remaining screens incrementally via `useT()`/`t()` — add the keys to
   lib/i18n/strings.ts (both languages, enforced by the type) as you go.
 

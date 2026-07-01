@@ -21,10 +21,22 @@ it does NOT have its own backend.
   (plugin: configureAndroidBackup), expo-calendar (plugin: calendarPermission; auto-adds
   READ/WRITE_CALENDAR), expo-notifications (no plugin yet — add it when a custom notification
   icon/sound exists; POST_NOTIFICATIONS is declared in android.permissions).
-  ZOOM VIDEO (S14/S15): @zoom/react-native-videosdk pinned EXACT 2.5.10 is INSTALLED &
-  CONFIGURED in app.json BUT NOT YET COMPILED INTO a dev client — it is the native dep
-  forcing the next EAS build (until that build runs, rendering its video views will crash
-  with IllegalViewOperationException). NO config plugin (Zoom ships none; autolinking
+  ZOOM VIDEO (S14/S15): @zoom/react-native-videosdk pinned EXACT 2.5.10 is INSTALLED,
+  CONFIGURED in app.json, and NOW COMPILED INTO the current dev client (the EAS build ran).
+  VIDEO-VIEW RENDER VERIFIED (2026-07-01): a throwaway smoke test confirmed the local
+  <ZoomView> renders the camera feed through the New-Arch interop shim on Android — the
+  eventId→/api/zoom/token→joinSession→getMySelf→<ZoomView> chain works end-to-end, no
+  IllegalViewOperationException. So S14/S15 can be built for real against live video.
+  GOTCHA (see memory zoom-join-audiooptions-gotcha): joinSession() throws "Exception in
+  HostFunction: autoAdjustSpeakerVolume" unless audioOptions.autoAdjustSpeakerVolume is
+  passed, even though the TS type marks it optional — always include it. types/api.ts is
+  now aligned to the LIVE responses (verified 2026-07-01): PostZoomTokenResponse =
+  { token, sessionName, passcode (→ SDK sessionPassword), startIso, durationWithGrace
+  (minutes, incl. grace), expiresAt (unix seconds) } — the live endpoint does NOT return
+  userName/role despite the contract doc (get the join display name from the auth session);
+  and Booking (my-bookings item) now carries eventId. The temporary smoke-test screen has
+  been deleted now that video render is verified.
+  NO config plugin (Zoom ships none; autolinking
   handles the native module). REQUIRES minSdkVersion 28 (Android 9): Zoom 2.5.10 declares
   minSdk 28, so the Expo-54 default of 24 fails manifest merge (processDebugMainManifest) —
   bumped via the expo-build-properties plugin (android.minSdkVersion:28) added to app.json.
@@ -32,7 +44,7 @@ it does NOT have its own backend.
   this Zoom version (override/downgrade rejected). expo-build-properties is a config plugin
   only (no runtime native module; takes effect at prebuild). It is
   a LEGACY-ARCH SDK running through RN's New-Arch interop shim (the app is New Arch for
-  Reanimated 4) — verify its video views once the build exists. Camera/mic permissions
+  Reanimated 4) — video views VERIFIED to render through the shim (see above). Camera/mic permissions
   added for it: iOS infoPlist NSCameraUsageDescription / NSMicrophoneUsageDescription
   (Spanish), Android CAMERA + RECORD_AUDIO (alongside POST_NOTIFICATIONS). The iOS
   ONLY_ACTIVE_ARCH Podfile tweak is DEFERRED — iOS-only TODO for whenever iOS ships

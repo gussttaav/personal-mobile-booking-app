@@ -185,11 +185,23 @@ export interface PostZoomTokenRequest {
   eventId: string;
 }
 
+// Shape verified against the live /api/zoom/token response (2026-07-01). The
+// contract doc still lists `userName`/`role`, but the live endpoint does NOT
+// return them — it returns the session-timing fields below instead. Get the
+// display name for joinSession() from the auth session, not from here.
 export interface PostZoomTokenResponse {
+  /** Zoom Video SDK JWT — pass as `token` to joinSession(). */
   token: string;
+  /** Zoom session name — pass as `sessionName` to joinSession(). */
   sessionName: string;
-  userName: string;
-  role: 0 | 1;
+  /** Session passcode — maps to the SDK join field `sessionPassword`. */
+  passcode: string;
+  /** ISO-8601 start time of the booked session. */
+  startIso: string;
+  /** Session length in MINUTES including the post-session grace window (e.g. 70 = 60m + 10m grace). */
+  durationWithGrace: number;
+  /** JWT/session expiry as a UNIX epoch in SECONDS. */
+  expiresAt: number;
 }
 
 // ── Chat session (in-session messaging) ──────────────────────────────────────
@@ -252,6 +264,8 @@ export interface PostLocaleResponse {
 export interface Booking {
   token: string;
   joinToken: string;
+  /** Google Calendar event id — the key for /api/zoom/token, chat-session, and reviews. */
+  eventId: string;
   sessionType: SessionType;
   startsAt: string;
   endsAt: string;

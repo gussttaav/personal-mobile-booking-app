@@ -17,8 +17,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChatPanel } from '@/components/video/chat-panel';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { useChatSession } from '@/lib/use-chat-session';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 // S15 joins a FRESH Zoom session on mount (S14 only previewed the device camera,
@@ -73,11 +75,24 @@ export default function VideoRoomScreen() {
   const subsRef = useRef<EmitterSubscription[]>([]);
   const cameraOnRef = useRef(cameraOn); // read by the AppState handler (registered once)
 
+  // ── In-session chat (Pass B) — a SEPARATE concern from the video lifecycle. The hook
+  // owns the Supabase Realtime subscription; opening/closing the panel is pure UI. Chat is
+  // enabled once we're joined (waiting or inClass), matching when the room is usable.
+  const [chatOpen, setChatOpen] = useState(false);
+  const chat = useChatSession({
+    eventId,
+    enabled: phase === 'waiting' || phase === 'inClass',
+  });
+
   // ── Teardown: fully release the session (camera + mic + video views). Idempotent.
   // A leaked session keeps the camera on (privacy) or fails the next join.
   async function teardown() {
     if (leftRef.current) return;
     leftRef.current = true;
+    // Release the chat Realtime channel immediately alongside the video (the hook's own
+    // unmount cleanup is the safety net; this makes it release on Leave without waiting
+    // for the navigation transition to unmount the screen).
+    chat.teardown();
     for (const s of subsRef.current) s.remove();
     subsRef.current = [];
     try {
@@ -286,6 +301,16 @@ export default function VideoRoomScreen() {
     Promise.resolve(p).catch(() => {});
   }
 
+  function openChat() {
+    setChatOpen(true);
+    chat.setPanelVisible(true); // zeroes unread + suppresses further counting while open
+  }
+
+  function closeChat() {
+    setChatOpen(false);
+    chat.setPanelVisible(false);
+  }
+
   const joined = phase === 'waiting' || phase === 'inClass';
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -452,14 +477,22 @@ export default function VideoRoomScreen() {
               />
             </TouchableOpacity>
 
-            {/* TODO(Pass B): wire chat. Disabled placeholder to hold the layout. */}
             <TouchableOpacity
-              style={[styles.controlBtn, styles.controlBtnDisabled]}
-              disabled
+              style={styles.controlBtn}
+              onPress={openChat}
+              disabled={!joined}
+              activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={t('room.chatLabel')}
             >
-              <MaterialCommunityIcons name="message-outline" size={24} color={Colors.textDim} />
+              <MaterialCommunityIcons name="message-outline" size={24} color={Colors.text} />
+              {chat.unreadCount > 0 && !chatOpen && (
+                <View style={styles.chatBadge}>
+                  <Text style={styles.chatBadgeText}>
+                    {chat.unreadCount > 9 ? '9+' : String(chat.unreadCount)}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -475,6 +508,17 @@ export default function VideoRoomScreen() {
           </View>
         </>
       )}
+
+      {/* Chat panel — absolute overlay; the video stays active/visible above the sheet. */}
+      <ChatPanel
+        visible={chatOpen}
+        onClose={closeChat}
+        messages={chat.messages}
+        currentEmail={chat.currentEmail}
+        onSend={chat.send}
+        sending={chat.sending}
+        sendError={chat.sendError}
+      />
     </View>
   );
 }
@@ -710,8 +754,21 @@ const styles = StyleSheet.create({
     borderColor: Colors.errorBorder,
     backgroundColor: 'rgba(255, 180, 171, 0.14)',
   },
-  controlBtnDisabled: {
-    opacity: 0.45,
+  chatBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatBadgeText: {
+    ...TypeScale.badge,
+    color: Colors.onPrimary,
   },
   leaveBtn: {
     backgroundColor: LEAVE_RED,

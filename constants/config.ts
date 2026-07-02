@@ -3,3 +3,5 @@ export const STRIPE_PUBLISHABLE_KEY = 'pk_test_51T7ZmQ35RmDZD7yYQK0xaxnuHglSh61b
 
 export const SUPABASE_URL = 'https://lgfntdmrbzlvepngucyo.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_ZOVMNnQJR9wPpGsptsb_LQ_iSQb_r19';
+
+export const GOOGLE_REVIEW_URL = 'https://g.page/r/CeUEcIsZXTyiEBM/review';

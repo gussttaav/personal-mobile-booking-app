@@ -38,8 +38,7 @@ it does NOT have its own backend.
   been deleted now that video render is verified.
   S14 (app/(video)/video-prejoin.tsx) IS built — the pre-join camera/mic test.
   S15 PASS A (app/(video)/video-room.tsx) IS built — the LIVE video session (video +
-  controls + lifecycle + teardown; CHAT is Pass B, not built — a DISABLED placeholder
-  chat control holds the layout). Joins a FRESH session on mount from the S14 params
+  controls + lifecycle + teardown). Joins a FRESH session on mount from the S14 params
   (joinSession with audioOptions.autoAdjustSpeakerVolume ALWAYS set — the gotcha).
   EVENT-DRIVEN phase machine: connecting → waiting → inClass → error, driven by SDK
   events (onSessionJoin/onUserJoin/onUserLeave/onSessionLeave/onError + on{Audio,Video}
@@ -68,6 +67,50 @@ it does NOT have its own backend.
   the camera was on when backgrounded (cameraOnRef captured synchronously). Strings live
   in the room.* i18n namespace (ES+EN). No native dep / no rebuild (Zoom already
   compiled in).
+  S15 PASS B (in-session TEXT CHAT) IS built — the app's FIRST and ONLY Supabase Realtime
+  integration, layered onto Pass A as a SEPARATE concern (the video lifecycle is untouched).
+  Backend contract: GET /api/chat-session/channel?eventId → { channelName (HMAC capability
+  "chat:<hash>", returned only after a membership check), initialMessages }; RECEIVE via
+  Supabase BROADCAST on channelName, event "message", payload = a ChatMessage
+  { id:"<eventId>:<index>", senderEmail, senderName, text, sentAt(ISO) }; SEND via
+  POST /api/chat-session { eventId, text } (bearer; persists=source of truth, then broadcasts).
+  types/api.ts ChatMessage was REALIGNED to this shape (the old stub { sender,text,createdAt }
+  was wrong). NEW FILES: lib/chat.ts (PURE, unit-tested in lib/__tests__/chat.test.ts —
+  mergeMessages dedups by id + sorts by index, parseMessageIndex; mirrors payment-confirmation's
+  pure-core discipline); lib/use-chat-session.ts (the Realtime lifecycle hook — handshake →
+  merge backlog → supabase.channel().on('broadcast',{event:'message'}).subscribe(); owns the
+  subscription so the panel open/close is pure UI); components/video/chat-panel.tsx (the
+  "chat abierto" bottom-sheet UI: own vs tutor bubbles, input+send, absolute overlay so the
+  video stays active/visible above it). KEYBOARD GOTCHA (hit + fixed on-device): SDK 54's
+  Android edge-to-edge default does NOT resize/pan the window for the soft keyboard, so a
+  KeyboardAvoidingView can't lift an absolute overlay; the raw Keyboard API also under-reports
+  the height on some Android OEMs (excludes the gesture-nav region → input still clipped).
+  FIX: chat-panel.tsx uses Reanimated's useAnimatedKeyboard (edge-to-edge-aware, reports the
+  true inset) to animate the SHEET's bottom padding to max(keyboard, safe-area-bottom) — the
+  sheet bg stays flush to the screen bottom (extends behind the keyboard) while its content +
+  input lift above the keyboard; the message FlatList is flex:1 so it shrinks/scrolls and the
+  header stays pinned. NB the sheet needs a DEFINITE height (height:'80%', not maxHeight) or the
+  flex:1 list resolves to 0 height and the messages vanish. Reanimated 4 is already compiled in
+  — no native dep / no rebuild.
+  SCOPE FENCE: lib/use-chat-session.ts + lib/supabase.ts
+  are CHAT-ONLY — payments stay POLL-ONLY (lib/payment-confirmation.ts); do NOT reuse this
+  Realtime path for payments. SEND = WAIT-FOR-BROADCAST (not optimistic): POST → "sending…"
+  → the bubble renders only when its own broadcast echoes back (deduped by id) — one render
+  path, no optimistic/real mismatch (the ":index" can't be predicted client-side so echo-
+  matching would be fragile). The input clears only on POST success; a failed send keeps the
+  text + shows an error (never silently dropped). RECONCILE: backlog is re-fetched on every
+  SUBSCRIBED (fires on first subscribe AND on reconnect) and re-merged — recovers a broadcast
+  missed in the snapshot→subscribe gap or during a socket drop (dedup makes the re-merge safe;
+  same reconcile-on-resubscribe pattern as payments). TEARDOWN: the hook's channel is released
+  idempotently (supabase.removeChannel) both on unmount (its own useEffect cleanup — covers
+  EVERY video exit path since they all unmount the room) AND imperatively inside the room's
+  existing teardown() so it releases immediately on Leave/back/session-lost alongside video.
+  BACKGROUNDING: the subscription stays ALIVE (matches Pass A keeping the session alive — a
+  brief notification check must not drop chat); Supabase auto-reconnects and reconcile-on-
+  SUBSCRIBED recovers anything missed. Chat is enabled once joined (waiting|inClass); the
+  Pass-A placeholder control is now wired (opens the sheet; unread badge from unreadCount
+  while closed). Strings in the room.chat.* i18n namespace (ES+EN). NO native dep / NO rebuild
+  (@supabase/supabase-js is JS-only, already bundled).
   PROVIDER WIRING: ZoomVideoSdkProvider is an APP-SESSION SINGLETON mounted ONCE at the
   root (app/_layout.tsx, inside StripeProvider around RootNavigator, config
   enableLog:__DEV__). It MUST NOT be scoped to the (video) group: that layout remounts on
@@ -126,6 +169,7 @@ it does NOT have its own backend.
   shared client SCOPED TO in-session chat Realtime (S15) ONLY — explicitly NOT for payment
   confirmation, which stays poll-only (scope fence comment in the file). Auth session
   persistence is disabled there (chat uses no Supabase auth), avoiding an AsyncStorage dep.
+  NOW IN USE by S15 Pass B chat (lib/use-chat-session.ts) — the only Realtime consumer.
   Stripe integration IS written: StripeProvider in app/_layout.tsx (card-only, Google Pay
   off for now); PaymentSheet wired in app/(tabs)/(booking)/confirm.tsx (S06 Pass A).
   S06 Pass B confirms the booking by AUTHORITATIVE POLLING of
@@ -250,6 +294,28 @@ it does NOT have its own backend.
   rebuild needed — expo-calendar was already compiled in. Entry points pass params
   {startIso, endIso, sessionType, joinToken}. S08's Alert stub removed; S11's Alert
   stub removed. All user-facing strings in addToCalendar.* i18n namespace (ES + EN).
+  S16 (app/review.tsx) IS built — the post-class review, the LAST screen of the class
+  lifecycle. Reached from S15 on leave (video-room.tsx goReview → router.replace /review
+  with { eventId }); eventId is the ONLY param (so the app-bar shows the static title +
+  a "1 · 2"/"2 · 2" step chip, no date/time subtitle). Gentle progressive form, backend
+  owns all logic — 4-phase machine: rating → comment → google → thanks. RATING: 1–5 stars;
+  the kind:"rating" POST fires ON STAR TAP (not on Continuar) so the rating is saved the
+  moment it's picked and the user can leave freely — re-tapping a different star re-POSTs
+  (backend upserts, safe). It reads the server-decided showGoogleReview flag off that
+  response (NEVER computed client-side); Continuar (enabled only after a rating save)
+  advances. COMMENT (skippable): optional TextInput maxLength 1000 (contract limit; the
+  design mock's 280 is superseded), live counter; "Enviar reseña" POSTs kind:"comment"
+  only when non-empty, "Omitir" skips — both then branch showGoogleReview ? google :
+  thanks. GOOGLE (only when showGoogleReview===true, so 1–3★ NEVER see it): accept POSTs
+  kind:"google" action:"accept" then Linking.openURL(GOOGLE_REVIEW_URL); "Ahora no" (and
+  header X) POSTs action:"decline" — the google POST is best-effort (a failure still
+  proceeds to thanks, never traps the user). THANKS: check hero + star recap + "Volver al
+  inicio" → router.replace /(tabs)/(home). Concurrent-submit guard via busyRef; failed
+  rating/comment POSTs show an inline error (REVIEW_BOOKING_NOT_FOUND → friendly copy,
+  else generic) and keep the user's selection/text for retry — never silently dropped.
+  Strings in the review.* i18n namespace (ES+EN). NO pure-logic module (thin phase machine
+  over api.postReview — unlike chat/payment; no new unit test). NO native dep / NO rebuild
+  (pure JS + core Linking). GOOGLE_REVIEW_URL is a PLACEHOLDER in constants/config.ts.
   Validate app.json plugin changes with
   `npx expo config --type prebuild` (the VSCode Expo extension's plugin linter throws false
   "invalid config plugin" warnings — ignore those).
@@ -280,7 +346,7 @@ app/
 ├── _layout.tsx            — root Stack; registers (tabs) + full-screen experiences
 ├── login.tsx              — S01 Bienvenida / Iniciar sesión
 ├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
-├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
+├── review.tsx             — S16 Valoración post-clase (BUILT) (tab bar hidden)
 ├── add-to-calendar.tsx    — S19 Añadir al calendario         (modal)
 ├── (video)/               — route group holding the tab-bar-hidden video routes;
 │   │                        _layout is a plain <Stack>. (ZoomVideoSdkProvider is an
@@ -288,8 +354,10 @@ app/
 │   │                        group re-entry crashes.) Parenthesized → URLs stay
 │   │                        /video-prejoin, /video-room
 │   ├── video-prejoin.tsx  — S14 Pre-unión · prueba de cámara/micro
-│   └── video-room.tsx     — S15 Sala · en clase (Pass A built: live video +
-│                             controls + lifecycle + teardown; chat is Pass B)
+│   └── video-room.tsx     — S15 Sala · en clase (Pass A: live video + controls +
+│                             lifecycle + teardown; Pass B: in-session text chat via
+│                             Supabase Realtime — components/video/chat-panel.tsx +
+│                             lib/use-chat-session.ts + lib/chat.ts)
 └── (tabs)/
     ├── _layout.tsx        — 4-tab Tabs navigator (MaterialCommunityIcons, outline/filled by focus)
     ├── (home)/            — Tab: Inicio (home-outline / home)
@@ -331,7 +399,10 @@ in `(tabs)/_layout.tsx` alone did NOT fix it. Keep new tabs' landing screens as 
 routes (not `index.tsx`) so the app reliably opens on Inicio.
 
 ### Key files
-- `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev)
+- `constants/config.ts` — `API_BASE` URL (production: https://www.gustavoai.dev);
+  also `GOOGLE_REVIEW_URL` — the S16 "Dejar reseña en Google" target. PLACEHOLDER: the
+  backend does NOT return this URL (the kind:"google" POST only records the accept/decline
+  outcome), so replace it with the real Google Business review link before shipping.
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`, `refreshSession`
   (single-flight silent refresh — see Auth status), `signOutGoogle`,
   `hydrateSession` (load persisted → in-memory at launch), `AuthSession`/`AuthUser` types,
@@ -360,6 +431,13 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   fails LOUD (kind:'error') if the channel returns the single-session shape for a flow we
   initiated as a pack. Both swallow transient errors; `now`/`sleep` injectable; resolve
   exactly once. Unit-tested in `lib/__tests__/payment-confirmation.test.ts`
+- `lib/chat.ts` — pure in-session chat reconciliation (S15 Pass B; no React/Supabase):
+  `mergeMessages()` unions backlog + live broadcasts deduped by `id`, sorted by message
+  index; `parseMessageIndex()` parses "<eventId>:<index>". Unit-tested in
+  `lib/__tests__/chat.test.ts`. Mirrors payment-confirmation's pure-core discipline.
+- `lib/use-chat-session.ts` — S15 Pass B Realtime lifecycle hook (handshake → merge backlog →
+  supabase.channel().on('broadcast').subscribe(); send via api.postChatSession; reconcile-on-
+  SUBSCRIBED; idempotent teardown; unread count). CHAT-ONLY scope fence (never payments).
 - `lib/notification-store.ts` — expo-secure-store wrapper (mirrors locale-store.ts)
   for the S18 notification PREFERENCE (`{ enabled, leadTimeMinutes }`) under
   `app.notification-prefs`. Local-only (no backend); `loadNotificationPrefs()` returns
@@ -460,7 +538,10 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   lib/i18n/strings.ts (both languages, enforced by the type) as you go.
 
 ### Out of scope for now
-- Zoom video integration (last phase)
+- Nothing pending — Zoom video (S14/S15) and the post-class review (S16, the last
+  screen) are all built. Remaining follow-ups are the marked TODOs in the notes above
+  (iOS permission requests / Podfile tweak, notification scheduling, S08→S11 goDetail
+  wiring, and replacing the GOOGLE_REVIEW_URL placeholder).
 
 ## Maintaining this file
 

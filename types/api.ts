@@ -211,9 +211,13 @@ export interface GetChatSessionChannelParams {
 }
 
 export interface ChatMessage {
-  sender: string;
+  /** Stable message id, shaped "<eventId>:<index>" — used to dedup backlog vs live broadcasts. */
+  id: string;
+  senderEmail: string;
+  senderName: string;
   text: string;
-  createdAt: string;
+  /** ISO timestamp. */
+  sentAt: string;
 }
 
 export interface GetChatSessionChannelResponse {

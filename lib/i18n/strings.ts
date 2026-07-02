@@ -151,6 +151,56 @@ const es = {
     errorTitle: 'Se perdió la conexión',
     errorDesc: 'No pudimos mantener la sala. Comprueba tu conexión e inténtalo de nuevo.',
     errorBack: 'Volver',
+    chat: {
+      headerTitle: 'Chat de la clase',
+      close: 'Cerrar chat',
+      inputPlaceholder: 'Escribe un mensaje',
+      send: 'Enviar',
+      you: 'Tú',
+      empty: 'Aún no hay mensajes',
+      sendError: 'No se pudo enviar. Reintenta.',
+    },
+  },
+  review: {
+    appBarTitle: 'Clase con Gustavo',
+    stepOfTwo: '{n} · 2',
+    // Rating step
+    ratingTitle: '¿Cómo ha ido tu clase?',
+    ratingSubtitle: 'Tu valoración ayuda a Gustavo a mejorar cada sesión.',
+    ratingHint: 'Toca una estrella para valorar',
+    ratingSaving: 'Guardando tu valoración…',
+    rating1: 'Muy mejorable',
+    rating2: 'Regular',
+    rating3: 'Bien',
+    rating4: 'Muy bien',
+    rating5: '¡Excelente!',
+    continue: 'Continuar',
+    // Comment step
+    savedPill: 'Tu valoración se ha guardado',
+    commentTitle: '¿Quieres añadir un comentario?',
+    commentSubtitlePrefix: 'Opcional ·',
+    commentSubtitle: 'Cuéntale a Gustavo qué te ha ayudado o qué se puede mejorar.',
+    commentPlaceholder: 'Escribe tu comentario…',
+    commentCounter: '{n} / 1000',
+    sendReview: 'Enviar reseña',
+    skip: 'Omitir',
+    sending: 'Enviando…',
+    // Google step
+    googleTitle: '¿Nos dejas una reseña en Google?',
+    googleBody:
+      'Ayudas a que más estudiantes encuentren a Gustavo. Te llevará menos de un minuto.',
+    googleCta: 'Dejar reseña en Google',
+    googleSkip: 'Ahora no, gracias',
+    // Thanks step
+    thanksTitle: '¡Gracias por tu reseña!',
+    thanksBody:
+      'Tu opinión ayuda a Gustavo a seguir mejorando. Nos vemos en tu próxima clase.',
+    thanksRecap: 'Valoración enviada',
+    goHome: 'Volver al inicio',
+    // Errors
+    errorGeneric: 'No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo.',
+    errorNotFound: 'No encontramos esta clase para valorar.',
+    retry: 'Reintentar',
   },
 };
 
@@ -300,6 +350,56 @@ const en: Dictionary = {
     errorTitle: 'Connection lost',
     errorDesc: "We couldn't keep the room. Check your connection and try again.",
     errorBack: 'Go back',
+    chat: {
+      headerTitle: 'Class chat',
+      close: 'Close chat',
+      inputPlaceholder: 'Type a message',
+      send: 'Send',
+      you: 'You',
+      empty: 'No messages yet',
+      sendError: "Couldn't send. Try again.",
+    },
+  },
+  review: {
+    appBarTitle: 'Class with Gustavo',
+    stepOfTwo: '{n} · 2',
+    // Rating step
+    ratingTitle: 'How was your class?',
+    ratingSubtitle: 'Your rating helps Gustavo improve every session.',
+    ratingHint: 'Tap a star to rate',
+    ratingSaving: 'Saving your rating…',
+    rating1: 'Needs work',
+    rating2: 'Okay',
+    rating3: 'Good',
+    rating4: 'Great',
+    rating5: 'Excellent!',
+    continue: 'Continue',
+    // Comment step
+    savedPill: 'Your rating has been saved',
+    commentTitle: 'Want to add a comment?',
+    commentSubtitlePrefix: 'Optional ·',
+    commentSubtitle: 'Tell Gustavo what helped or what could be better.',
+    commentPlaceholder: 'Write your comment…',
+    commentCounter: '{n} / 1000',
+    sendReview: 'Send review',
+    skip: 'Skip',
+    sending: 'Sending…',
+    // Google step
+    googleTitle: 'Leave us a Google review?',
+    googleBody:
+      'You help more students find Gustavo. It takes less than a minute.',
+    googleCta: 'Leave a Google review',
+    googleSkip: 'Not now, thanks',
+    // Thanks step
+    thanksTitle: 'Thanks for your review!',
+    thanksBody:
+      'Your feedback helps Gustavo keep improving. See you in your next class.',
+    thanksRecap: 'Rating submitted',
+    goHome: 'Back to home',
+    // Errors
+    errorGeneric: "We couldn't save it. Check your connection and try again.",
+    errorNotFound: "We couldn't find this class to review.",
+    retry: 'Retry',
   },
 };
 

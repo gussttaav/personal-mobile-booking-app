@@ -453,7 +453,7 @@ export default function VideoRoomScreen() {
               disabled={!joined}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel={t('room.micLabel')}
+              accessibilityLabel={t('common.microphone')}
             >
               <MaterialCommunityIcons
                 name={micOn ? 'microphone' : 'microphone-off'}
@@ -468,7 +468,7 @@ export default function VideoRoomScreen() {
               disabled={!joined}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel={t('room.cameraLabel')}
+              accessibilityLabel={t('common.camera')}
             >
               <MaterialCommunityIcons
                 name={cameraOn ? 'video' : 'video-off'}

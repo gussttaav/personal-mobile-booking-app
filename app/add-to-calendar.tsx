@@ -170,7 +170,7 @@ export default function AddToCalendarScreen() {
             <Text style={styles.primaryBtnText}>{t('addToCalendar.requestBtn')}</Text>
           </TouchableOpacity>
           <Pressable style={styles.textBtn} onPress={() => router.back()}>
-            <Text style={styles.textBtnText}>{t('addToCalendar.dismiss')}</Text>
+            <Text style={styles.textBtnText}>{t('common.close')}</Text>
           </Pressable>
         </View>
       )}
@@ -204,7 +204,7 @@ export default function AddToCalendarScreen() {
             <Text style={styles.primaryBtnText}>{t('addToCalendar.openSettings')}</Text>
           </TouchableOpacity>
           <Pressable style={styles.textBtn} onPress={() => router.back()}>
-            <Text style={styles.textBtnText}>{t('addToCalendar.dismiss')}</Text>
+            <Text style={styles.textBtnText}>{t('common.close')}</Text>
           </Pressable>
         </View>
       )}
@@ -220,7 +220,7 @@ export default function AddToCalendarScreen() {
             <Text style={styles.primaryBtnText}>{t('addToCalendar.retry')}</Text>
           </TouchableOpacity>
           <Pressable style={styles.textBtn} onPress={() => router.back()}>
-            <Text style={styles.textBtnText}>{t('addToCalendar.dismiss')}</Text>
+            <Text style={styles.textBtnText}>{t('common.close')}</Text>
           </Pressable>
         </View>
       )}

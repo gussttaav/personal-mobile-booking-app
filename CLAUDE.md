@@ -549,6 +549,16 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   screen supplies, e.g. `sessionType.pricesWord` / `schedule.availabilityWord`). S05 & S11
   DROPPED their hardcoded Spanish month/weekday arrays in favour of Intl via `bcp47(locale)`
   + `toLocaleDateString` (same Cluster-1 pattern; `formatEur` stays es-ES).
+  CLUSTER 3 (the video block) is now localized — S14 prejoin, S15 room + chat, and S16
+  review were already fully `t()`-driven with complete ES+EN dictionaries (built that way);
+  the only remaining hardcoded Spanish was 4 `accessibilityLabel` literals in
+  video-prejoin.tsx, now extracted. PROMOTED to `common.*`: `close` (retired
+  `addToCalendar.dismiss`, now used by S14 + S19), `camera` + `microphone` (retired
+  `room.micLabel`/`room.cameraLabel`, now the shared control a11y labels for S14 + S15).
+  The flip-camera a11y label stays single-screen as `prejoin.flipCameraA11y`. Tone-sensitive
+  copy confirmed: the S15 "esperando a Gustavo" waiting copy is calm/reassuring in EN, the
+  S14 permission-denied recovery explains why+how, the S16 Google-review prompt is a genuine
+  (non-pushy) invitation, and "Gustavo" is kept as an untranslated proper noun throughout.
 - KEY-NAMING CONVENTION (established with Cluster 1, applies to later clusters):
   `screen.section.element`. Strings repeated across ≥2 screens live in a shared
   `common.*` namespace (never duplicated per screen — e.g. `common.backHome`,

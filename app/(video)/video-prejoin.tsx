@@ -234,7 +234,7 @@ export default function VideoPrejoinScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Cerrar"
+          accessibilityLabel={t('common.close')}
         >
           <MaterialCommunityIcons name="close" size={22} color={Colors.text} />
         </TouchableOpacity>
@@ -378,7 +378,7 @@ export default function VideoPrejoinScreen() {
                   onPress={flipCamera}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel="Cambiar de cámara"
+                  accessibilityLabel={t('prejoin.flipCameraA11y')}
                 >
                   <MaterialCommunityIcons name="camera-flip" size={18} color={Colors.text} />
                 </TouchableOpacity>
@@ -394,7 +394,7 @@ export default function VideoPrejoinScreen() {
                   onPress={() => setCameraOn((v) => !v)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel="Cámara"
+                  accessibilityLabel={t('common.camera')}
                 >
                   <MaterialCommunityIcons
                     name={cameraOn ? 'video' : 'video-off'}
@@ -407,7 +407,7 @@ export default function VideoPrejoinScreen() {
                   onPress={() => setMicOn((v) => !v)}
                   activeOpacity={0.7}
                   accessibilityRole="button"
-                  accessibilityLabel="Micrófono"
+                  accessibilityLabel={t('common.microphone')}
                 >
                   <MaterialCommunityIcons
                     name={micOn ? 'microphone' : 'microphone-off'}

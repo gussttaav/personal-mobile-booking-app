@@ -5,23 +5,28 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
+
+type TFn = (key: TranslationKey) => string;
 
 function fmt2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function formatTimeRemaining(startsAt: string): string {
+function formatTimeRemaining(startsAt: string, t: TFn): string {
   const delta = new Date(startsAt).getTime() - Date.now();
-  if (delta <= 0) return 'Tu clase ya ha comenzado.';
+  if (delta <= 0) return t('common.timeRemaining.started');
   const totalMins = Math.ceil(delta / 60_000);
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-  if (h >= 1) return `Tu clase empieza en ${h} h ${fmt2(m)} min.`;
-  return `Tu clase empieza en ${totalMins} min.`;
+  if (h >= 1) return t('common.timeRemaining.hoursMins').replace('{h}', String(h)).replace('{m}', fmt2(m));
+  return t('common.timeRemaining.mins').replace('{n}', String(totalMins));
 }
 
 export default function RescheduleScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   const { token, startsAt, sessionType } = useLocalSearchParams<{
     token: string;
     startsAt: string;
@@ -68,8 +73,8 @@ export default function RescheduleScreen() {
             <MaterialCommunityIcons name="clock-alert-outline" size={22} color={Colors.warning} />
           </View>
           <View style={{ flex: 1, paddingTop: 1 }}>
-            <Text style={styles.title}>Ya no puedes reprogramar online</Text>
-            <Text style={styles.subtitle}>{formatTimeRemaining(safeStartsAt)}</Text>
+            <Text style={styles.title}>{t('reschedule.blockedTitle')}</Text>
+            <Text style={styles.subtitle}>{formatTimeRemaining(safeStartsAt, t)}</Text>
           </View>
         </View>
 
@@ -81,9 +86,9 @@ export default function RescheduleScreen() {
             style={{ flexShrink: 0, marginTop: 1 }}
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.infoTitle}>Ventana de reprogramación cerrada</Text>
+            <Text style={styles.infoTitle}>{t('reschedule.windowTitle')}</Text>
             <Text style={styles.infoBody}>
-              El cambio de hora se cierra 2 h antes del inicio de la clase.
+              {t('reschedule.windowBody')}
             </Text>
           </View>
         </View>
@@ -96,9 +101,9 @@ export default function RescheduleScreen() {
             style={{ flexShrink: 0, marginTop: 1 }}
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.infoTitle}>¿No puedes asistir?</Text>
+            <Text style={styles.infoTitle}>{t('common.cantAttendTitle')}</Text>
             <Text style={styles.infoBody}>
-              Avísale a Gustavo directamente y buscad una solución.
+              {t('common.cantAttendBody')}
             </Text>
           </View>
         </View>
@@ -107,18 +112,18 @@ export default function RescheduleScreen() {
           style={styles.tealBtn}
           onPress={() =>
             Alert.alert(
-              'Próximamente',
-              'El chat con Gustavo estará disponible próximamente.',
+              t('common.soonTitle'),
+              t('common.soonBody'),
             )
           }
           activeOpacity={0.85}
         >
           <MaterialCommunityIcons name="chat-processing-outline" size={18} color={Colors.primary} />
-          <Text style={styles.tealBtnText}>Avisar a Gustavo</Text>
+          <Text style={styles.tealBtnText}>{t('common.notifyGustavo')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.ghostBtn} onPress={() => router.back()} activeOpacity={0.7}>
-          <Text style={styles.ghostBtnText}>Volver al detalle</Text>
+          <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
         </TouchableOpacity>
       </View>
     </View>

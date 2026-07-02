@@ -13,15 +13,26 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
+import type { Locale } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Screen-local copies matching Home/S08 conventions.
 
-function formatDate(iso: string): string {
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
+
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
@@ -30,8 +41,8 @@ function formatTime(iso: string): string {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h'): string {
-  const label = duration === '1h' ? '1 hora' : '2 horas';
+function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h', t: TFn): string {
+  const label = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
   return `${formatTime(startIso)} – ${formatTime(endIso)} · ${label}`;
 }
 
@@ -39,14 +50,14 @@ function durationFromSessionType(sessionType: string): '1h' | '2h' {
   return sessionType === 'session2h' ? '2h' : '1h';
 }
 
-function classLabel(startsAt: string): string {
+function classLabel(startsAt: string, locale: Locale, t: TFn): string {
   const start = new Date(startsAt);
   const now = new Date();
-  if (start.toDateString() === now.toDateString()) return 'Hoy';
+  if (start.toDateString() === now.toDateString()) return t('bookingDetail.today');
   const tomorrow = new Date(now.getTime() + 86400000);
-  if (start.toDateString() === tomorrow.toDateString()) return 'Mañana';
-  const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  return DAYS[start.getDay()];
+  if (start.toDateString() === tomorrow.toDateString()) return t('bookingDetail.tomorrow');
+  const weekday = start.toLocaleDateString(bcp47(locale), { weekday: 'short' }).replace('.', '');
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}`;
 }
 
 type ClassStatus = 'upcoming' | 'imminent' | 'active';
@@ -64,18 +75,21 @@ function minutesUntil(startsAt: string): number {
   return Math.max(0, Math.round((new Date(startsAt).getTime() - Date.now()) / 60000));
 }
 
-function payLabel(sessionType: string, packSize?: string): string {
+function payLabel(sessionType: string, t: TFn, packSize?: string): string {
   if (sessionType === 'pack') {
-    return packSize ? `1 crédito · Pack ${packSize}` : '1 crédito · Pack';
+    return packSize
+      ? t('bookingDetail.payPackSized').replace('{n}', packSize)
+      : t('bookingDetail.payPack');
   }
-  if (sessionType === 'free15min') return 'Clase gratuita';
-  return 'Sesión individual';
+  if (sessionType === 'free15min') return t('bookingDetail.payFree');
+  return t('bookingDetail.paySingle');
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function BookingDetailScreen() {
   const insets = useSafeAreaInsets();
+  const { t, locale } = useLocale();
   const params = useLocalSearchParams<{
     token: string;
     joinToken: string;
@@ -160,11 +174,11 @@ export default function BookingDetailScreen() {
           onPress={goBack}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('common.back')}
         >
           <MaterialCommunityIcons name="chevron-left" size={26} color={Colors.textMuted} />
         </TouchableOpacity>
-        <Text style={styles.appBarTitle}>Detalle de reserva</Text>
+        <Text style={styles.appBarTitle}>{t('bookingDetail.appbarTitle')}</Text>
         {/* spacer to visually center the title */}
         <View style={styles.backBtn} />
       </View>
@@ -180,33 +194,35 @@ export default function BookingDetailScreen() {
           <View style={styles.heroTopRow}>
             <View style={styles.heroPill}>
               <MaterialCommunityIcons name="check-circle-outline" size={13} color={Colors.primary} />
-              <Text style={styles.heroPillText}>Confirmada</Text>
+              <Text style={styles.heroPillText}>{t('bookingDetail.confirmed')}</Text>
             </View>
             {status !== 'upcoming' && (
               <View style={styles.imminentChip}>
                 <Animated.View style={[styles.imminentDot, { opacity: dotOpacity }]} />
                 <Text style={styles.imminentText}>
-                  {status === 'active' ? 'Sala activa' : `Empieza en ${minutesUntil(startsAt)} min`}
+                  {status === 'active'
+                    ? t('bookingDetail.activeRoom')
+                    : t('bookingDetail.startsIn').replace('{n}', String(minutesUntil(startsAt)))}
                 </Text>
               </View>
             )}
           </View>
 
           {/* Overline */}
-          <Text style={styles.heroOverline}>TU PRÓXIMA CLASE</Text>
+          <Text style={styles.heroOverline}>{t('bookingDetail.overline')}</Text>
 
           {/* Time row — start and end on the same line, mixed sizes */}
           {startsAt ? (
             <>
               <View style={styles.heroTimeRow}>
                 <Text style={styles.heroTime}>
-                  {classLabel(startsAt)} · {formatTime(startsAt)}
+                  {classLabel(startsAt, locale, t)} · {formatTime(startsAt)}
                 </Text>
                 <Text style={styles.heroTimeEnd}> – {formatTime(endsAt)}</Text>
               </View>
               <Text style={styles.heroMeta}>
-                {duration === '1h' ? '1 hora' : '2 horas'} · con Gustavo
-                {status === 'active' ? ' · Sala lista' : ''}
+                {duration === '1h' ? t('common.duration1h') : t('common.duration2h')} · {t('common.tutorName')}
+                {status === 'active' ? ` · ${t('bookingDetail.roomReady')}` : ''}
               </Text>
             </>
           ) : (
@@ -222,9 +238,9 @@ export default function BookingDetailScreen() {
               <MaterialCommunityIcons name="calendar-outline" size={18} color={Colors.primary} />
             </View>
             <View style={styles.detailBody}>
-              <Text style={styles.detailLabel}>Fecha</Text>
+              <Text style={styles.detailLabel}>{t('bookingDetail.dateLabel')}</Text>
               <Text style={styles.detailValue}>
-                {startsAt ? formatDate(startsAt) : '—'}
+                {startsAt ? formatDate(startsAt, locale) : '—'}
               </Text>
             </View>
           </View>
@@ -237,9 +253,9 @@ export default function BookingDetailScreen() {
               <MaterialCommunityIcons name="clock-outline" size={18} color={Colors.primary} />
             </View>
             <View style={styles.detailBody}>
-              <Text style={styles.detailLabel}>Horario</Text>
+              <Text style={styles.detailLabel}>{t('bookingDetail.timeLabel')}</Text>
               <Text style={styles.detailValue}>
-                {startsAt ? formatTimeRange(startsAt, endsAt, duration) : '—'}
+                {startsAt ? formatTimeRange(startsAt, endsAt, duration, t) : '—'}
               </Text>
             </View>
           </View>
@@ -257,12 +273,12 @@ export default function BookingDetailScreen() {
             </View>
             <View style={[styles.detailBody, styles.detailBodyRow]}>
               <View style={styles.detailBodyText}>
-                <Text style={styles.detailLabel}>Pago</Text>
-                <Text style={styles.detailValue}>{payLabel(sessionType, packSize)}</Text>
+                <Text style={styles.detailLabel}>{t('bookingDetail.payLabel')}</Text>
+                <Text style={styles.detailValue}>{payLabel(sessionType, t, packSize)}</Text>
               </View>
               <View style={[styles.payPill, isPack && styles.payPillPack]}>
                 <Text style={[styles.payPillText, isPack && styles.payPillTextPack]}>
-                  {isPack ? 'Crédito' : 'Pago único'}
+                  {isPack ? t('bookingDetail.payPillCredit') : t('bookingDetail.payPillSingle')}
                 </Text>
               </View>
             </View>
@@ -273,7 +289,7 @@ export default function BookingDetailScreen() {
         <View style={styles.policyBanner}>
           <MaterialCommunityIcons name="shield-check-outline" size={16} color={Colors.textDim} />
           <Text style={styles.policyText}>
-            Cancela o reprograma gratis hasta 2 h antes
+            {t('bookingDetail.policyBanner')}
           </Text>
         </View>
       </ScrollView>
@@ -287,7 +303,7 @@ export default function BookingDetailScreen() {
           disabled={!isJoinable}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel="Unirse a la clase"
+          accessibilityLabel={t('bookingDetail.join')}
         >
           <MaterialCommunityIcons
             name="video"
@@ -295,12 +311,12 @@ export default function BookingDetailScreen() {
             color={isJoinable ? Colors.onPrimary : Colors.textDim}
           />
           <Text style={[styles.joinBtnText, !isJoinable && styles.joinBtnTextIdle]}>
-            Unirse a la clase
+            {t('bookingDetail.join')}
           </Text>
         </TouchableOpacity>
 
         {!isJoinable && (
-          <Text style={styles.joinHint}>Disponible 15 min antes</Text>
+          <Text style={styles.joinHint}>{t('bookingDetail.joinHint')}</Text>
         )}
 
         {/* Secondary row */}
@@ -312,7 +328,7 @@ export default function BookingDetailScreen() {
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="calendar-plus" size={17} color={Colors.textMuted} />
-            <Text style={styles.secondaryBtnText}>Calendario</Text>
+            <Text style={styles.secondaryBtnText}>{t('bookingDetail.calendar')}</Text>
           </TouchableOpacity>
 
           {/* Reprogramar */}
@@ -322,7 +338,7 @@ export default function BookingDetailScreen() {
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="calendar-refresh-outline" size={17} color={Colors.textMuted} />
-            <Text style={styles.secondaryBtnText}>Reprogramar</Text>
+            <Text style={styles.secondaryBtnText}>{t('common.reschedule')}</Text>
           </TouchableOpacity>
 
           {/* Cancelar */}
@@ -332,7 +348,7 @@ export default function BookingDetailScreen() {
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons name="close-circle-outline" size={17} color={Colors.error} />
-            <Text style={[styles.secondaryBtnText, styles.cancelBtnText]}>Cancelar</Text>
+            <Text style={[styles.secondaryBtnText, styles.cancelBtnText]}>{t('bookingDetail.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>

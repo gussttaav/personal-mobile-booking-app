@@ -68,12 +68,12 @@ function formatTimeRange(startIso: string, sessionType: string, t: TFn): string 
 
 function formatTimeRemaining(startsAt: string, t: TFn): string {
   const delta = new Date(startsAt).getTime() - Date.now();
-  if (delta <= 0) return t('cancel.timeRemaining.started');
+  if (delta <= 0) return t('common.timeRemaining.started');
   const totalMins = Math.ceil(delta / 60_000);
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-  if (h >= 1) return t('cancel.timeRemaining.hoursMins').replace('{h}', String(h)).replace('{m}', fmt2(m));
-  return t('cancel.timeRemaining.mins').replace('{n}', String(totalMins));
+  if (h >= 1) return t('common.timeRemaining.hoursMins').replace('{h}', String(h)).replace('{m}', fmt2(m));
+  return t('common.timeRemaining.mins').replace('{n}', String(totalMins));
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -430,9 +430,9 @@ export default function CancelScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>{t('cancel.blocked.cantAttendTitle')}</Text>
+                <Text style={styles.infoCardTitle}>{t('common.cantAttendTitle')}</Text>
                 <Text style={styles.infoCardBody}>
-                  {t('cancel.blocked.cantAttendBody')}
+                  {t('common.cantAttendBody')}
                 </Text>
               </View>
             </View>
@@ -441,17 +441,17 @@ export default function CancelScreen() {
               style={styles.tealOutlineBtn}
               onPress={() =>
                 Alert.alert(
-                  t('cancel.blocked.soonTitle'),
-                  t('cancel.blocked.soonBody'),
+                  t('common.soonTitle'),
+                  t('common.soonBody'),
                 )
               }
               activeOpacity={0.85}
             >
               <MaterialCommunityIcons name="chat-processing-outline" size={18} color={Colors.primary} />
-              <Text style={styles.tealOutlineBtnText}>{t('cancel.blocked.notifyCta')}</Text>
+              <Text style={styles.tealOutlineBtnText}>{t('common.notifyGustavo')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.ghostBtn} onPress={() => router.back()} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>{t('cancel.backToDetail')}</Text>
+              <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -497,7 +497,7 @@ export default function CancelScreen() {
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
-              <Text style={styles.ghostBtnText}>{t('cancel.backToDetail')}</Text>
+              <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
             </TouchableOpacity>
             <View style={styles.contactRow}>
               <Text style={styles.contactMuted}>{t('cancel.errGeneric.stillFailing')}</Text>

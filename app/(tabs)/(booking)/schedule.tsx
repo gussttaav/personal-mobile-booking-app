@@ -16,11 +16,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { api } from '@/lib/api-client';
+import { useLocale, useT } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { rescheduleFlag } from '@/lib/reschedule-flag';
 import {
   buildGridModel,
   civilDateInTz,
-  civilWeekday,
   dateKey,
   getDeviceTimeZone,
   weekColumns,
@@ -28,7 +29,7 @@ import {
   type GridCell as GridCellModel,
   type GridModel,
 } from '@/lib/grid-time';
-import type { AvailabilitySlot, GetScheduleResponse } from '@/types/api';
+import type { AvailabilitySlot, GetScheduleResponse, Locale } from '@/types/api';
 
 // ── Grid geometry ───────────────────────────────────────────────────────────
 // Cells are 60px wide (comfortable touch), 40px tall (compact for 30-min rows).
@@ -50,14 +51,33 @@ const CELL_COLORS = {
   noFit: { bg: 'rgba(78, 222, 163, 0.045)', border: 'rgba(78, 222, 163, 0.32)', text: '#8a9990' },
 } as const;
 
-// ── Spanish date labels ───────────────────────────────────────────────────────
+// ── Locale-aware date labels ──────────────────────────────────────────────────
+// Spanish uses day-before-month; en-GB keeps that ordering in English. Weekday /
+// month names come from Intl, not hardcoded arrays, so they follow the app locale.
 
-const WEEKDAYS_ES = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
-const MONTHS_SHORT_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const MONTHS_FULL_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
+
+// "ene" / "jan" — short month name for a 1-based month number.
+function monthShort(month1: number, locale: Locale): string {
+  return new Date(2020, month1 - 1, 1)
+    .toLocaleDateString(bcp47(locale), { month: 'short' })
+    .replace('.', '');
+}
+
+// "Enero" / "January" — full month name, capitalized.
+function monthFull(month1: number, locale: Locale): string {
+  const m = new Date(2020, month1 - 1, 1).toLocaleDateString(bcp47(locale), { month: 'long' });
+  return m.charAt(0).toUpperCase() + m.slice(1);
+}
+
+// "jue" / "thu" — short weekday name for a civil date (caller upper/caps as needed).
+function weekdayShort(cd: CivilDate, locale: Locale): string {
+  return new Date(cd.year, cd.month - 1, cd.day)
+    .toLocaleDateString(bcp47(locale), { weekday: 'short' })
+    .replace('.', '');
+}
 
 function slotLabel(minute: number): string {
   const h = Math.floor(minute / 60);
@@ -70,11 +90,11 @@ function parseKey(key: string): CivilDate {
   return { year, month, day };
 }
 
-function weekRangeLabel(cols: CivilDate[]): string {
+function weekRangeLabel(cols: CivilDate[], locale: Locale): string {
   const a = cols[0];
   const b = cols[cols.length - 1];
-  if (a.month === b.month) return `${a.day} – ${b.day} ${MONTHS_SHORT_ES[a.month - 1]}`;
-  return `${a.day} ${MONTHS_SHORT_ES[a.month - 1]} – ${b.day} ${MONTHS_SHORT_ES[b.month - 1]}`;
+  if (a.month === b.month) return `${a.day} – ${b.day} ${monthShort(a.month, locale)}`;
+  return `${a.day} ${monthShort(a.month, locale)} – ${b.day} ${monthShort(b.month, locale)}`;
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -105,19 +125,20 @@ function TopGlow() {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ title, subtitle }: { title?: string; subtitle?: string }) {
+  const t = useT();
   return (
     <View style={styles.header}>
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => router.back()}
         activeOpacity={0.7}
-        accessibilityLabel="Volver"
+        accessibilityLabel={t('common.back')}
       >
         <MaterialCommunityIcons name="chevron-left" size={24} color={Colors.text} />
       </TouchableOpacity>
       <View style={styles.headerText}>
-        <Text style={styles.headerTitle}>{title ?? 'Reservar'}</Text>
-        <Text style={styles.headerSubtitle}>{subtitle ?? 'Paso 2 de 3 · elige fecha y hora'}</Text>
+        <Text style={styles.headerTitle}>{title ?? t('common.book')}</Text>
+        <Text style={styles.headerSubtitle}>{subtitle ?? t('schedule.stepSubtitle')}</Text>
       </View>
     </View>
   );
@@ -125,25 +146,28 @@ function Header({ title, subtitle }: { title?: string; subtitle?: string }) {
 
 // ── Reschedule "from" banner ──────────────────────────────────────────────────
 
-const WEEKDAYS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
 function RescheduleBanner({ origStartsAt, duration }: { origStartsAt: string; duration: Duration }) {
+  const { t, locale } = useLocale();
   const d = new Date(origStartsAt);
   const h = d.getHours().toString().padStart(2, '0');
   const m = d.getMinutes().toString().padStart(2, '0');
-  const label = `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT_ES[d.getMonth()]} · ${h}:${m}`;
-  const durationLabel = duration === '2h' ? '2 horas' : '1 hora';
+  const wd = d.toLocaleDateString(bcp47(locale), { weekday: 'short' }).replace('.', '');
+  const wdCap = wd.charAt(0).toUpperCase() + wd.slice(1);
+  const label = `${wdCap} ${d.getDate()} ${monthShort(d.getMonth() + 1, locale)} · ${h}:${m}`;
+  const durationLabel = duration === '2h' ? t('common.duration2h') : t('common.duration1h');
   return (
     <View style={styles.rescheduleBanner}>
       <View style={styles.rescheduleBannerFrom}>
         <MaterialCommunityIcons name="calendar-arrow-right" size={15} color={Colors.primary} />
         <Text style={styles.rescheduleBannerLabel} numberOfLines={1}>
-          Moviendo desde: <Text style={styles.rescheduleBannerDate}>{label}</Text>
+          {t('schedule.movingFrom')}<Text style={styles.rescheduleBannerDate}>{label}</Text>
         </Text>
       </View>
       <View style={styles.rescheduleLockPill}>
         <MaterialCommunityIcons name="lock-outline" size={11} color={Colors.textDim} />
-        <Text style={styles.rescheduleLockText}>{durationLabel} · mismo tipo · sin cargo</Text>
+        <Text style={styles.rescheduleLockText}>
+          {t('schedule.sameTypeNoCharge').replace('{duration}', durationLabel)}
+        </Text>
       </View>
     </View>
   );
@@ -152,6 +176,7 @@ function RescheduleBanner({ origStartsAt, duration }: { origStartsAt: string; du
 // ── Duration toggle (reflects + switches the route param) ─────────────────────
 
 function DurationToggle({ duration, onChange }: { duration: Duration; onChange: (d: Duration) => void }) {
+  const t = useT();
   return (
     <View style={styles.toggle}>
       {(['1h', '2h'] as const).map((d) => {
@@ -164,7 +189,7 @@ function DurationToggle({ duration, onChange }: { duration: Duration; onChange: 
             activeOpacity={0.8}
           >
             <Text style={[styles.toggleText, active && styles.toggleTextActive]}>
-              {d === '1h' ? '1 hora' : '2 horas'}
+              {d === '1h' ? t('common.duration1h') : t('common.duration2h')}
             </Text>
           </TouchableOpacity>
         );
@@ -192,13 +217,14 @@ function WeekNav({
   onPrev: () => void;
   onNext: () => void;
 }) {
+  const { t, locale } = useLocale();
   const mid = cols[3] ?? cols[0];
   return (
     <View style={styles.weekNav}>
       <View style={styles.weekNavLabel}>
-        <Text style={styles.weekRange}>{weekRangeLabel(cols)}</Text>
+        <Text style={styles.weekRange}>{weekRangeLabel(cols, locale)}</Text>
         <Text style={styles.weekMeta} numberOfLines={1}>
-          {MONTHS_FULL_ES[mid.month - 1]} {mid.year} · {timezone}
+          {monthFull(mid.month, locale)} {mid.year} · {timezone}
         </Text>
       </View>
       {loading && <ActivityIndicator size="small" color={Colors.primary} style={styles.weekSpinner} />}
@@ -208,7 +234,7 @@ function WeekNav({
           onPress={onPrev}
           disabled={!canPrev}
           activeOpacity={0.8}
-          accessibilityLabel="Semana anterior"
+          accessibilityLabel={t('schedule.prevWeek')}
         >
           <MaterialCommunityIcons name="chevron-left" size={20} color={canPrev ? Colors.primary : Colors.textDim} />
         </TouchableOpacity>
@@ -217,7 +243,7 @@ function WeekNav({
           onPress={onNext}
           disabled={!canNext}
           activeOpacity={0.8}
-          accessibilityLabel="Semana siguiente"
+          accessibilityLabel={t('schedule.nextWeek')}
         >
           <MaterialCommunityIcons name="chevron-right" size={20} color={canNext ? Colors.primary : Colors.textDim} />
         </TouchableOpacity>
@@ -299,6 +325,7 @@ function Grid({
   duration: Duration;
   onSelect: (s: Selection) => void;
 }) {
+  const { locale } = useLocale();
   const N = duration === '2h' ? 4 : 2;
   const todayKey = dateKey(today);
   const rows = model.slotMinutes.length;
@@ -337,7 +364,7 @@ function Grid({
                 const isToday = col.key === todayKey;
                 return (
                   <View key={col.key} style={styles.dayHead}>
-                    <Text style={[styles.dayName, isToday && styles.dayTodayAccent]}>{WEEKDAYS_ES[col.weekday]}</Text>
+                    <Text style={[styles.dayName, isToday && styles.dayTodayAccent]}>{weekdayShort(col.date, locale).toUpperCase()}</Text>
                     <Text style={[styles.dayNum, isToday && styles.dayTodayAccent]}>{col.date.day}</Text>
                   </View>
                 );
@@ -409,14 +436,15 @@ function Grid({
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-const LEGEND: { label: string; swatch: 'available' | 'noFit' | 'booked' | 'unavailable' }[] = [
-  { label: 'Disponible', swatch: 'available' },
-  { label: 'No válido', swatch: 'noFit' },
-  { label: 'Reservado', swatch: 'booked' },
-  { label: 'No disponible', swatch: 'unavailable' },
+const LEGEND: { key: TranslationKey; swatch: 'available' | 'noFit' | 'booked' | 'unavailable' }[] = [
+  { key: 'schedule.legend.available', swatch: 'available' },
+  { key: 'schedule.legend.noFit', swatch: 'noFit' },
+  { key: 'schedule.legend.booked', swatch: 'booked' },
+  { key: 'schedule.legend.unavailable', swatch: 'unavailable' },
 ];
 
 function Legend() {
+  const t = useT();
   return (
     <View style={styles.legend}>
       {LEGEND.map((item) => {
@@ -435,9 +463,9 @@ function Legend() {
           swatchStyle = { backgroundColor: CELL_COLORS.unavailable.bg, borderColor: CELL_COLORS.unavailable.border };
         }
         return (
-          <View key={item.label} style={styles.legendItem}>
+          <View key={item.key} style={styles.legendItem}>
             <View style={[styles.legendSwatch, swatchStyle]} />
-            <Text style={styles.legendText}>{item.label}</Text>
+            <Text style={styles.legendText}>{t(item.key)}</Text>
           </View>
         );
       })}
@@ -462,36 +490,35 @@ function EmptyState({
   onSwitch1h: () => void;
   onBack?: () => void;
 }) {
+  const t = useT();
   return (
     <View style={styles.emptyCard}>
       <View style={styles.emptyIcon}>
         <MaterialCommunityIcons name="calendar-search" size={26} color={Colors.primary} />
       </View>
-      <Text style={styles.emptyTitle}>No quedan huecos esta semana</Text>
+      <Text style={styles.emptyTitle}>{t('schedule.empty.title')}</Text>
       <Text style={styles.emptyText}>
-        {duration === '2h'
-          ? 'No hay bloques de 2 horas libres esta semana. Prueba otra semana o cambia a 1 hora.'
-          : 'No hay horas libres esta semana. Prueba con la semana siguiente.'}
+        {duration === '2h' ? t('schedule.empty.body2h') : t('schedule.empty.body1h')}
       </Text>
       {canNext && (
         <TouchableOpacity style={styles.emptyPrimaryBtn} onPress={onNextWeek} activeOpacity={0.85}>
-          <Text style={styles.emptyPrimaryText}>Ver semana siguiente</Text>
+          <Text style={styles.emptyPrimaryText}>{t('schedule.empty.nextWeek')}</Text>
           <MaterialCommunityIcons name="arrow-right" size={16} color={Colors.onPrimary} />
         </TouchableOpacity>
       )}
       {onBack ? (
         <TouchableOpacity style={styles.emptySecondaryBtn} onPress={onBack} activeOpacity={0.85}>
-          <Text style={styles.emptySecondaryText}>Mantener la hora actual</Text>
+          <Text style={styles.emptySecondaryText}>{t('schedule.empty.keepCurrent')}</Text>
         </TouchableOpacity>
       ) : duration === '2h' ? (
         <TouchableOpacity style={styles.emptySecondaryBtn} onPress={onSwitch1h} activeOpacity={0.85}>
-          <Text style={styles.emptySecondaryText}>Probar con 1 hora</Text>
+          <Text style={styles.emptySecondaryText}>{t('schedule.empty.try1h')}</Text>
         </TouchableOpacity>
       ) : null}
       <View style={styles.emptyNote}>
         <MaterialCommunityIcons name="information-outline" size={13} color={Colors.textDim} />
         <Text style={styles.emptyNoteText}>
-          Los huecos = disponibilidad menos reservas, con ≥ {minNoticeHours} h de antelación.
+          {t('schedule.empty.note').replace('{h}', String(minNoticeHours))}
         </Text>
       </View>
     </View>
@@ -538,15 +565,16 @@ function LoadingGrid() {
 }
 
 function ErrorCard({ onRetry }: { onRetry: () => void }) {
+  const t = useT();
   return (
     <View style={styles.errorCard}>
       <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
       <Text style={styles.errorText}>
-        No pudimos cargar la disponibilidad. Comprueba tu conexión e inténtalo de nuevo.
+        {t('errors.loadFailed').replace('{what}', t('schedule.availabilityWord'))}
       </Text>
       <TouchableOpacity style={styles.retryBtn} onPress={onRetry} activeOpacity={0.8}>
         <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-        <Text style={styles.retryBtnText}>Reintentar</Text>
+        <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -556,6 +584,7 @@ function ErrorCard({ onRetry }: { onRetry: () => void }) {
 
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
+  const { t, locale } = useLocale();
   const params = useLocalSearchParams<{
     duration?: string;
     mode?: string;
@@ -730,9 +759,9 @@ export default function ScheduleScreen() {
   const selectionLabel = useMemo(() => {
     if (!selected || selected.dateKey === '') return null;
     const cd = parseKey(selected.dateKey);
-    const day = `${WEEKDAYS_ES[civilWeekday(cd)]} ${cd.day} ${MONTHS_SHORT_ES[cd.month - 1]}`;
+    const day = `${weekdayShort(cd, locale).toUpperCase()} ${cd.day} ${monthShort(cd.month, locale)}`;
     return `${day} · ${slotLabel(selected.startMinute)}–${slotLabel(selected.endMinute)}`;
-  }, [selected]);
+  }, [selected, locale]);
 
   // Normalise: a deselect sentinel (dateKey='') should not show as selected
   const hasSelection = selected !== null && selected.dateKey !== '';
@@ -744,8 +773,8 @@ export default function ScheduleScreen() {
       <TopGlow />
       <View style={[styles.chrome, { paddingTop: insets.top + Spacing[2] }]}>
         <Header
-          title={isReschedule ? 'Reprogramar' : undefined}
-          subtitle={isReschedule ? 'Elige un nuevo hueco · sin cargo' : undefined}
+          title={isReschedule ? t('common.reschedule') : undefined}
+          subtitle={isReschedule ? t('schedule.rescheduleSubtitle') : undefined}
         />
         {!isReschedule && mode !== 'credit' && <DurationToggle duration={duration} onChange={switchDuration} />}
         {isReschedule && origStartsAt ? (
@@ -770,7 +799,7 @@ export default function ScheduleScreen() {
         {stale && (
           <View style={styles.staleBanner}>
             <MaterialCommunityIcons name="alert-circle-outline" size={16} color={Colors.warning} />
-            <Text style={styles.staleText}>Esa hora se acaba de ocupar. Elige otro horario.</Text>
+            <Text style={styles.staleText}>{t('schedule.stale')}</Text>
           </View>
         )}
 
@@ -821,10 +850,12 @@ export default function ScheduleScreen() {
             {hasSelection ? (
               <>
                 <Text style={styles.dockTime}>{selectionLabel}</Text>
-                <Text style={styles.dockSub}>{duration === '2h' ? 'Sesión de 2 horas' : 'Sesión de 1 hora'}</Text>
+                <Text style={styles.dockSub}>
+                  {t('schedule.dockSession').replace('{duration}', duration === '2h' ? t('common.duration2h') : t('common.duration1h'))}
+                </Text>
               </>
             ) : (
-              <Text style={styles.dockHint}>Elige un hueco disponible para continuar</Text>
+              <Text style={styles.dockHint}>{t('schedule.dockHint')}</Text>
             )}
           </View>
         </View>
@@ -838,7 +869,7 @@ export default function ScheduleScreen() {
             <ActivityIndicator size="small" color={Colors.onPrimary} />
           ) : (
             <Text style={[styles.continueText, !hasSelection && styles.continueTextDisabled]}>
-            {isReschedule ? 'Confirmar cambio' : 'Continuar'}
+            {isReschedule ? t('schedule.confirmChange') : t('common.continue')}
           </Text>
           )}
         </TouchableOpacity>

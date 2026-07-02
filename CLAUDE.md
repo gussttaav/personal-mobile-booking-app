@@ -537,6 +537,18 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   CLUSTER 1 (money / rule-bearing screens) is now localized: S12 cancel (`cancel.*`),
   S06 confirm & pay (`confirm.*`), S07 confirm-with-credit (`confirmCredit.*`), S08
   booking success (`success.*`), S09 packs catalog (`packs.*`), S10 pack pay (`packPay.*`).
+  CLUSTER 2 (the booking flow) is now localized: S04 session-type (`sessionType.*`),
+  S05 schedule/weekly grid (`schedule.*`, incl. the `schedule.legend.*` cell-state labels
+  Available/Booked/Unavailable/Won't fit — noFit ES kept as "No válido"), S13 reschedule
+  blocked-gate (`reschedule.*`), S11 booking-detail (`bookingDetail.*`). Cluster 2 PROMOTED
+  to `common.*`: `back`, `book`, `reschedule`, `continue`, `backToDetail` (moved off
+  `cancel.*`), plus the contact/soon-alert block (`cantAttendTitle/cantAttendBody/
+  notifyGustavo/soonTitle/soonBody`) and the `common.timeRemaining.*` trio — all
+  de-duplicated out of `cancel.*` (cancel.tsx now reads them from `common.*`), since S13
+  reuses the same copy. New shared error: `errors.loadFailed` (with a `{what}` noun the
+  screen supplies, e.g. `sessionType.pricesWord` / `schedule.availabilityWord`). S05 & S11
+  DROPPED their hardcoded Spanish month/weekday arrays in favour of Intl via `bcp47(locale)`
+  + `toLocaleDateString` (same Cluster-1 pattern; `formatEur` stays es-ES).
 - KEY-NAMING CONVENTION (established with Cluster 1, applies to later clusters):
   `screen.section.element`. Strings repeated across ≥2 screens live in a shared
   `common.*` namespace (never duplicated per screen — e.g. `common.backHome`,

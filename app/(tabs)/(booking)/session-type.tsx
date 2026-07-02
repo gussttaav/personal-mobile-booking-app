@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
+import { useT } from '@/lib/i18n/locale-context';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import type { GetPricingResponse } from '@/types/api';
 
@@ -57,12 +58,13 @@ function TopGlow() {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header() {
+  const t = useT();
   return (
     <View style={styles.header}>
-      <Text style={styles.overline}>Reservar</Text>
-      <Text style={styles.title}>Elige la duración</Text>
+      <Text style={styles.overline}>{t('common.book')}</Text>
+      <Text style={styles.title}>{t('sessionType.headerTitle')}</Text>
       <Text style={styles.subtitle}>
-        Selecciona el tipo de sesión para ver los horarios disponibles.
+        {t('sessionType.headerSubtitle')}
       </Text>
     </View>
   );
@@ -108,10 +110,11 @@ function DurationCard({ title, subtitle, price, priceCaption, badge, onPress }: 
 // ── Footer note ───────────────────────────────────────────────────────────────
 
 function FooterNote() {
+  const t = useT();
   return (
     <View style={styles.footerNote}>
       <MaterialCommunityIcons name="information-outline" size={14} color={Colors.textDim} />
-      <Text style={styles.footerNoteText}>Las clases se reservan con ≥ 5 h de antelación</Text>
+      <Text style={styles.footerNoteText}>{t('sessionType.footerNote')}</Text>
     </View>
   );
 }
@@ -120,6 +123,7 @@ function FooterNote() {
 
 export default function SessionTypeScreen() {
   const insets = useSafeAreaInsets();
+  const t = useT();
   const [state, setState] = useState<ScreenState>('loading');
   const [prices, setPrices] = useState<Prices | null>(null);
 
@@ -172,11 +176,11 @@ export default function SessionTypeScreen() {
           <View style={styles.errorCard}>
             <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
             <Text style={styles.errorText}>
-              No pudimos cargar los precios. Comprueba tu conexión e inténtalo de nuevo.
+              {t('errors.loadFailed').replace('{what}', t('sessionType.pricesWord'))}
             </Text>
             <TouchableOpacity style={styles.retryBtn} onPress={load} activeOpacity={0.8}>
               <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-              <Text style={styles.retryBtnText}>Reintentar</Text>
+              <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -184,20 +188,20 @@ export default function SessionTypeScreen() {
         {state === 'ready' && prices != null && (
           <View style={styles.cardList}>
             <DurationCard
-              title="1 hora"
-              subtitle="Sesión individual con Gustavo"
+              title={t('common.duration1h')}
+              subtitle={t('sessionType.card1hSubtitle')}
               price={formatEur(prices.oneHourCents)}
-              priceCaption="pago único"
+              priceCaption={t('sessionType.card1hPrice')}
               onPress={() => selectDuration('1h')}
             />
             <DurationCard
-              title="2 horas"
-              subtitle="Sesión doble · más tiempo"
+              title={t('common.duration2h')}
+              subtitle={t('sessionType.card2hSubtitle')}
               price={formatEur(prices.twoHourCents)}
-              priceCaption={`${formatEur(prices.twoHourCents / 2)}/h`}
+              priceCaption={t('sessionType.perHour').replace('{eur}', formatEur(prices.twoHourCents / 2))}
               badge={
                 2 * prices.oneHourCents - prices.twoHourCents > 0
-                  ? `Ahorra ${formatEur(2 * prices.oneHourCents - prices.twoHourCents)}`
+                  ? t('sessionType.savings').replace('{eur}', formatEur(2 * prices.oneHourCents - prices.twoHourCents))
                   : undefined
               }
               onPress={() => selectDuration('2h')}

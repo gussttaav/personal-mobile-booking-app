@@ -534,6 +534,41 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   row in S17 (profile.tsx → router.push settings); S18 shows its own header (the
   (profile) stack is headerShown:false) for the back button. Also localized: S14 pre-join
   (`prejoin.*`), S19 add-to-calendar (`addToCalendar.*`), and S15 video room (`room.*`).
+  CLUSTER 1 (money / rule-bearing screens) is now localized: S12 cancel (`cancel.*`),
+  S06 confirm & pay (`confirm.*`), S07 confirm-with-credit (`confirmCredit.*`), S08
+  booking success (`success.*`), S09 packs catalog (`packs.*`), S10 pack pay (`packPay.*`).
+- KEY-NAMING CONVENTION (established with Cluster 1, applies to later clusters):
+  `screen.section.element`. Strings repeated across ≥2 screens live in a shared
+  `common.*` namespace (never duplicated per screen — e.g. `common.backHome`,
+  `common.retry`, `common.yourBooking`, `common.tutorName/tutorSubtitle`,
+  `common.duration1h/2h/15min`, `common.notePlaceholder`, `common.payPrice`/`retryPrice`);
+  recurring error/failure copy lives in `errors.*` (`errors.checkoutInitTitle`,
+  `errors.paymentRejectedTitle`, `errors.noConnection`, etc.). `t()` has NO built-in
+  interpolation — put a `{token}` in the value and `.replace('{token}', v)` at the call
+  site (mirrors `review.stepOfTwo`); plurals get two explicit keys (`…One`/`…Other`,
+  as in `confirmCredit.credit.remainingOne/Other`). Sub-components that render strings
+  call `useLocale()` themselves rather than threading `t` through props.
+- DATE/DURATION LOCALIZATION: each money screen's local `formatDate`/`formatTimeRange`
+  helpers now take the app `locale` and map it to a BCP-47 tag via a `bcp47(locale)`
+  helper (`es`→'es-ES', `en`→'en-GB' — en-GB keeps the day-before-month order the
+  Spanish uses); duration words come from `common.duration*`, not inline literals. NOTE
+  euro formatting (`formatEur`) is deliberately left on `es-ES` — number formatting, not
+  translated text; out of scope for this pass.
+- KNOWN LIMITATION — the Stripe PaymentSheet (S06 confirm.tsx, S10 pay.tsx) does NOT
+  follow the in-app language toggle: it is a NATIVE surface whose language comes from the
+  Android OS/app locale (`Locale.getDefault()`), and `@stripe/stripe-react-native` 0.50.3
+  exposes NO locale option (checked initPaymentSheet / presentPaymentSheet / StripeProvider
+  / native PaymentSheet.Configuration). Our i18n is pure-JS (no expo-localization / no
+  native locale) so the sheet can't see it. ACCEPTED AS-IS (2026-07-02): the sheet follows
+  the device language. Forcing it to match would require a native module calling
+  `AppCompatDelegate.setApplicationLocales(...)` + a DEV-CLIENT REBUILD, and that API
+  recreates the Android activity (RN reload) so it can't fire mid-checkout — deferred, not
+  worth the rebuild for a short standard payment surface.
+- RULE-BEARING COPY kept faithful (verified against docs/design/design-brief.md Flow E):
+  the paid-cancel refund line is extracted AS-IS — `cancel.refundBody` = "...en 1–3 días
+  hábiles (menos la comisión de Stripe)." / "...within 1–3 business days (minus the Stripe
+  fee)." (NO fee breakdown added; NOT softened to "minus fees"). Pack product names
+  ("Pack Esencial"/"Pack Intensivo") are NOT translated — kept Spanish in both languages.
 - Translate remaining screens incrementally via `useT()`/`t()` — add the keys to
   lib/i18n/strings.ts (both languages, enforced by the type) as you go.
 

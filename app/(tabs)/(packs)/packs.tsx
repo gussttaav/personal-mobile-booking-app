@@ -6,6 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
+import { useLocale } from '@/lib/i18n/locale-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import type { GetCreditsResponse, GetPricingResponse, PricingPack } from '@/types/api';
@@ -39,6 +40,7 @@ type ScreenState = 'loading' | 'load_error' | 'ready';
 // ── PackCard ──────────────────────────────────────────────────────────────────
 
 function PackCard({ pack, onPress }: { pack: PricingPack; onPress: () => void }) {
+  const { t } = useLocale();
   const size = packSizeOf(pack);
   const featured = size === 10;
   const savings = pack.savingsCents != null && pack.savingsCents > 0 ? pack.savingsCents : null;
@@ -49,11 +51,11 @@ function PackCard({ pack, onPress }: { pack: PricingPack; onPress: () => void })
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={`Comprar ${PACK_NAME[size]}`}
+      accessibilityLabel={t('packs.card.buyA11y').replace('{pack}', PACK_NAME[size])}
     >
       {featured && (
         <View style={styles.recommendBadge}>
-          <Text style={styles.recommendBadgeText}>Recomendado · Mejor precio</Text>
+          <Text style={styles.recommendBadgeText}>{t('packs.card.recommended')}</Text>
         </View>
       )}
 
@@ -68,7 +70,7 @@ function PackCard({ pack, onPress }: { pack: PricingPack; onPress: () => void })
           </View>
           <View style={styles.packTitleWrap}>
             <Text style={styles.packName}>{PACK_NAME[size]}</Text>
-            <Text style={styles.packSub}>{size} clases · 1 h cada una</Text>
+            <Text style={styles.packSub}>{t('packs.card.classesEach').replace('{size}', String(size))}</Text>
           </View>
         </View>
         <MaterialCommunityIcons
@@ -85,12 +87,12 @@ function PackCard({ pack, onPress }: { pack: PricingPack; onPress: () => void })
           <Text style={[styles.packPrice, featured && styles.packPriceFeatured]}>
             {formatEur(pack.amountCents)}
           </Text>
-          <Text style={styles.packPerClass}>· {formatEur(pack.perClassCents)}/clase</Text>
+          <Text style={styles.packPerClass}>{t('packs.card.perClass').replace('{eur}', formatEur(pack.perClassCents))}</Text>
         </View>
         {savings != null && (
           <View style={[styles.savingsPill, featured ? styles.savingsPillFeatured : styles.savingsPillPlain]}>
             <Text style={[styles.savingsPillText, featured ? styles.savingsPillTextFeatured : styles.savingsPillTextPlain]}>
-              Ahorra {formatEur(savings)}
+              {t('packs.card.save').replace('{eur}', formatEur(savings))}
             </Text>
           </View>
         )}
@@ -102,13 +104,14 @@ function PackCard({ pack, onPress }: { pack: PricingPack; onPress: () => void })
 // ── BalanceCard (con pack activo) ─────────────────────────────────────────────
 
 function BalanceCard({ credits, packSize }: { credits: number; packSize: number }) {
+  const { t } = useLocale();
   const packName = PACK_NAME[packSize] ?? `Pack ×${packSize}`;
   const ratio = packSize > 0 ? Math.max(0, Math.min(1, credits / packSize)) : 0;
 
   return (
     <View style={styles.balanceCard}>
       <View style={styles.balanceHeader}>
-        <Text style={styles.balanceOverline}>Pack activo</Text>
+        <Text style={styles.balanceOverline}>{t('packs.balance.overline')}</Text>
         <View style={styles.balanceChip}>
           <Text style={styles.balanceChipText}>{packName}</Text>
         </View>
@@ -116,13 +119,15 @@ function BalanceCard({ credits, packSize }: { credits: number; packSize: number 
 
       <View style={styles.balanceStatRow}>
         <Text style={styles.balanceStat}>{credits}</Text>
-        <Text style={styles.balanceStatLabel}>créditos restantes</Text>
+        <Text style={styles.balanceStatLabel}>{t('packs.balance.remaining')}</Text>
       </View>
 
       <View style={styles.trackOuter}>
         <View style={[styles.trackFill, { width: `${Math.round(ratio * 100)}%` }]} />
       </View>
-      <Text style={styles.balanceMeta}>{credits} de {packSize} disponibles</Text>
+      <Text style={styles.balanceMeta}>
+        {t('packs.balance.available').replace('{credits}', String(credits)).replace('{packSize}', String(packSize))}
+      </Text>
       {/* TODO: show expiry (días restantes) once GET /api/credits exposes it. */}
     </View>
   );
@@ -131,10 +136,11 @@ function BalanceCard({ credits, packSize }: { credits: number; packSize: number 
 // ── ValueProps (sin pack) ─────────────────────────────────────────────────────
 
 function ValueProps() {
+  const { t } = useLocale();
   const items = [
-    { value: '−15%', label: 'hasta de ahorro', accent: true },
-    { value: '12 m', label: 'para usarlos', accent: false },
-    { value: '1 tap', label: 'para reservar', accent: false },
+    { value: '−15%', label: t('packs.valueProps.saveLabel'), accent: true },
+    { value: '12 m', label: t('packs.valueProps.monthsLabel'), accent: false },
+    { value: '1 tap', label: t('packs.valueProps.tapLabel'), accent: false },
   ];
   return (
     <View style={styles.valueProps}>
@@ -164,6 +170,7 @@ function SectionDivider({ title, trailing }: { title: string; trailing?: string 
 
 export default function PacksScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   const [state, setState] = useState<ScreenState>('loading');
   const [pricing, setPricing] = useState<GetPricingResponse | null>(null);
   const [credits, setCredits] = useState<GetCreditsResponse | null>(null);
@@ -211,14 +218,14 @@ export default function PacksScreen() {
       />
 
       <View style={[styles.header, { paddingTop: insets.top + Spacing[3] }]}>
-        <Text style={styles.headerOverline}>Packs</Text>
+        <Text style={styles.headerOverline}>{t('packs.header.overline')}</Text>
         <Text style={styles.headerTitle}>
-          {hasActivePack ? 'Tus créditos' : 'Compra clases por adelantado'}
+          {hasActivePack ? t('packs.header.titleActive') : t('packs.header.titleInactive')}
         </Text>
         <Text style={styles.headerSubtitle}>
           {hasActivePack
-            ? 'Reserva con crédito cuando quieras. Renueva antes de que caduquen.'
-            : 'Paga menos por clase y reserva con un crédito cuando te venga bien.'}
+            ? t('packs.header.subtitleActive')
+            : t('packs.header.subtitleInactive')}
         </Text>
       </View>
 
@@ -236,11 +243,11 @@ export default function PacksScreen() {
         <View style={styles.errorCard}>
           <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
           <Text style={styles.errorText}>
-            No pudimos cargar los packs. Comprueba tu conexión e inténtalo de nuevo.
+            {t('packs.loadError')}
           </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={load} activeOpacity={0.8}>
             <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-            <Text style={styles.retryBtnText}>Reintentar</Text>
+            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -255,12 +262,12 @@ export default function PacksScreen() {
           {hasActivePack && credits?.packSize != null ? (
             <>
               <BalanceCard credits={credits.credits} packSize={credits.packSize} />
-              <SectionDivider title="Renovar pack" trailing="Paga por adelantado" />
+              <SectionDivider title={t('packs.section.renewTitle')} trailing={t('packs.section.renewTrailing')} />
             </>
           ) : (
             <>
               <ValueProps />
-              <SectionDivider title="Elige tu pack" />
+              <SectionDivider title={t('packs.section.chooseTitle')} />
             </>
           )}
 
@@ -271,7 +278,7 @@ export default function PacksScreen() {
           <View style={styles.footerNote}>
             <MaterialCommunityIcons name="shield-check-outline" size={14} color={Colors.textDim} />
             <Text style={styles.footerNoteText}>
-              Pago seguro con Stripe · los créditos caducan a los 12 meses de la compra
+              {t('packs.footer')}
             </Text>
           </View>
         </ScrollView>

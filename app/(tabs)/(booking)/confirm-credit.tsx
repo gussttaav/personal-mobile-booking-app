@@ -15,12 +15,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
 import { getDeviceTimeZone } from '@/lib/grid-time';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { GetPricingResponse } from '@/types/api';
+import type { GetPricingResponse, Locale } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Screen-local, matching confirm.tsx / success.tsx conventions.
+
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
 
 function formatEur(cents: number): string {
   const value = (cents / 100).toLocaleString('es-ES', {
@@ -34,26 +43,28 @@ function findCents(pricing: GetPricingResponse, productKey: 'session1h' | 'sessi
   return pricing.sessions.find((s) => s.productKey === productKey)?.amountCents ?? null;
 }
 
-// Pack-size → display name (mirrors components/CreditBalanceCard.tsx).
+// Pack-size → display name (mirrors components/CreditBalanceCard.tsx). Brand names —
+// intentionally NOT translated (kept Spanish in both languages).
 const PACK_NAME: Record<number, string> = { 5: 'Pack Esencial', 10: 'Pack Intensivo' };
 function packLabel(packSize: number | null): string | null {
   return packSize != null ? (PACK_NAME[packSize] ?? `Pack ×${packSize}`) : null;
 }
 
-// "Jueves 25 jun"
-function formatDate(iso: string): string {
+// "Jueves 25 jun" / "Thursday 25 Jun"
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
 // "17:00 – 18:00 · 1 hora" — credit classes are always 1h.
-function formatTimeRange(startIso: string, endIso: string): string {
+function formatTimeRange(startIso: string, endIso: string, locale: Locale, t: TFn): string {
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-  return `${fmt(startIso)} – ${fmt(endIso)} · 1 hora`;
+    new Date(iso).toLocaleTimeString(bcp47(locale), { hour: '2-digit', minute: '2-digit', hour12: false });
+  return `${fmt(startIso)} – ${fmt(endIso)} · ${t('common.duration1h')}`;
 }
 
 // One credit always books exactly one hour.
@@ -79,6 +90,7 @@ function TopGlow() {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ title, backDisabled }: { title: string; backDisabled?: boolean }) {
+  const { t } = useLocale();
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -90,11 +102,11 @@ function Header({ title, backDisabled }: { title: string; backDisabled?: boolean
         <MaterialCommunityIcons name="chevron-left" size={22} color={Colors.text} />
       </TouchableOpacity>
       <View style={styles.headerTitle}>
-        <Text style={styles.headerOverline}>Reservar · crédito</Text>
+        <Text style={styles.headerOverline}>{t('confirmCredit.header.overline')}</Text>
         <Text style={styles.headerTitleText}>{title}</Text>
       </View>
       <View style={styles.stepChip}>
-        <Text style={styles.stepChipText}>Paso 2/2</Text>
+        <Text style={styles.stepChipText}>{t('confirmCredit.header.step')}</Text>
       </View>
     </View>
   );
@@ -103,17 +115,18 @@ function Header({ title, backDisabled }: { title: string; backDisabled?: boolean
 // ── SummaryCard ───────────────────────────────────────────────────────────────
 
 function SummaryCard({ start, end }: { start: string; end: string }) {
+  const { t, locale } = useLocale();
   return (
     <View style={styles.summaryCard}>
-      <Text style={styles.summaryOverline}>Tu reserva</Text>
+      <Text style={styles.summaryOverline}>{t('common.yourBooking')}</Text>
 
       <View style={styles.summaryDateRow}>
         <View style={styles.summaryCalIcon}>
           <MaterialCommunityIcons name="calendar-outline" size={22} color={Colors.primary} />
         </View>
         <View style={styles.summaryDateText}>
-          <Text style={styles.summaryDate}>{formatDate(start)}</Text>
-          <Text style={styles.summaryTime}>{formatTimeRange(start, end)}</Text>
+          <Text style={styles.summaryDate}>{formatDate(start, locale)}</Text>
+          <Text style={styles.summaryTime}>{formatTimeRange(start, end, locale, t)}</Text>
         </View>
       </View>
 
@@ -124,10 +137,10 @@ function SummaryCard({ start, end }: { start: string; end: string }) {
           <Text style={styles.summaryAvatarText}>GT</Text>
         </View>
         <View style={styles.summaryTutorInfo}>
-          <Text style={styles.summaryTutorName}>con Gustavo</Text>
-          <Text style={styles.summaryTutorSub}>Tutoría individual 1:1</Text>
+          <Text style={styles.summaryTutorName}>{t('common.tutorName')}</Text>
+          <Text style={styles.summaryTutorSub}>{t('common.tutorSubtitle')}</Text>
         </View>
-        <Text style={styles.summaryTz}>Europe/Madrid</Text>
+        <Text style={styles.summaryTz}>{t('common.timezone')}</Text>
       </View>
     </View>
   );
@@ -137,7 +150,15 @@ function SummaryCard({ start, end }: { start: string; end: string }) {
 // "Gastas 1 crédito · te quedan N" — N is the balance AFTER this booking.
 
 function CreditCard({ remainingAfter, packSize }: { remainingAfter: number; packSize: number | null }) {
+  const { t } = useLocale();
   const name = packLabel(packSize);
+  const remainingText =
+    remainingAfter === 0
+      ? t('confirmCredit.credit.last')
+      : (remainingAfter === 1
+          ? t('confirmCredit.credit.remainingOne')
+          : t('confirmCredit.credit.remainingOther')
+        ).replace('{n}', String(remainingAfter));
   return (
     <View style={styles.creditCard}>
       <View style={styles.creditTopRow}>
@@ -145,12 +166,8 @@ function CreditCard({ remainingAfter, packSize }: { remainingAfter: number; pack
           <MaterialCommunityIcons name="timer-outline" size={21} color={Colors.primary} />
         </View>
         <View style={styles.creditText}>
-          <Text style={styles.creditTitle}>Gastas 1 crédito</Text>
-          <Text style={styles.creditRemaining}>
-            {remainingAfter === 0
-              ? 'Será tu último crédito'
-              : `Te quedan ${remainingAfter} ${remainingAfter === 1 ? 'crédito' : 'créditos'}`}
-          </Text>
+          <Text style={styles.creditTitle}>{t('confirmCredit.credit.title')}</Text>
+          <Text style={styles.creditRemaining}>{remainingText}</Text>
         </View>
       </View>
       {name != null && (
@@ -158,7 +175,7 @@ function CreditCard({ remainingAfter, packSize }: { remainingAfter: number; pack
           <View style={styles.creditDivider} />
           <View style={styles.creditMetaRow}>
             <Text style={styles.creditPackName}>{name}</Text>
-            <Text style={styles.creditMetaDim}>Crédito de pack</Text>
+            <Text style={styles.creditMetaDim}>{t('confirmCredit.credit.packCredit')}</Text>
           </View>
         </>
       )}
@@ -184,6 +201,7 @@ function ErrorBanner({ title, body }: { title: string; body: string }) {
 
 export default function ConfirmCreditScreen() {
   const insets = useSafeAreaInsets();
+  const { t, locale } = useLocale();
   const { start: startParam, end: endParam } = useLocalSearchParams<{
     start?: string;
     end?: string;
@@ -272,20 +290,20 @@ export default function ConfirmCreditScreen() {
         } else if (err.code === 'SLOT_UNAVAILABLE') {
           setState('slot_taken');
         } else if (err.status === 429) {
-          setSubmitError('Demasiados intentos. Espera un momento e inténtalo de nuevo.');
+          setSubmitError(t('errors.tooManyAttempts'));
         } else {
           // 401 is normally handled by api-client's silent refresh; if it (or any
           // 400/500) surfaces here, show a generic retryable error.
-          setSubmitError('No pudimos completar la reserva. Inténtalo de nuevo.');
+          setSubmitError(t('confirmCredit.errBookFailed'));
         }
       } else {
-        setSubmitError('No hay conexión. Comprueba tu red e inténtalo de nuevo.');
+        setSubmitError(t('errors.noConnection'));
       }
     } finally {
       if (mountedRef.current) setIsSubmitting(false);
       submittingRef.current = false;
     }
-  }, [start, end, note, credits]);
+  }, [start, end, note, credits, t]);
 
   const goPacks = useCallback(() => {
     router.replace('/(tabs)/(packs)/packs');
@@ -303,7 +321,9 @@ export default function ConfirmCreditScreen() {
     router.back();
   }, []);
 
-  const headerTitle = state === 'no_credits' ? 'Reservar con crédito' : 'Confirmar reserva';
+  const headerTitle = state === 'no_credits'
+    ? t('confirmCredit.header.titleNoCredits')
+    : t('confirmCredit.header.title');
 
   return (
     <View style={styles.screen}>
@@ -326,11 +346,11 @@ export default function ConfirmCreditScreen() {
         <View style={styles.errorCard}>
           <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
           <Text style={styles.errorText}>
-            No pudimos cargar tu saldo de créditos. Comprueba tu conexión e inténtalo de nuevo.
+            {t('confirmCredit.loadError')}
           </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={load} activeOpacity={0.8}>
             <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-            <Text style={styles.retryBtnText}>Reintentar</Text>
+            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -342,21 +362,21 @@ export default function ConfirmCreditScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}
           keyboardShouldPersistTaps="handled"
         >
-          {submitError && <ErrorBanner title="No se pudo confirmar" body={submitError} />}
+          {submitError && <ErrorBanner title={t('confirmCredit.errorTitle')} body={submitError} />}
 
           <SummaryCard start={start} end={end} />
           <CreditCard remainingAfter={Math.max(0, credits - 1)} packSize={packSize} />
 
           <View style={styles.noteSection}>
             <View style={styles.noteLabelRow}>
-              <Text style={styles.noteLabel}>Nota para Gustavo</Text>
+              <Text style={styles.noteLabel}>{t('common.noteLabel')}</Text>
               <View style={styles.optionalChip}>
-                <Text style={styles.optionalChipText}>Opcional</Text>
+                <Text style={styles.optionalChipText}>{t('common.optional')}</Text>
               </View>
             </View>
             <TextInput
               style={styles.noteInput}
-              placeholder="¿Algo en lo que quieras centrarte? Ej. recursión, álgebra lineal…"
+              placeholder={t('common.notePlaceholder')}
               placeholderTextColor={Colors.textDim}
               multiline
               numberOfLines={3}
@@ -376,16 +396,15 @@ export default function ConfirmCreditScreen() {
             <View style={[styles.terminalIcon, { backgroundColor: Colors.warningBg, borderColor: Colors.warningBorder }]}>
               <MaterialCommunityIcons name="clock-alert-outline" size={32} color={Colors.warning} />
             </View>
-            <Text style={styles.terminalTitle}>Esa hora ya no está disponible</Text>
+            <Text style={styles.terminalTitle}>{t('confirmCredit.slotTaken.title')}</Text>
             <Text style={styles.terminalBody}>
-              Alguien acaba de reservar ese hueco. No se ha gastado ningún crédito. Elige otra hora
-              para continuar.
+              {t('confirmCredit.slotTaken.body')}
             </Text>
           </View>
           <View style={styles.terminalActions}>
             <TouchableOpacity style={styles.primaryBtn} onPress={chooseAnotherSlot} activeOpacity={0.85}>
               <MaterialCommunityIcons name="calendar-clock" size={17} color={Colors.onPrimary} />
-              <Text style={styles.primaryBtnText}>Elegir otro horario</Text>
+              <Text style={styles.primaryBtnText}>{t('confirmCredit.slotTaken.cta')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -403,24 +422,24 @@ export default function ConfirmCreditScreen() {
               <View style={styles.emptyHeroIcon}>
                 <MaterialCommunityIcons name="timer-off-outline" size={30} color={Colors.warning} />
               </View>
-              <Text style={styles.emptyTitle}>No te quedan créditos</Text>
+              <Text style={styles.emptyTitle}>{t('confirmCredit.noCredits.title')}</Text>
               <Text style={styles.emptyBody}>
                 {packLabel(packSize)
-                  ? `Tu ${packLabel(packSize)} ya no tiene créditos disponibles. `
-                  : 'Ya no tienes créditos disponibles. '}
-                Compra un pack nuevo para volver a reservar con crédito, o paga esta clase suelta.
+                  ? t('confirmCredit.noCredits.bodyPack').replace('{pack}', packLabel(packSize)!)
+                  : t('confirmCredit.noCredits.bodyGeneric')}
+                {t('confirmCredit.noCredits.bodyTail')}
               </Text>
             </View>
 
             <View style={styles.crossSell}>
               <View style={styles.crossSellHead}>
-                <Text style={styles.crossSellTitle}>Ahorra con un pack</Text>
+                <Text style={styles.crossSellTitle}>{t('confirmCredit.noCredits.crossSellTitle')}</Text>
                 <View style={styles.crossSellBadge}>
                   <Text style={styles.crossSellBadgeText}>-15%</Text>
                 </View>
               </View>
               <Text style={styles.crossSellBody}>
-                5 o 10 clases por adelantado. Reserva con crédito cuando quieras.
+                {t('confirmCredit.noCredits.crossSellBody')}
               </Text>
             </View>
           </ScrollView>
@@ -428,11 +447,13 @@ export default function ConfirmCreditScreen() {
           <View style={[styles.stickyBar, { paddingBottom: Math.max(insets.bottom, Spacing[4]) }]}>
             <TouchableOpacity style={styles.primaryBtn} onPress={goPacks} activeOpacity={0.85}>
               <MaterialCommunityIcons name="gift-outline" size={17} color={Colors.onPrimary} />
-              <Text style={styles.primaryBtnText}>Ver packs</Text>
+              <Text style={styles.primaryBtnText}>{t('common.seePacks')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryBtn} onPress={payThisClass} activeOpacity={0.7}>
               <Text style={styles.secondaryBtnText}>
-                {oneHourCents != null ? `Pagar esta clase · ${formatEur(oneHourCents)}` : 'Pagar esta clase'}
+                {oneHourCents != null
+                  ? t('confirmCredit.noCredits.payThisWithPrice').replace('{eur}', formatEur(oneHourCents))
+                  : t('confirmCredit.noCredits.payThis')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -453,12 +474,12 @@ export default function ConfirmCreditScreen() {
             ) : (
               <>
                 <MaterialCommunityIcons name="check" size={18} color={Colors.onPrimary} />
-                <Text style={styles.primaryBtnText}>Confirmar · gastar 1 crédito</Text>
+                <Text style={styles.primaryBtnText}>{t('confirmCredit.confirmCta')}</Text>
               </>
             )}
           </TouchableOpacity>
           <View style={styles.payCaption}>
-            <Text style={styles.payCaptionText}>Sin pago · se descuenta 1 crédito al confirmar</Text>
+            <Text style={styles.payCaptionText}>{t('confirmCredit.caption')}</Text>
           </View>
         </View>
       )}

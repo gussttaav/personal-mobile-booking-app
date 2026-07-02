@@ -20,11 +20,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
 import { pollPaymentConfirmation, PollAbortedError } from '@/lib/payment-confirmation';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { GetPricingResponse } from '@/types/api';
+import type { GetPricingResponse, Locale } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
 
 function formatEur(cents: number): string {
   const value = (cents / 100).toLocaleString('es-ES', {
@@ -38,20 +47,21 @@ function findCents(pricing: GetPricingResponse, productKey: 'session1h' | 'sessi
   return pricing.sessions.find((s) => s.productKey === productKey)?.amountCents ?? null;
 }
 
-// "Miércoles 24 jun"
-function formatDate(iso: string): string {
+// "Miércoles 24 jun" / "Wednesday 24 Jun"
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
 // "18:00 – 20:00 · 2 horas"
-function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h'): string {
+function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h', locale: Locale, t: TFn): string {
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const label = duration === '1h' ? '1 hora' : '2 horas';
+    new Date(iso).toLocaleTimeString(bcp47(locale), { hour: '2-digit', minute: '2-digit', hour12: false });
+  const label = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
   return `${fmt(startIso)} – ${fmt(endIso)} · ${label}`;
 }
 
@@ -88,6 +98,7 @@ function TopGlow({ error }: { error?: boolean }) {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ backDisabled }: { backDisabled?: boolean }) {
+  const { t } = useLocale();
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -99,11 +110,11 @@ function Header({ backDisabled }: { backDisabled?: boolean }) {
         <MaterialCommunityIcons name="chevron-left" size={22} color={Colors.text} />
       </TouchableOpacity>
       <View style={styles.headerTitle}>
-        <Text style={styles.headerOverline}>Reservar</Text>
-        <Text style={styles.headerTitleText}>Confirmar y pagar</Text>
+        <Text style={styles.headerOverline}>{t('confirm.header.overline')}</Text>
+        <Text style={styles.headerTitleText}>{t('confirm.header.title')}</Text>
       </View>
       <View style={styles.stepChip}>
-        <Text style={styles.stepChipText}>Paso 3/3</Text>
+        <Text style={styles.stepChipText}>{t('confirm.header.step')}</Text>
       </View>
     </View>
   );
@@ -119,18 +130,19 @@ interface SummaryCardProps {
 }
 
 function SummaryCard({ start, end, duration, priceCents }: SummaryCardProps) {
-  const durationLabel = duration === '1h' ? '1 hora' : '2 horas';
+  const { t, locale } = useLocale();
+  const durationLabel = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
   return (
     <View style={styles.summaryCard}>
-      <Text style={styles.summaryOverline}>Tu reserva</Text>
+      <Text style={styles.summaryOverline}>{t('common.yourBooking')}</Text>
 
       <View style={styles.summaryDateRow}>
         <View style={styles.summaryCalIcon}>
           <MaterialCommunityIcons name="calendar-outline" size={22} color={Colors.primary} />
         </View>
         <View style={styles.summaryDateText}>
-          <Text style={styles.summaryDate}>{formatDate(start)}</Text>
-          <Text style={styles.summaryTime}>{formatTimeRange(start, end, duration)}</Text>
+          <Text style={styles.summaryDate}>{formatDate(start, locale)}</Text>
+          <Text style={styles.summaryTime}>{formatTimeRange(start, end, duration, locale, t)}</Text>
         </View>
       </View>
 
@@ -141,16 +153,16 @@ function SummaryCard({ start, end, duration, priceCents }: SummaryCardProps) {
           <Text style={styles.summaryAvatarText}>GT</Text>
         </View>
         <View style={styles.summaryTutorInfo}>
-          <Text style={styles.summaryTutorName}>con Gustavo</Text>
-          <Text style={styles.summaryTutorSub}>Tutoría individual 1:1</Text>
+          <Text style={styles.summaryTutorName}>{t('common.tutorName')}</Text>
+          <Text style={styles.summaryTutorSub}>{t('common.tutorSubtitle')}</Text>
         </View>
-        <Text style={styles.summaryTz}>Europe/Madrid</Text>
+        <Text style={styles.summaryTz}>{t('common.timezone')}</Text>
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.summaryPriceRow}>
-        <Text style={styles.summaryPriceLabel}>Sesión de {durationLabel}</Text>
+        <Text style={styles.summaryPriceLabel}>{t('confirm.summary.priceLabel').replace('{duration}', durationLabel)}</Text>
         <Text style={styles.summaryPrice}>{formatEur(priceCents)}</Text>
       </View>
     </View>
@@ -160,11 +172,12 @@ function SummaryCard({ start, end, duration, priceCents }: SummaryCardProps) {
 // ── CheckoutErrorBanner ───────────────────────────────────────────────────────
 
 function CheckoutErrorBanner({ message }: { message: string }) {
+  const { t } = useLocale();
   return (
     <View style={styles.checkoutErrorBanner}>
       <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Colors.error} style={styles.checkoutErrorIcon} />
       <View style={styles.checkoutErrorText}>
-        <Text style={styles.checkoutErrorTitle}>Error al iniciar el pago</Text>
+        <Text style={styles.checkoutErrorTitle}>{t('errors.checkoutInitTitle')}</Text>
         <Text style={styles.checkoutErrorBody}>{message}</Text>
       </View>
     </View>
@@ -174,13 +187,14 @@ function CheckoutErrorBanner({ message }: { message: string }) {
 // ── RejectedBanner ────────────────────────────────────────────────────────────
 
 function RejectedBanner() {
+  const { t } = useLocale();
   return (
     <View style={styles.rejectedBanner}>
       <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Colors.error} style={styles.checkoutErrorIcon} />
       <View style={styles.checkoutErrorText}>
-        <Text style={styles.checkoutErrorTitle}>Pago rechazado</Text>
+        <Text style={styles.checkoutErrorTitle}>{t('errors.paymentRejectedTitle')}</Text>
         <Text style={styles.checkoutErrorBody}>
-          Tu banco rechazó el cargo. No se te ha cobrado. Prueba con otra tarjeta.
+          {t('confirm.rejected.body')}
         </Text>
       </View>
     </View>
@@ -198,9 +212,12 @@ interface StickyBarProps {
 }
 
 function StickyBar({ priceCents, state, onPay, onRetry, insetBottom }: StickyBarProps) {
+  const { t } = useLocale();
   const isInitiating = state === 'initiating';
   const isRejected = state === 'rejected';
-  const label = isRejected ? `Reintentar · ${formatEur(priceCents)}` : `Pagar ${formatEur(priceCents)}`;
+  const label = isRejected
+    ? t('common.retryPrice').replace('{eur}', formatEur(priceCents))
+    : t('common.payPrice').replace('{eur}', formatEur(priceCents));
 
   return (
     <View style={[styles.stickyBar, { paddingBottom: Math.max(insetBottom, Spacing[4]) }]}>
@@ -222,7 +239,7 @@ function StickyBar({ priceCents, state, onPay, onRetry, insetBottom }: StickyBar
       {!isRejected && (
         <View style={styles.payCaption}>
           <MaterialCommunityIcons name="lock-outline" size={13} color={Colors.textDim} />
-          <Text style={styles.payCaptionText}>Pago seguro con Stripe · cancela gratis hasta 2 h antes</Text>
+          <Text style={styles.payCaptionText}>{t('confirm.pay.caption')}</Text>
         </View>
       )}
     </View>
@@ -232,16 +249,17 @@ function StickyBar({ priceCents, state, onPay, onRetry, insetBottom }: StickyBar
 // ── ConfirmandoOverlay ────────────────────────────────────────────────────────
 
 function ConfirmandoOverlay({ priceCents, insetBottom }: { priceCents: number; insetBottom: number }) {
+  const { t } = useLocale();
   return (
     <View style={[styles.confirmandoOverlay, { paddingBottom: Math.max(insetBottom + Spacing[4], Spacing[8]) }]}>
       <ActivityIndicator size="large" color={Colors.primary} />
-      <Text style={styles.confirmandoTitle}>Procesando pago…</Text>
+      <Text style={styles.confirmandoTitle}>{t('confirm.confirmando.title')}</Text>
       <Text style={styles.confirmandoBody}>
-        Confirmando el cargo con tu banco. No cierres la app ni vuelvas atrás.
+        {t('confirm.confirmando.body')}
       </Text>
       <View style={styles.confirmandoCaption}>
         <MaterialCommunityIcons name="lock-outline" size={13} color={Colors.textDim} />
-        <Text style={styles.payCaptionText}>{formatEur(priceCents)} · Stripe</Text>
+        <Text style={styles.payCaptionText}>{t('confirm.confirmando.caption').replace('{eur}', formatEur(priceCents))}</Text>
       </View>
     </View>
   );
@@ -314,6 +332,7 @@ function TerminalView({
 
 export default function ConfirmScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   const { duration: durationParam, start: startParam, end: endParam } = useLocalSearchParams<{
     duration?: string;
     start?: string;
@@ -416,7 +435,7 @@ export default function ConfirmScreen() {
 
       if (!checkout.clientSecret) {
         if (!mountedRef.current) return;
-        setCheckoutError('No se pudo iniciar el pago. Inténtalo de nuevo.');
+        setCheckoutError(t('errors.checkoutInitFailed'));
         setState('summary');
         return;
       }
@@ -432,7 +451,7 @@ export default function ConfirmScreen() {
 
       if (initError) {
         if (!mountedRef.current) return;
-        setCheckoutError(initError.message ?? 'Error al preparar el pago.');
+        setCheckoutError(initError.message ?? t('errors.checkoutPrepFailed'));
         setState('summary');
         return;
       }
@@ -457,11 +476,11 @@ export default function ConfirmScreen() {
       setState('rejected');
     } catch (err: unknown) {
       if (!mountedRef.current) return;
-      const msg = err instanceof Error ? err.message : 'Error desconocido.';
+      const msg = err instanceof Error ? err.message : t('errors.unknown');
       setCheckoutError(msg);
       setState('summary');
     }
-  }, [duration, end, priceCents, start]);
+  }, [duration, end, priceCents, start, t]);
 
   const handleRetry = useCallback(() => {
     setState('summary');
@@ -508,11 +527,11 @@ export default function ConfirmScreen() {
         <View style={styles.errorCard}>
           <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
           <Text style={styles.errorText}>
-            No pudimos cargar los precios. Comprueba tu conexión e inténtalo de nuevo.
+            {t('confirm.loadError')}
           </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadPricing} activeOpacity={0.8}>
             <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-            <Text style={styles.retryBtnText}>Reintentar</Text>
+            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -532,14 +551,14 @@ export default function ConfirmScreen() {
           {/* Note field */}
           <View style={styles.noteSection}>
             <View style={styles.noteLabelRow}>
-              <Text style={styles.noteLabel}>Nota para Gustavo</Text>
+              <Text style={styles.noteLabel}>{t('common.noteLabel')}</Text>
               <View style={styles.optionalChip}>
-                <Text style={styles.optionalChipText}>Opcional</Text>
+                <Text style={styles.optionalChipText}>{t('common.optional')}</Text>
               </View>
             </View>
             <TextInput
               style={styles.noteInput}
-              placeholder="¿Algo en lo que quieras centrarte? Ej. recursión, álgebra lineal…"
+              placeholder={t('common.notePlaceholder')}
               placeholderTextColor={Colors.textDim}
               multiline
               numberOfLines={3}
@@ -573,10 +592,10 @@ export default function ConfirmScreen() {
           tint={Colors.warning}
           tintBg={Colors.warningBg}
           tintBorder={Colors.warningBorder}
-          title="Ese horario se acaba de ocupar"
-          body="Mientras pagabas, otra persona reservó ese hueco. No se te ha cobrado nada. Elige otra hora para continuar."
-          primary={{ label: 'Elegir otra hora', icon: 'calendar-clock', onPress: chooseAnotherSlot }}
-          secondary={{ label: 'Cancelar', onPress: goHome }}
+          title={t('confirm.slotTaken.title')}
+          body={t('confirm.slotTaken.body')}
+          primary={{ label: t('confirm.slotTaken.cta'), icon: 'calendar-clock', onPress: chooseAnotherSlot }}
+          secondary={{ label: t('confirm.slotTaken.cancel'), onPress: goHome }}
           insetBottom={insets.bottom}
         />
       )}
@@ -588,9 +607,9 @@ export default function ConfirmScreen() {
           tint={Colors.textMuted}
           tintBg={Colors.surfaceHigh}
           tintBorder={Colors.border}
-          title="Estamos finalizando tu reserva"
-          body="Hemos recibido tu pago. Tu reserva se está finalizando y te contactaremos."
-          primary={{ label: 'Volver a inicio', onPress: goHome }}
+          title={t('confirm.failed.title')}
+          body={t('confirm.failed.body')}
+          primary={{ label: t('common.backHome'), onPress: goHome }}
           insetBottom={insets.bottom}
         />
       )}
@@ -602,10 +621,10 @@ export default function ConfirmScreen() {
           tint={Colors.textMuted}
           tintBg={Colors.surfaceHigh}
           tintBorder={Colors.border}
-          title="No hemos podido confirmar todavía"
-          body="Tu pago se ha recibido. Si no se confirma en unos minutos te contactaremos."
-          primary={{ label: 'Comprobar de nuevo', icon: 'refresh', onPress: recheck }}
-          secondary={{ label: 'Volver a inicio', onPress: goHome }}
+          title={t('confirm.limbo.title')}
+          body={t('confirm.limbo.body')}
+          primary={{ label: t('confirm.limbo.recheck'), icon: 'refresh', onPress: recheck }}
+          secondary={{ label: t('common.backHome'), onPress: goHome }}
           insetBottom={insets.bottom}
         />
       )}

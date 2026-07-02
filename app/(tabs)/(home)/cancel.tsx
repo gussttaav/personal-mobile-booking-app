@@ -13,10 +13,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { PostCancelResponse } from '@/types/api';
+import type { Locale, PostCancelResponse } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
 
 function endIsoFromSessionType(startIso: string, sessionType: string): string {
   const t = Date.parse(startIso);
@@ -28,11 +37,12 @@ function endIsoFromSessionType(startIso: string, sessionType: string): string {
   return new Date(t + ms).toISOString();
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
@@ -45,25 +55,25 @@ function formatTimeHHMM(iso: string): string {
   return `${fmt2(d.getHours())}:${fmt2(d.getMinutes())}`;
 }
 
-function sessionDurationLabel(sessionType: string): string {
-  if (sessionType === 'session2h') return '2 horas';
-  if (sessionType === 'free15min') return '15 min';
-  return '1 hora';
+function sessionDurationLabel(sessionType: string, t: TFn): string {
+  if (sessionType === 'session2h') return t('common.duration2h');
+  if (sessionType === 'free15min') return t('common.duration15min');
+  return t('common.duration1h');
 }
 
-function formatTimeRange(startIso: string, sessionType: string): string {
+function formatTimeRange(startIso: string, sessionType: string, t: TFn): string {
   const endIso = endIsoFromSessionType(startIso, sessionType);
-  return `${formatTimeHHMM(startIso)}–${formatTimeHHMM(endIso)} · ${sessionDurationLabel(sessionType)}`;
+  return `${formatTimeHHMM(startIso)}–${formatTimeHHMM(endIso)} · ${sessionDurationLabel(sessionType, t)}`;
 }
 
-function formatTimeRemaining(startsAt: string): string {
+function formatTimeRemaining(startsAt: string, t: TFn): string {
   const delta = new Date(startsAt).getTime() - Date.now();
-  if (delta <= 0) return 'Tu clase ha comenzado.';
+  if (delta <= 0) return t('cancel.timeRemaining.started');
   const totalMins = Math.ceil(delta / 60_000);
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-  if (h >= 1) return `Tu clase empieza en ${h} h ${fmt2(m)} min.`;
-  return `Tu clase empieza en ${totalMins} min.`;
+  if (h >= 1) return t('cancel.timeRemaining.hoursMins').replace('{h}', String(h)).replace('{m}', fmt2(m));
+  return t('cancel.timeRemaining.mins').replace('{n}', String(totalMins));
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -81,6 +91,7 @@ type Phase =
 
 export default function CancelScreen() {
   const insets = useSafeAreaInsets();
+  const { t, locale } = useLocale();
   const { token, startsAt, sessionType } = useLocalSearchParams<{
     token: string;
     startsAt: string;
@@ -144,6 +155,8 @@ export default function CancelScreen() {
             onPress={() => router.replace('/(tabs)/(home)')}
             hitSlop={12}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.backHome')}
           >
             <MaterialCommunityIcons name="close" size={22} color={Colors.textDim} />
           </TouchableOpacity>
@@ -159,9 +172,9 @@ export default function CancelScreen() {
               <MaterialCommunityIcons name="check" size={40} color={Colors.primary} />
             </View>
             <View style={styles.pillTag}>
-              <Text style={styles.pillTagText}>RESERVA CANCELADA</Text>
+              <Text style={styles.pillTagText}>{t('cancel.success.pill')}</Text>
             </View>
-            <Text style={styles.heroTitle}>Clase cancelada</Text>
+            <Text style={styles.heroTitle}>{t('cancel.success.title')}</Text>
           </View>
 
           {creditsRestored ? (
@@ -172,8 +185,8 @@ export default function CancelScreen() {
                   <MaterialCommunityIcons name="database-outline" size={23} color={Colors.primary} />
                 </View>
                 <View style={styles.successCardText}>
-                  <Text style={styles.successCardTitle}>1 crédito devuelto</Text>
-                  <Text style={styles.successCardBody}>Ya disponible en tu Pack Esencial</Text>
+                  <Text style={styles.successCardTitle}>{t('cancel.success.creditTitle')}</Text>
+                  <Text style={styles.successCardBody}>{t('cancel.success.creditBody')}</Text>
                 </View>
               </View>
             </View>
@@ -188,16 +201,16 @@ export default function CancelScreen() {
                   style={{ marginTop: 1, flexShrink: 0 }}
                 />
                 <View style={styles.successCardText}>
-                  <Text style={styles.successCardTitle}>Reembolso en proceso</Text>
+                  <Text style={styles.successCardTitle}>{t('cancel.success.refundTitle')}</Text>
                   <Text style={styles.successCardBody}>
-                    Recibirás tu reembolso en 1–3 días hábiles (menos la comisión de Stripe).
+                    {t('cancel.refundBody')}
                   </Text>
                 </View>
               </View>
               <View style={styles.emailRow}>
                 <MaterialCommunityIcons name="email-outline" size={17} color={Colors.textDim} />
                 <Text style={styles.emailNote}>
-                  Recibirás un email de confirmación con los detalles.
+                  {t('cancel.success.emailNote')}
                 </Text>
               </View>
             </View>
@@ -210,9 +223,9 @@ export default function CancelScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.cancelledDate, styles.strikethrough]}>
-                {formatDate(safeStartsAt)} · {formatTimeHHMM(safeStartsAt)}
+                {formatDate(safeStartsAt, locale)} · {formatTimeHHMM(safeStartsAt)}
               </Text>
-              <Text style={styles.cancelledSub}>Cancelada</Text>
+              <Text style={styles.cancelledSub}>{t('cancel.success.cancelledTag')}</Text>
             </View>
           </View>
         </ScrollView>
@@ -227,14 +240,14 @@ export default function CancelScreen() {
                 activeOpacity={0.85}
               >
                 <MaterialCommunityIcons name="calendar-plus" size={18} color={Colors.onPrimary} />
-                <Text style={styles.primaryBtnText}>Reservar otra clase</Text>
+                <Text style={styles.primaryBtnText}>{t('cancel.success.bookAnother')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.ghostBtn}
                 onPress={() => router.replace('/(tabs)/(home)')}
                 activeOpacity={0.7}
               >
-                <Text style={styles.ghostBtnText}>Volver a Inicio</Text>
+                <Text style={styles.ghostBtnText}>{t('common.backHome')}</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -245,14 +258,14 @@ export default function CancelScreen() {
                 activeOpacity={0.85}
               >
                 <MaterialCommunityIcons name="home-outline" size={18} color={Colors.onPrimary} />
-                <Text style={styles.primaryBtnText}>Volver a Inicio</Text>
+                <Text style={styles.primaryBtnText}>{t('common.backHome')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.ghostBtn}
                 onPress={() => router.replace('/(tabs)/(booking)/session-type')}
                 activeOpacity={0.7}
               >
-                <Text style={styles.ghostBtnText}>Reservar otra clase</Text>
+                <Text style={styles.ghostBtnText}>{t('cancel.success.bookAnother')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -279,8 +292,8 @@ export default function CancelScreen() {
                 <MaterialCommunityIcons name="alert-circle-outline" size={23} color={Colors.error} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>¿Cancelar esta clase?</Text>
-                <Text style={styles.sheetSubtitle}>Esta acción no se puede deshacer.</Text>
+                <Text style={styles.sheetTitle}>{t('cancel.confirm.title')}</Text>
+                <Text style={styles.sheetSubtitle}>{t('cancel.confirm.subtitle')}</Text>
               </View>
             </View>
 
@@ -290,18 +303,18 @@ export default function CancelScreen() {
                 <MaterialCommunityIcons name="calendar-outline" size={20} color={Colors.textMuted} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.miniBookingDate}>{formatDate(safeStartsAt)}</Text>
+                <Text style={styles.miniBookingDate}>{formatDate(safeStartsAt, locale)}</Text>
                 <Text style={styles.miniBookingSub}>
-                  {formatTimeRange(safeStartsAt, safeSessionType)}
+                  {formatTimeRange(safeStartsAt, safeSessionType, t)}
                 </Text>
               </View>
               {isPack ? (
                 <View style={styles.badgeGreen}>
-                  <Text style={styles.badgeGreenText}>CRÉDITO</Text>
+                  <Text style={styles.badgeGreenText}>{t('cancel.confirm.badgeCredit')}</Text>
                 </View>
               ) : (
                 <View style={styles.badgeGray}>
-                  <Text style={styles.badgeGrayText}>PAGADA</Text>
+                  <Text style={styles.badgeGrayText}>{t('cancel.confirm.badgePaid')}</Text>
                 </View>
               )}
             </View>
@@ -310,8 +323,9 @@ export default function CancelScreen() {
             <View style={styles.ruleRow}>
               <MaterialCommunityIcons name="check-circle-outline" size={16} color={Colors.primary} />
               <Text style={styles.ruleText}>
-                Cancelación gratuita: faltan más de{' '}
-                <Text style={styles.ruleBold}>2 h</Text> para el inicio.
+                {t('cancel.confirm.ruleBefore')}
+                <Text style={styles.ruleBold}>{t('cancel.confirm.ruleHours')}</Text>
+                {t('cancel.confirm.ruleAfter')}
               </Text>
             </View>
 
@@ -326,9 +340,9 @@ export default function CancelScreen() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.consequenceTitle}>
-                    Se devuelve 1 crédito a tu Pack Esencial
+                    {t('cancel.confirm.consequencePackTitle')}
                   </Text>
-                  <Text style={styles.consequenceBody}>Automático e inmediato.</Text>
+                  <Text style={styles.consequenceBody}>{t('cancel.confirm.consequencePackBody')}</Text>
                 </View>
               </View>
             ) : (
@@ -341,10 +355,10 @@ export default function CancelScreen() {
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.consequenceTitle}>
-                    El reembolso lo gestiona Gustavo a mano
+                    {t('cancel.confirm.consequencePaidTitle')}
                   </Text>
                   <Text style={styles.consequenceBody}>
-                    Recibirás tu reembolso en 1–3 días hábiles (menos la comisión de Stripe).
+                    {t('cancel.refundBody')}
                   </Text>
                 </View>
               </View>
@@ -361,7 +375,7 @@ export default function CancelScreen() {
               ) : (
                 <>
                   <MaterialCommunityIcons name="close-circle-outline" size={18} color="#3a0a06" />
-                  <Text style={styles.dangerBtnText}>Sí, cancelar la clase</Text>
+                  <Text style={styles.dangerBtnText}>{t('cancel.confirm.dangerCta')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -371,7 +385,7 @@ export default function CancelScreen() {
               disabled={submitting}
               activeOpacity={0.7}
             >
-              <Text style={styles.ghostBtnText}>Mantener clase</Text>
+              <Text style={styles.ghostBtnText}>{t('cancel.confirm.keepCta')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -384,11 +398,11 @@ export default function CancelScreen() {
                 <MaterialCommunityIcons name="clock-alert-outline" size={22} color={Colors.warning} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>Ya no puedes cancelar online</Text>
+                <Text style={styles.sheetTitle}>{t('cancel.blocked.title')}</Text>
                 <Text style={styles.sheetSubtitle}>
                   {phase === 'err_outside_window'
-                    ? 'Tu clase empieza en menos de 2 h.'
-                    : formatTimeRemaining(safeStartsAt)}
+                    ? t('cancel.blocked.subtitleOutside')
+                    : formatTimeRemaining(safeStartsAt, t)}
                 </Text>
               </View>
             </View>
@@ -401,9 +415,9 @@ export default function CancelScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>Por respeto al tiempo reservado</Text>
+                <Text style={styles.infoCardTitle}>{t('cancel.blocked.respectTitle')}</Text>
                 <Text style={styles.infoCardBody}>
-                  Con menos de 2 h de antelación no podemos ofrecer cancelación gratuita online.
+                  {t('cancel.blocked.respectBody')}
                 </Text>
               </View>
             </View>
@@ -416,9 +430,9 @@ export default function CancelScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>¿No puedes asistir?</Text>
+                <Text style={styles.infoCardTitle}>{t('cancel.blocked.cantAttendTitle')}</Text>
                 <Text style={styles.infoCardBody}>
-                  Avísale a Gustavo directamente y buscad una solución.
+                  {t('cancel.blocked.cantAttendBody')}
                 </Text>
               </View>
             </View>
@@ -427,17 +441,17 @@ export default function CancelScreen() {
               style={styles.tealOutlineBtn}
               onPress={() =>
                 Alert.alert(
-                  'Próximamente',
-                  'El chat con Gustavo estará disponible próximamente.',
+                  t('cancel.blocked.soonTitle'),
+                  t('cancel.blocked.soonBody'),
                 )
               }
               activeOpacity={0.85}
             >
               <MaterialCommunityIcons name="chat-processing-outline" size={18} color={Colors.primary} />
-              <Text style={styles.tealOutlineBtnText}>Avisar a Gustavo</Text>
+              <Text style={styles.tealOutlineBtnText}>{t('cancel.blocked.notifyCta')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.ghostBtn} onPress={() => router.back()} activeOpacity={0.7}>
-              <Text style={styles.ghostBtnText}>Volver al detalle</Text>
+              <Text style={styles.ghostBtnText}>{t('cancel.backToDetail')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -450,8 +464,8 @@ export default function CancelScreen() {
                 <MaterialCommunityIcons name="close-circle-outline" size={23} color={Colors.error} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>No hemos podido cancelar</Text>
-                <Text style={styles.sheetSubtitle}>Algo ha fallado. Tu reserva sigue activa.</Text>
+                <Text style={styles.sheetTitle}>{t('cancel.errGeneric.title')}</Text>
+                <Text style={styles.sheetSubtitle}>{t('cancel.errGeneric.subtitle')}</Text>
               </View>
             </View>
 
@@ -463,9 +477,9 @@ export default function CancelScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>Tu reserva sigue activa</Text>
+                <Text style={styles.infoCardTitle}>{t('cancel.errGeneric.stillActiveTitle')}</Text>
                 <Text style={styles.infoCardBody}>
-                  No se ha realizado ningún cambio en tu reserva.
+                  {t('cancel.errGeneric.stillActiveBody')}
                 </Text>
               </View>
             </View>
@@ -476,24 +490,24 @@ export default function CancelScreen() {
               activeOpacity={0.85}
             >
               <MaterialCommunityIcons name="refresh" size={18} color={Colors.onPrimary} />
-              <Text style={styles.primaryBtnText}>Reintentar</Text>
+              <Text style={styles.primaryBtnText}>{t('common.retry')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.ghostBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
-              <Text style={styles.ghostBtnText}>Volver al detalle</Text>
+              <Text style={styles.ghostBtnText}>{t('cancel.backToDetail')}</Text>
             </TouchableOpacity>
             <View style={styles.contactRow}>
-              <Text style={styles.contactMuted}>¿Sigue fallando?</Text>
+              <Text style={styles.contactMuted}>{t('cancel.errGeneric.stillFailing')}</Text>
               <TouchableOpacity
                 onPress={() =>
-                  Alert.alert('Contacto', 'Escríbele a Gustavo por los medios habituales.')
+                  Alert.alert(t('cancel.errGeneric.contactTitle'), t('cancel.errGeneric.contactBody'))
                 }
                 activeOpacity={0.7}
               >
-                <Text style={styles.contactLink}>Escribir a Gustavo</Text>
+                <Text style={styles.contactLink}>{t('cancel.errGeneric.contactLink')}</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -508,10 +522,10 @@ export default function CancelScreen() {
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
                 <Text style={styles.sheetTitle}>
-                  Esta reserva ya no existe o ya fue cancelada
+                  {t('cancel.errInvalid.title')}
                 </Text>
                 <Text style={styles.sheetSubtitle}>
-                  Es posible que ya se hubiera cancelado anteriormente.
+                  {t('cancel.errInvalid.subtitle')}
                 </Text>
               </View>
             </View>
@@ -521,7 +535,7 @@ export default function CancelScreen() {
               onPress={() => router.replace('/(tabs)/(home)')}
               activeOpacity={0.85}
             >
-              <Text style={styles.primaryBtnText}>Volver a Inicio</Text>
+              <Text style={styles.primaryBtnText}>{t('common.backHome')}</Text>
             </TouchableOpacity>
           </>
         )}

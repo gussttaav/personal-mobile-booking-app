@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
 import { pollPackConfirmation, PollAbortedError } from '@/lib/payment-confirmation';
+import { useLocale } from '@/lib/i18n/locale-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import type { PricingPack } from '@/types/api';
@@ -57,6 +58,7 @@ type ScreenState =
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ backDisabled }: { backDisabled?: boolean }) {
+  const { t } = useLocale();
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -68,12 +70,12 @@ function Header({ backDisabled }: { backDisabled?: boolean }) {
         <MaterialCommunityIcons name="chevron-left" size={22} color={Colors.text} />
       </TouchableOpacity>
       <View style={styles.headerTitle}>
-        <Text style={styles.headerOverline}>Packs</Text>
-        <Text style={styles.headerTitleText}>Pago del pack</Text>
+        <Text style={styles.headerOverline}>{t('packs.header.overline')}</Text>
+        <Text style={styles.headerTitleText}>{t('packPay.header.title')}</Text>
       </View>
       <View style={styles.secureChip}>
         <MaterialCommunityIcons name="lock-outline" size={12} color={Colors.textDim} />
-        <Text style={styles.secureChipText}>Seguro</Text>
+        <Text style={styles.secureChipText}>{t('packPay.header.secure')}</Text>
       </View>
     </View>
   );
@@ -82,13 +84,14 @@ function Header({ backDisabled }: { backDisabled?: boolean }) {
 // ── SummaryCard ───────────────────────────────────────────────────────────────
 
 function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
+  const { t } = useLocale();
   const savings = pack.savingsCents != null && pack.savingsCents > 0 ? pack.savingsCents : null;
   const original = pack.originalAmountCents;
   const listPerClass = original != null ? Math.round(original / size) : null;
 
   return (
     <View style={styles.summaryCard}>
-      <Text style={styles.summaryOverline}>Tu pack</Text>
+      <Text style={styles.summaryOverline}>{t('packPay.summary.overline')}</Text>
 
       <View style={styles.summaryPackRow}>
         <View style={styles.summaryPackIcon}>
@@ -97,12 +100,12 @@ function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
         <View style={styles.summaryPackInfo}>
           <Text style={styles.summaryPackName}>{PACK_NAME[size] ?? `Pack ×${size}`}</Text>
           <Text style={styles.summaryPackSub}>
-            {size} clases · {formatEur(pack.perClassCents)}/clase
+            {t('packPay.summary.classes').replace('{size}', String(size)).replace('{eur}', formatEur(pack.perClassCents))}
           </Text>
         </View>
         {savings != null && (
           <View style={styles.savingsPill}>
-            <Text style={styles.savingsPillText}>Ahorra {formatEur(savings)}</Text>
+            <Text style={styles.savingsPillText}>{t('packs.card.save').replace('{eur}', formatEur(savings))}</Text>
           </View>
         )}
       </View>
@@ -111,13 +114,13 @@ function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
 
       {original != null && listPerClass != null && (
         <View style={styles.lineRow}>
-          <Text style={styles.lineLabel}>{size} clases × {formatEur(listPerClass)}</Text>
+          <Text style={styles.lineLabel}>{t('packPay.summary.lineClasses').replace('{size}', String(size)).replace('{eur}', formatEur(listPerClass))}</Text>
           <Text style={styles.lineStrike}>{formatEur(original)}</Text>
         </View>
       )}
       {savings != null && (
         <View style={styles.lineRow}>
-          <Text style={styles.lineLabelAccent}>Descuento del pack</Text>
+          <Text style={styles.lineLabelAccent}>{t('packPay.summary.discount')}</Text>
           <Text style={styles.lineDiscount}>−{formatEur(savings)}</Text>
         </View>
       )}
@@ -125,7 +128,7 @@ function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
       <View style={styles.divider} />
 
       <View style={styles.totalRow}>
-        <Text style={styles.totalLabel}>Total a pagar</Text>
+        <Text style={styles.totalLabel}>{t('packPay.summary.total')}</Text>
         <Text style={styles.totalValue}>{formatEur(pack.amountCents)}</Text>
       </View>
     </View>
@@ -135,11 +138,12 @@ function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
 // ── CreditsNote ───────────────────────────────────────────────────────────────
 
 function CreditsNote({ size }: { size: number }) {
+  const { t } = useLocale();
   return (
     <View style={styles.creditsNote}>
       <MaterialCommunityIcons name="information-outline" size={17} color={Colors.textDim} style={styles.creditsNoteIcon} />
       <Text style={styles.creditsNoteText}>
-        Los {size} créditos se añaden a tu cuenta tras confirmar el pago y caducan a los 12 meses.
+        {t('packPay.creditsNote').replace('{size}', String(size))}
       </Text>
     </View>
   );
@@ -182,39 +186,39 @@ function StepRow({
 }
 
 function ConfirmingView({ priceCents, size }: { priceCents: number; size: number }) {
+  const { t } = useLocale();
   return (
     <View style={styles.confirmingBody}>
       <View style={styles.confirmingHero}>
         <View style={styles.confirmingBadge}>
           <MaterialCommunityIcons name="check" size={26} color={Colors.warning} />
         </View>
-        <Text style={styles.confirmingTitle}>Pago recibido · confirmando</Text>
+        <Text style={styles.confirmingTitle}>{t('packPay.confirming.title')}</Text>
         <Text style={styles.confirmingSub}>
-          Tu cargo de {formatEur(priceCents)} se ha completado. Estamos activando tus créditos —
-          suele tardar unos segundos.
+          {t('packPay.confirming.sub').replace('{eur}', formatEur(priceCents))}
         </Text>
       </View>
 
       <View style={styles.stepperCard}>
         <StepRow
           icon="check"
-          label="Pago confirmado en Stripe"
-          status="Hecho"
+          label={t('packPay.confirming.step1')}
+          status={t('packPay.confirming.done')}
           statusColor={Colors.primary}
         />
         <View style={styles.divider} />
         <StepRow
           spinning
-          label={`Activando ${size} créditos`}
-          status="En curso"
+          label={t('packPay.confirming.step2').replace('{size}', String(size))}
+          status={t('packPay.confirming.inProgress')}
           statusColor={Colors.warning}
         />
         <View style={styles.divider} />
         <StepRow
           dashed
           textMuted
-          label="Listo para reservar"
-          status="Pendiente"
+          label={t('packPay.confirming.step3')}
+          status={t('packPay.confirming.pending')}
           statusColor={Colors.textDim}
         />
       </View>
@@ -222,8 +226,7 @@ function ConfirmingView({ priceCents, size }: { priceCents: number; size: number
       <View style={styles.creditsNote}>
         <MaterialCommunityIcons name="information-outline" size={17} color={Colors.textDim} style={styles.creditsNoteIcon} />
         <Text style={styles.creditsNoteText}>
-          Puedes cerrar esta pantalla con tranquilidad. Tus créditos aparecerán en cuanto estén
-          disponibles.
+          {t('packPay.confirming.note')}
         </Text>
       </View>
     </View>
@@ -245,7 +248,12 @@ function SuccessView({
   onReserve: () => void;
   onBack: () => void;
 }) {
+  const { t } = useLocale();
   const previous = Math.max(0, credits - packSize);
+  const metaText =
+    previous > 0
+      ? t('packPay.success.metaBoth').replace('{previous}', String(previous)).replace('{new}', String(packSize))
+      : t('packPay.success.metaNew').replace('{new}', String(packSize));
 
   return (
     <View style={styles.successRoot}>
@@ -258,15 +266,15 @@ function SuccessView({
           <View style={styles.successBadge}>
             <MaterialCommunityIcons name="check" size={34} color={Colors.primary} />
           </View>
-          <Text style={styles.successTitle}>¡{PACK_NAME[packSize] ?? `Pack ×${packSize}`} activado!</Text>
+          <Text style={styles.successTitle}>{t('packPay.success.title').replace('{pack}', PACK_NAME[packSize] ?? `Pack ×${packSize}`)}</Text>
           <Text style={styles.successSub}>
-            Tus créditos ya están disponibles. Reserva tu próxima clase cuando quieras.
+            {t('packPay.success.sub')}
           </Text>
         </View>
 
         <View style={styles.successBalanceCard}>
           <View style={styles.balanceHeader}>
-            <Text style={styles.balanceOverline}>Saldo actualizado</Text>
+            <Text style={styles.balanceOverline}>{t('packPay.success.balanceOverline')}</Text>
             <View style={styles.plusBadge}>
               <MaterialCommunityIcons name="plus" size={11} color={Colors.onPrimary} />
               <Text style={styles.plusBadgeText}>{packSize}</Text>
@@ -274,10 +282,10 @@ function SuccessView({
           </View>
           <View style={styles.balanceStatRow}>
             <Text style={styles.balanceStat}>{credits}</Text>
-            <Text style={styles.balanceStatLabel}>créditos disponibles</Text>
+            <Text style={styles.balanceStatLabel}>{t('packPay.success.available')}</Text>
           </View>
           <Text style={styles.balanceMeta}>
-            {previous > 0 ? `${previous} anteriores + ${packSize} nuevos` : `${packSize} nuevos`}
+            {metaText}
           </Text>
         </View>
       </ScrollView>
@@ -285,10 +293,10 @@ function SuccessView({
       <View style={[styles.stickyBar, { paddingBottom: Math.max(insetBottom, Spacing[4]) }]}>
         <TouchableOpacity style={styles.payBtn} onPress={onReserve} activeOpacity={0.85}>
           <MaterialCommunityIcons name="calendar" size={18} color={Colors.onPrimary} />
-          <Text style={styles.payBtnText}>Reservar ahora</Text>
+          <Text style={styles.payBtnText}>{t('packPay.success.reserveNow')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryBtn} onPress={onBack} activeOpacity={0.7}>
-          <Text style={styles.secondaryBtnText}>Volver a Packs</Text>
+          <Text style={styles.secondaryBtnText}>{t('packPay.backToPacks')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -299,6 +307,7 @@ function SuccessView({
 
 export default function PackPayScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useLocale();
   const { packSize: packSizeParam } = useLocalSearchParams<{ packSize?: string }>();
   const size: 5 | 10 = packSizeParam === '10' ? 10 : 5;
 
@@ -375,7 +384,7 @@ export default function PackPayScreen() {
 
       if (!checkout.clientSecret) {
         if (!mountedRef.current) return;
-        setCheckoutError('No se pudo iniciar el pago. Inténtalo de nuevo.');
+        setCheckoutError(t('errors.checkoutInitFailed'));
         setState('summary');
         return;
       }
@@ -390,7 +399,7 @@ export default function PackPayScreen() {
 
       if (initError) {
         if (!mountedRef.current) return;
-        setCheckoutError(initError.message ?? 'Error al preparar el pago.');
+        setCheckoutError(initError.message ?? t('errors.checkoutPrepFailed'));
         setState('summary');
         return;
       }
@@ -413,13 +422,13 @@ export default function PackPayScreen() {
       setState('rejected');
     } catch (err: unknown) {
       if (!mountedRef.current) return;
-      const msg = err instanceof Error ? err.message : 'Error desconocido.';
+      const msg = err instanceof Error ? err.message : t('errors.unknown');
       setCheckoutError(msg);
       setState('summary');
     } finally {
       submittingRef.current = false;
     }
-  }, [pack, size]);
+  }, [pack, size, t]);
 
   const recheck = useCallback(() => {
     setState('confirmando');
@@ -489,11 +498,11 @@ export default function PackPayScreen() {
         <View style={styles.errorCard}>
           <MaterialCommunityIcons name="alert-circle-outline" size={22} color={Colors.error} />
           <Text style={styles.errorText}>
-            No pudimos cargar el pack. Comprueba tu conexión e inténtalo de nuevo.
+            {t('packPay.loadError')}
           </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadPricing} activeOpacity={0.8}>
             <MaterialCommunityIcons name="refresh" size={16} color={Colors.primary} />
-            <Text style={styles.retryBtnText}>Reintentar</Text>
+            <Text style={styles.retryBtnText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -508,7 +517,7 @@ export default function PackPayScreen() {
             <View style={styles.banner}>
               <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Colors.error} style={styles.bannerIcon} />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>Error al iniciar el pago</Text>
+                <Text style={styles.bannerTitle}>{t('errors.checkoutInitTitle')}</Text>
                 <Text style={styles.bannerBody}>{checkoutError}</Text>
               </View>
             </View>
@@ -517,10 +526,9 @@ export default function PackPayScreen() {
             <View style={styles.banner}>
               <MaterialCommunityIcons name="alert-circle-outline" size={20} color={Colors.error} style={styles.bannerIcon} />
               <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>Pago rechazado</Text>
+                <Text style={styles.bannerTitle}>{t('errors.paymentRejectedTitle')}</Text>
                 <Text style={styles.bannerBody}>
-                  Tu banco rechazó el cargo. No se te ha cobrado y no se ha activado ningún crédito.
-                  Prueba con otra tarjeta o Google Pay.
+                  {t('packPay.rejectedBody')}
                 </Text>
               </View>
             </View>
@@ -543,7 +551,7 @@ export default function PackPayScreen() {
           </ScrollView>
           <View style={[styles.stickyBar, { paddingBottom: Math.max(insets.bottom, Spacing[4]) }]}>
             <TouchableOpacity style={styles.outlineBtn} onPress={goPacks} activeOpacity={0.7}>
-              <Text style={styles.outlineBtnText}>Volver a Packs</Text>
+              <Text style={styles.outlineBtnText}>{t('packPay.backToPacks')}</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -556,19 +564,18 @@ export default function PackPayScreen() {
             <View style={styles.terminalIcon}>
               <MaterialCommunityIcons name="timer-sand" size={32} color={Colors.textMuted} />
             </View>
-            <Text style={styles.terminalTitle}>Estamos activando tus créditos</Text>
+            <Text style={styles.terminalTitle}>{t('packPay.limbo.title')}</Text>
             <Text style={styles.terminalBody}>
-              Tu pago se ha recibido. Si los créditos no aparecen en unos minutos, te contactaremos.
-              Puedes comprobarlo de nuevo.
+              {t('packPay.limbo.body')}
             </Text>
           </View>
           <View style={styles.terminalActions}>
             <TouchableOpacity style={styles.payBtn} onPress={recheck} activeOpacity={0.85}>
               <MaterialCommunityIcons name="refresh" size={17} color={Colors.onPrimary} />
-              <Text style={styles.payBtnText}>Comprobar de nuevo</Text>
+              <Text style={styles.payBtnText}>{t('packPay.recheck')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryBtn} onPress={goPacks} activeOpacity={0.7}>
-              <Text style={styles.secondaryBtnText}>Volver a Packs</Text>
+              <Text style={styles.secondaryBtnText}>{t('packPay.backToPacks')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -594,14 +601,14 @@ export default function PackPayScreen() {
             )}
             <Text style={styles.payBtnText}>
               {state === 'rejected'
-                ? `Reintentar · ${formatEur(pack.amountCents)}`
-                : `Pagar ${formatEur(pack.amountCents)}`}
+                ? t('common.retryPrice').replace('{eur}', formatEur(pack.amountCents))
+                : t('common.payPrice').replace('{eur}', formatEur(pack.amountCents))}
             </Text>
           </TouchableOpacity>
           {state !== 'rejected' && (
             <View style={styles.payCaption}>
               <MaterialCommunityIcons name="lock-outline" size={13} color={Colors.textDim} />
-              <Text style={styles.payCaptionText}>Pago seguro con Stripe · pago único, sin renovación</Text>
+              <Text style={styles.payCaptionText}>{t('packPay.caption')}</Text>
             </View>
           )}
         </View>

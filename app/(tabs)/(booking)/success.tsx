@@ -5,26 +5,36 @@ import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { SessionType } from '@/types/api';
+import type { Locale, SessionType } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Screen-local (matches confirm.tsx / home conventions). Kept self-contained.
 
-// "Jueves 26 jun"
-function formatDate(iso: string): string {
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
+
+// "Jueves 26 jun" / "Thursday 26 Jun"
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
 // "18:00 – 19:00 · 1 hora"
-function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h'): string {
+function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h', locale: Locale, t: TFn): string {
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const label = duration === '1h' ? '1 hora' : '2 horas';
+    new Date(iso).toLocaleTimeString(bcp47(locale), { hour: '2-digit', minute: '2-digit', hour12: false });
+  const label = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
   return `${fmt(startIso)} – ${fmt(endIso)} · ${label}`;
 }
 
@@ -36,6 +46,7 @@ function durationFromSessionType(sessionType: string): '1h' | '2h' {
 
 export default function BookingSuccessScreen() {
   const insets = useSafeAreaInsets();
+  const { t, locale } = useLocale();
   const params = useLocalSearchParams<{
     eventId?: string;
     startIso?: string;
@@ -102,7 +113,7 @@ export default function BookingSuccessScreen() {
           onPress={goHome}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Volver a Inicio"
+          accessibilityLabel={t('common.backHome')}
         >
           <MaterialCommunityIcons name="close" size={22} color={Colors.textDim} />
         </TouchableOpacity>
@@ -118,15 +129,15 @@ export default function BookingSuccessScreen() {
             <MaterialCommunityIcons name="check" size={40} color={Colors.primary} />
           </View>
           <View style={styles.heroPill}>
-            <Text style={styles.heroPillText}>Confirmada</Text>
+            <Text style={styles.heroPillText}>{t('success.pill')}</Text>
           </View>
-          <Text style={styles.heroTitle}>Reserva confirmada</Text>
+          <Text style={styles.heroTitle}>{t('success.title')}</Text>
 
           {emailFailed && (
             <View style={styles.emailNote}>
               <MaterialCommunityIcons name="information-outline" size={15} color={Colors.textDim} />
               <Text style={styles.emailNoteText}>
-                Si no recibes el email, tu reserva sigue confirmada.
+                {t('success.emailNote')}
               </Text>
             </View>
           )}
@@ -134,15 +145,15 @@ export default function BookingSuccessScreen() {
 
         {/* ── Booking summary ──────────────────────────────────────────────── */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryOverline}>Tu reserva</Text>
+          <Text style={styles.summaryOverline}>{t('common.yourBooking')}</Text>
 
           <View style={styles.summaryDateRow}>
             <View style={styles.summaryCalIcon}>
               <MaterialCommunityIcons name="calendar-check" size={22} color={Colors.primary} />
             </View>
             <View style={styles.summaryDateText}>
-              <Text style={styles.summaryDate}>{formatDate(start)}</Text>
-              <Text style={styles.summaryTime}>{formatTimeRange(start, end, duration)}</Text>
+              <Text style={styles.summaryDate}>{formatDate(start, locale)}</Text>
+              <Text style={styles.summaryTime}>{formatTimeRange(start, end, duration, locale, t)}</Text>
             </View>
           </View>
 
@@ -153,10 +164,10 @@ export default function BookingSuccessScreen() {
               <Text style={styles.summaryAvatarText}>GT</Text>
             </View>
             <View style={styles.summaryTutorInfo}>
-              <Text style={styles.summaryTutorName}>con Gustavo</Text>
-              <Text style={styles.summaryTutorSub}>Tutoría individual 1:1</Text>
+              <Text style={styles.summaryTutorName}>{t('common.tutorName')}</Text>
+              <Text style={styles.summaryTutorSub}>{t('common.tutorSubtitle')}</Text>
             </View>
-            <Text style={styles.summaryTz}>Europe/Madrid</Text>
+            <Text style={styles.summaryTz}>{t('common.timezone')}</Text>
           </View>
         </View>
 
@@ -167,13 +178,12 @@ export default function BookingSuccessScreen() {
               <MaterialCommunityIcons name="timer-off-outline" size={20} color={Colors.warning} />
             </View>
             <View style={styles.depletedText}>
-              <Text style={styles.depletedTitle}>Has usado tu último crédito</Text>
+              <Text style={styles.depletedTitle}>{t('success.depleted.title')}</Text>
               <Text style={styles.depletedBody}>
-                Tu pack se ha agotado con esta reserva. Compra otro pack para seguir reservando con
-                crédito.
+                {t('success.depleted.body')}
               </Text>
               <TouchableOpacity onPress={goPacks} activeOpacity={0.7} style={styles.depletedLink}>
-                <Text style={styles.depletedLinkText}>Ver packs</Text>
+                <Text style={styles.depletedLinkText}>{t('common.seePacks')}</Text>
                 <MaterialCommunityIcons name="arrow-right" size={15} color={Colors.primary} />
               </TouchableOpacity>
             </View>
@@ -187,16 +197,15 @@ export default function BookingSuccessScreen() {
               <MaterialCommunityIcons name="video-outline" size={21} color={Colors.primary} />
             </View>
             <View style={styles.joinHeaderText}>
-              <Text style={styles.joinTitle}>Cómo unirte</Text>
+              <Text style={styles.joinTitle}>{t('success.join.title')}</Text>
               <Text style={styles.joinBody}>
-                El botón «Unirse» se activa 10 min antes en Inicio. Te avisaremos con una
-                notificación.
+                {t('success.join.body')}
               </Text>
             </View>
           </View>
           <TouchableOpacity style={styles.joinBtn} onPress={goJoin} activeOpacity={0.8}>
             <MaterialCommunityIcons name="video" size={17} color={Colors.primary} />
-            <Text style={styles.joinBtnText}>Unirse a la clase</Text>
+            <Text style={styles.joinBtnText}>{t('success.join.cta')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -205,14 +214,14 @@ export default function BookingSuccessScreen() {
       <View style={styles.stickyBar}>
         <TouchableOpacity style={styles.calBtn} onPress={addToCalendar} activeOpacity={0.85}>
           <MaterialCommunityIcons name="calendar-plus" size={18} color={Colors.onPrimary} />
-          <Text style={styles.calBtnText}>Añadir al calendario</Text>
+          <Text style={styles.calBtnText}>{t('addToCalendar.title')}</Text>
         </TouchableOpacity>
         <View style={styles.secondaryRow}>
           <TouchableOpacity style={styles.secondaryBtn} onPress={goDetail} activeOpacity={0.7}>
-            <Text style={styles.secondaryBtnText}>Ver detalle</Text>
+            <Text style={styles.secondaryBtnText}>{t('success.seeDetail')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryBtn} onPress={goHome} activeOpacity={0.7}>
-            <Text style={styles.secondaryBtnText}>Volver a Inicio</Text>
+            <Text style={styles.secondaryBtnText}>{t('common.backHome')}</Text>
           </TouchableOpacity>
         </View>
       </View>

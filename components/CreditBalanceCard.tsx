@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useT } from '@/lib/i18n/locale-context';
 import type { GetCreditsResponse } from '@/types/api';
 
 interface CreditBalanceCardProps {
@@ -15,6 +16,7 @@ const PACK_NAME: Record<number, string> = {
 };
 
 export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceCardProps) {
+  const t = useT();
   const { credits, packSize } = data;
   const packName = packSize != null ? (PACK_NAME[packSize] ?? `Pack ×${packSize}`) : null;
   const progressRatio = packSize != null && packSize > 0 ? credits / packSize : null;
@@ -26,17 +28,20 @@ export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceC
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.overline}>SALDO DE CRÉDITOS</Text>
+        <Text style={styles.overline}>{t('creditCard.overline')}</Text>
         {!depleted && (
           <TouchableOpacity onPress={onBuyMore} hitSlop={8}>
-            <Text style={styles.buyMore}>Comprar más</Text>
+            <Text style={styles.buyMore}>{t('creditCard.buyMore')}</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.statRow}>
         <Text style={styles.stat}>{credits}</Text>
-        <Text style={styles.statLabel}> créditos</Text>
+        <Text style={styles.statLabel}>
+          {' '}
+          {credits === 1 ? t('creditCard.creditWordOne') : t('creditCard.creditWordOther')}
+        </Text>
         {packName != null && (
           <Text style={styles.packName}> · {packName}</Text>
         )}
@@ -50,7 +55,7 @@ export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceC
 
       {depleted && (
         <Text style={styles.depletedHint}>
-          Te has quedado sin créditos. Compra un pack para seguir reservando.
+          {t('creditCard.depletedHint')}
         </Text>
       )}
 
@@ -60,7 +65,7 @@ export function CreditBalanceCard({ data, onReserve, onBuyMore }: CreditBalanceC
         activeOpacity={0.8}
       >
         <Text style={styles.reserveBtnText}>
-          {depleted ? 'Comprar más créditos' : 'Reservar con crédito →'}
+          {depleted ? t('creditCard.buyMoreCredits') : t('creditCard.reserve')}
         </Text>
       </TouchableOpacity>
     </View>

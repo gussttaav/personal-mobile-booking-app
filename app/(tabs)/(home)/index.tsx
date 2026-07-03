@@ -18,16 +18,24 @@ import { Card } from '@/components/Card';
 import { CreditBalanceCard } from '@/components/CreditBalanceCard';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import { useT } from '@/lib/i18n/locale-context';
-import type { Booking, GetCreditsResponse } from '@/types/api';
+import { useLocale, useT } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
+import type { Booking, GetCreditsResponse, Locale } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
+
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function greeting(): string {
+function greeting(t: TFn): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Buenos días';
-  if (h < 20) return 'Buenas tardes';
-  return 'Buenas noches';
+  if (h < 12) return t('home.greeting.morning');
+  if (h < 20) return t('home.greeting.afternoon');
+  return t('home.greeting.evening');
 }
 
 function initials(name: string): string {
@@ -44,22 +52,22 @@ function formatTime(iso: string): string {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function formatDuration(startsAt: string, endsAt: string): string {
+function formatDuration(startsAt: string, endsAt: string, t: TFn): string {
   const mins = (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000;
   if (mins < 60) return `${mins} min`;
-  if (mins === 120) return '2 horas';
-  return '1 hora';
+  if (mins === 120) return t('common.duration2h');
+  return t('common.duration1h');
 }
 
-function classLabel(startsAt: string): string {
+function classLabel(startsAt: string, locale: Locale, t: TFn): string {
   const start = new Date(startsAt);
   const now = new Date();
   const todayStr = now.toDateString();
   const tomorrowStr = new Date(now.getTime() + 86400000).toDateString();
-  if (start.toDateString() === todayStr) return 'Hoy';
-  if (start.toDateString() === tomorrowStr) return 'Mañana';
-  const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  return DAYS[start.getDay()];
+  if (start.toDateString() === todayStr) return t('common.today');
+  if (start.toDateString() === tomorrowStr) return t('common.tomorrow');
+  const weekday = start.toLocaleDateString(bcp47(locale), { weekday: 'short' }).replace('.', '');
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}`;
 }
 
 type ClassStatus = 'upcoming' | 'imminent' | 'active';
@@ -224,9 +232,9 @@ function EmptyState({ userName }: { userName: string }) {
       >
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.greetingLine}>Te damos la bienvenida</Text>
+            <Text style={styles.greetingLine}>{t('home.greeting.welcome')}</Text>
             <Text style={styles.greetingName}>
-              {name ? `Hola, ${name}` : 'Hola'}
+              {name ? t('home.greeting.helloName').replace('{name}', name) : t('home.greeting.hello')}
             </Text>
           </View>
           {name ? (
@@ -248,7 +256,7 @@ function EmptyState({ userName }: { userName: string }) {
             activeOpacity={0.85}
           >
             <MaterialCommunityIcons name="plus" size={20} color={Colors.onPrimary} />
-            <Text style={styles.primaryBtnText}>Reservar primera clase</Text>
+            <Text style={styles.primaryBtnText}>{t('home.empty.cta')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -259,13 +267,13 @@ function EmptyState({ userName }: { userName: string }) {
             </View>
             <View style={styles.crossSellContent}>
               <View style={styles.crossSellHeader}>
-                <Text style={styles.crossSellTitle}>Ahorra con un pack</Text>
+                <Text style={styles.crossSellTitle}>{t('home.crossSell.title')}</Text>
                 <View style={styles.discountBadge}>
-                  <Text style={styles.discountBadgeText}>-15%</Text>
+                  <Text style={styles.discountBadgeText}>{t('home.crossSell.discount')}</Text>
                 </View>
               </View>
               <Text style={styles.crossSellBody}>
-                Compra 5 o 10 clases por adelantado y reserva con crédito cuando quieras.
+                {t('home.crossSell.body')}
               </Text>
             </View>
           </View>
@@ -274,14 +282,14 @@ function EmptyState({ userName }: { userName: string }) {
             onPress={() => router.push('/(tabs)/(packs)/packs')}
             activeOpacity={0.8}
           >
-            <Text style={styles.crossSellBtnText}>Ver packs</Text>
+            <Text style={styles.crossSellBtnText}>{t('common.seePacks')}</Text>
             <MaterialCommunityIcons name="arrow-right" size={16} color={Colors.primary} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.trustBadge}>
           <MaterialCommunityIcons name="shield-check-outline" size={14} color={Colors.textDim} />
-          <Text style={styles.trustText}>Cancela gratis hasta 24 h antes</Text>
+          <Text style={styles.trustText}>{t('home.crossSell.trust')}</Text>
         </View>
       </ScrollView>
     </View>
@@ -292,6 +300,7 @@ function EmptyState({ userName }: { userName: string }) {
 
 function WithClasses({ data }: { data: HomeData }) {
   const insets = useSafeAreaInsets();
+  const { locale, t } = useLocale();
   const { nextClass, upcomingList, credits, ownedPack, userName } = data;
   const firstName = userName.split(' ')[0] || '';
 
@@ -305,8 +314,10 @@ function WithClasses({ data }: { data: HomeData }) {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.greetingLine}>{greeting()}</Text>
-            <Text style={styles.greetingName}>Hola, {firstName || userName}</Text>
+            <Text style={styles.greetingLine}>{greeting(t)}</Text>
+            <Text style={styles.greetingName}>
+              {t('home.greeting.helloName').replace('{name}', firstName || userName)}
+            </Text>
           </View>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials(userName)}</Text>
@@ -314,7 +325,7 @@ function WithClasses({ data }: { data: HomeData }) {
         </View>
 
         {/* Next class card */}
-        {nextClass != null && <NextClassCard booking={nextClass} />}
+        {nextClass != null && <NextClassCard booking={nextClass} locale={locale} t={t} />}
 
         {/* Credits balance — shown for anyone who has owned a pack, including a
             depleted 0-credit pack so the repurchase nudge stays visible. Ownership
@@ -333,7 +344,7 @@ function WithClasses({ data }: { data: HomeData }) {
         {upcomingList.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Próximas clases</Text>
+              <Text style={styles.sectionTitle}>{t('home.withClasses.upcomingTitle')}</Text>
               <View style={styles.countBadge}>
                 <Text style={styles.countBadgeText}>{upcomingList.length}</Text>
               </View>
@@ -368,7 +379,7 @@ function WithClasses({ data }: { data: HomeData }) {
           activeOpacity={0.75}
         >
           <MaterialCommunityIcons name="plus" size={18} color={Colors.textMuted} />
-          <Text style={styles.reserveOtherText}>Reservar otra clase</Text>
+          <Text style={styles.reserveOtherText}>{t('home.withClasses.reserveOther')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -377,26 +388,26 @@ function WithClasses({ data }: { data: HomeData }) {
 
 // ── Next class card (inline — unique to this screen) ─────────────────────────
 
-function NextClassCard({ booking }: { booking: Booking }) {
+function NextClassCard({ booking, locale, t }: { booking: Booking; locale: Locale; t: TFn }) {
   const status = getClassStatus(booking.startsAt, booking.endsAt);
   const isJoinable = status === 'imminent' || status === 'active';
-  const startLabel = classLabel(booking.startsAt);
+  const startLabel = classLabel(booking.startsAt, locale, t);
   const startTime = formatTime(booking.startsAt);
   const endTime = formatTime(booking.endsAt);
-  const duration = formatDuration(booking.startsAt, booking.endsAt);
+  const duration = formatDuration(booking.startsAt, booking.endsAt, t);
 
   return (
     <Card glowing style={styles.nextClassCard}>
       {/* Card header row */}
       <View style={styles.nextClassTop}>
-        <Text style={styles.nextClassOverline}>TU PRÓXIMA CLASE</Text>
+        <Text style={styles.nextClassOverline}>{t('home.nextClass.overline')}</Text>
         {status !== 'upcoming' && (
           <View style={styles.statusChip}>
             <View style={styles.statusDot} />
             <Text style={styles.statusChipText}>
               {status === 'active'
-                ? 'Sala lista'
-                : `Empieza en ${minutesUntil(booking.startsAt)} min`}
+                ? t('home.nextClass.roomReady')
+                : t('home.nextClass.startsIn').replace('{n}', String(minutesUntil(booking.startsAt)))}
             </Text>
           </View>
         )}
@@ -412,11 +423,11 @@ function NextClassCard({ booking }: { booking: Booking }) {
 
       {/* Meta */}
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>{duration} · con Gustavo</Text>
+        <Text style={styles.metaText}>{t('home.nextClass.withTutor').replace('{duration}', duration)}</Text>
         {status === 'active' && (
           <>
             <Text style={styles.metaSep}> · </Text>
-            <Text style={styles.metaActive}>Sala lista</Text>
+            <Text style={styles.metaActive}>{t('home.nextClass.roomReady')}</Text>
           </>
         )}
       </View>
@@ -443,7 +454,7 @@ function NextClassCard({ booking }: { booking: Booking }) {
           color={isJoinable ? Colors.onPrimary : Colors.textDim}
         />
         <Text style={[styles.joinBtnText, !isJoinable && styles.joinBtnTextDisabled]}>
-          Unirse a la clase
+          {t('home.nextClass.join')}
         </Text>
       </TouchableOpacity>
 
@@ -467,7 +478,7 @@ function NextClassCard({ booking }: { booking: Booking }) {
           }
           activeOpacity={0.7}
         >
-          <Text style={styles.detailBtnText}>Ver detalle</Text>
+          <Text style={styles.detailBtnText}>{t('home.nextClass.detail')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.calendarBtn}

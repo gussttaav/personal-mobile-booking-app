@@ -1,14 +1,21 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { Booking } from '@/types/api';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
+import type { Booking, Locale } from '@/types/api';
 
 interface BookingRowProps {
   booking: Booking;
   onPress: () => void;
 }
 
-const DAY_ABBR = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'] as const;
+type TFn = (key: TranslationKey) => string;
+
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -17,10 +24,10 @@ function formatTime(iso: string): string {
   return `${h}:${m}`;
 }
 
-function durationLabel(startsAt: string, endsAt: string): string {
+function durationLabel(startsAt: string, endsAt: string, t: TFn): string {
   const mins = (new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000;
   if (mins <= 60) return `${mins} min`;
-  return mins === 120 ? '2 horas' : '1 hora';
+  return mins === 120 ? t('common.duration2h') : t('common.duration1h');
 }
 
 type TagVariant = 'credit' | 'paid' | 'free';
@@ -31,18 +38,19 @@ function tagVariant(sessionType: Booking['sessionType']): TagVariant {
   return 'paid';
 }
 
-const TAG_LABEL: Record<TagVariant, string> = {
-  credit: 'CRÉDITO',
-  paid:   'PAGADA',
-  free:   'GRATIS',
+const TAG_LABEL_KEY: Record<TagVariant, TranslationKey> = {
+  credit: 'common.tagCredit',
+  paid:   'common.tagPaid',
+  free:   'common.tagFree',
 };
 
 export function BookingRow({ booking, onPress }: BookingRowProps) {
+  const { locale, t } = useLocale();
   const start = new Date(booking.startsAt);
-  const dayAbbr = DAY_ABBR[start.getDay()];
+  const dayAbbr = start.toLocaleDateString(bcp47(locale), { weekday: 'short' }).replace('.', '');
   const dateNum = start.getDate();
   const timeRange = `${formatTime(booking.startsAt)} – ${formatTime(booking.endsAt)}`;
-  const dur = durationLabel(booking.startsAt, booking.endsAt);
+  const dur = durationLabel(booking.startsAt, booking.endsAt, t);
   const variant = tagVariant(booking.sessionType);
 
   return (
@@ -58,7 +66,7 @@ export function BookingRow({ booking, onPress }: BookingRowProps) {
           <Text style={styles.dur}>{dur}</Text>
           <View style={[styles.tag, variant === 'credit' ? styles.tagCredit : styles.tagPaid]}>
             <Text style={[styles.tagText, variant === 'credit' ? styles.tagTextCredit : styles.tagTextPaid]}>
-              {TAG_LABEL[variant]}
+              {t(TAG_LABEL_KEY[variant])}
             </Text>
           </View>
         </View>

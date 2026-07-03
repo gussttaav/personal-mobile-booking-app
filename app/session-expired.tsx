@@ -153,7 +153,7 @@ export default function SessionExpiredScreen() {
             {connecting ? (
               <>
                 <ActivityIndicator size="small" color="#1f1f1f" />
-                <Text style={styles.googleBtnText}>{t('sessionExpired.signingIn')}</Text>
+                <Text style={styles.googleBtnText}>{t('common.signingIn')}</Text>
               </>
             ) : (
               <>
@@ -162,7 +162,7 @@ export default function SessionExpiredScreen() {
                   style={styles.googleIcon}
                   contentFit="contain"
                 />
-                <Text style={styles.googleBtnText}>{t('sessionExpired.googleSignIn')}</Text>
+                <Text style={styles.googleBtnText}>{t('common.signInGoogle')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -170,7 +170,7 @@ export default function SessionExpiredScreen() {
           {/* Apple — reserved slot for iOS, no functionality yet */}
           <View style={styles.appleSlot}>
             <MaterialCommunityIcons name="apple" size={16} color="#555357" />
-            <Text style={styles.appleSlotText}>{t('sessionExpired.appleComingSoon')}</Text>
+            <Text style={styles.appleSlotText}>{t('common.comingSoonIos')}</Text>
           </View>
         </View>
       </View>

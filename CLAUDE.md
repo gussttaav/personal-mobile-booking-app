@@ -526,7 +526,13 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   derive from device, apply, and POST /api/locale once to SEED the DB (emails
   default 'es' until seeded — fire early). `AuthUser.locale` (Locale | null) is
   now captured from /api/auth/mobile and persisted in the session blob.
-- LOCALIZED so far (everything else is still hardcoded Spanish): the 4 tab labels
+- FULLY BILINGUAL as of CLUSTER 4 (2026-07-02): EVERY screen is now localized —
+  a full-app grep sweep confirms NO hardcoded user-facing Spanish remains anywhere
+  (every screen imports `@/lib/i18n`; no accented/¿¡ literals or Spanish words left
+  in JSX text / accessibilityLabel / placeholder / Alert.alert). tsc enforces ES/EN
+  key parity. Only the native Stripe PaymentSheet still follows the device locale
+  (documented KNOWN LIMITATION below) and euro number-formatting stays es-ES.
+- LOCALIZED (history): the 4 tab labels
   (app/(tabs)/_layout.tsx), the Home empty-state title + subtitle
   (app/(tabs)/(home)/index.tsx EmptyState), and the WHOLE Perfil tab — S17
   profile.tsx (`profile.*` keys) and S18 settings.tsx (`settings.*` keys). S18's
@@ -559,6 +565,29 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   copy confirmed: the S15 "esperando a Gustavo" waiting copy is calm/reassuring in EN, the
   S14 permission-denied recovery explains why+how, the S16 Google-review prompt is a genuine
   (non-pushy) invitation, and "Gustavo" is kept as an untranslated proper noun throughout.
+  CLUSTER 4 (FINAL) is now localized — S03 Home (`home.*`: greeting by time-of-day,
+  empty-state cross-sell, with-classes, next-class card) incl. its sub-components
+  CreditBalanceCard (`creditCard.*`) and BookingRow (tag labels), S01 login (`login.*`),
+  and the S17/S18 footer + S19 close-a11y stragglers. S02 session-expired was already
+  fully keyed and its `googleSignIn/signingIn/appleComingSoon` keys were RETIRED into
+  the promoted `common.*` (see below). A full-app sweep during Cluster 4 also caught that
+  S13 reschedule-CONFIRM (app/(tabs)/(home)/reschedule-confirm.tsx — the 7-phase confirm/
+  success/error state machine) was NEVER localized (Cluster 2 only did the reschedule
+  blocked-gate); it is now fully localized under `reschedule.confirm.*` (ES+EN). PROMOTED
+  to `common.*` in Cluster 4: `signInGoogle`, `signingIn`, `comingSoonIos` (shared by S01 +
+  S02, retired the `sessionExpired.*` copies), `today`/`tomorrow` (Home + BookingRow date
+  labels via Intl), `version` (S17/S18 footer word), and `tagCredit`/`tagPaid`/`tagFree`
+  (BookingRow + reschedule-confirm badges — retired the just-added `home.tag.*`). Reuses:
+  `common.seePacks`, `common.duration1h/2h/15min`, `common.backHome`, `common.retry`,
+  `common.soonTitle`, `common.close`, `errors.noConnection` (login offline),
+  `addToCalendar.title` and `schedule.empty.keepCurrent` (reschedule-confirm buttons). New
+  namespaces: `home.*` (expanded), `creditCard.*`, `login.*`, `reschedule.confirm.*`. Home
+  & BookingRow DROPPED their hardcoded Spanish weekday arrays for Intl `bcp47(locale)` +
+  `toLocaleDateString({weekday:'short'})` (same Cluster-2 pattern); login value-prop uses
+  the user-approved faithful EN phrasing; cross-sell rule/number copy (5/10 classes, -15%,
+  24 h) kept faithful. NB the runtime EN↔ES toggle walkthrough could not be run here (no
+  emulator in the build env) — verified statically via tsc key-parity + grep sweeps + the
+  i18n unit test.
 - KEY-NAMING CONVENTION (established with Cluster 1, applies to later clusters):
   `screen.section.element`. Strings repeated across ≥2 screens live in a shared
   `common.*` namespace (never duplicated per screen — e.g. `common.backHome`,
@@ -591,8 +620,10 @@ routes (not `index.tsx`) so the app reliably opens on Inicio.
   hábiles (menos la comisión de Stripe)." / "...within 1–3 business days (minus the Stripe
   fee)." (NO fee breakdown added; NOT softened to "minus fees"). Pack product names
   ("Pack Esencial"/"Pack Intensivo") are NOT translated — kept Spanish in both languages.
-- Translate remaining screens incrementally via `useT()`/`t()` — add the keys to
-  lib/i18n/strings.ts (both languages, enforced by the type) as you go.
+- ALL screens are now localized (Cluster 4 completed the pass). For any NEW screen,
+  follow the same convention: `useT()`/`t()`, add keys to lib/i18n/strings.ts in BOTH
+  languages (parity enforced by the type), reuse `common.*`/`errors.*`, and never leave
+  hardcoded user-facing Spanish.
 
 ### Out of scope for now
 - Nothing pending — Zoom video (S14/S15) and the post-class review (S16, the last

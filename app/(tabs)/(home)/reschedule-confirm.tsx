@@ -16,16 +16,26 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, ApiError } from '@/lib/api-client';
 import { getDeviceTimeZone } from '@/lib/grid-time';
 import { rescheduleFlag } from '@/lib/reschedule-flag';
+import { useLocale } from '@/lib/i18n/locale-context';
+import type { TranslationKey } from '@/lib/i18n/strings';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
-import type { PostBookResponse, SessionType } from '@/types/api';
+import type { Locale, PostBookResponse, SessionType } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string): string {
+// Spanish uses day-before-month; en-GB keeps that ordering in English.
+function bcp47(locale: Locale): string {
+  return locale === 'en' ? 'en-GB' : 'es-ES';
+}
+
+function formatDate(iso: string, locale: Locale): string {
   const d = new Date(iso);
-  const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+  const tag = bcp47(locale);
+  const weekday = d.toLocaleDateString(tag, { weekday: 'long' });
   const day = d.getDate();
-  const month = d.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+  const month = d.toLocaleDateString(tag, { month: 'short' }).replace('.', '');
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
@@ -48,10 +58,10 @@ function endIsoFromSessionType(startIso: string, sType: string): string {
   return new Date(t + ms).toISOString();
 }
 
-function durationLabel(sType: string): string {
-  if (sType === 'session2h') return '2 horas';
-  if (sType === 'free15min') return '15 min';
-  return '1 hora';
+function durationLabel(sType: string, t: TFn): string {
+  if (sType === 'session2h') return t('common.duration2h');
+  if (sType === 'free15min') return t('common.duration15min');
+  return t('common.duration1h');
 }
 
 // Reset the Booking tab's stack to session-type (it holds S05 in reschedule mode),
@@ -75,6 +85,7 @@ type Phase =
 
 export default function RescheduleConfirmScreen() {
   const insets = useSafeAreaInsets();
+  const { locale, t } = useLocale();
   const { rescheduleToken, sessionType, newStartIso, newEndIso, origStartsAt } =
     useLocalSearchParams<{
       rescheduleToken: string;
@@ -175,15 +186,15 @@ export default function RescheduleConfirmScreen() {
               <MaterialCommunityIcons name="check" size={40} color={Colors.primary} />
             </View>
             <View style={styles.pillTag}>
-              <Text style={styles.pillTagText}>CLASE REPROGRAMADA</Text>
+              <Text style={styles.pillTagText}>{t('reschedule.confirm.successPill')}</Text>
             </View>
-            <Text style={styles.heroTitle}>Clase reprogramada</Text>
-            <Text style={styles.heroSubtitle}>Sin cargo · mismo crédito</Text>
+            <Text style={styles.heroTitle}>{t('reschedule.confirm.successTitle')}</Text>
+            <Text style={styles.heroSubtitle}>{t('reschedule.confirm.noChargeSameCredit')}</Text>
           </View>
 
           {/* Before → After card */}
           <View style={styles.changeCard}>
-            <Text style={styles.changeCardOverline}>El cambio</Text>
+            <Text style={styles.changeCardOverline}>{t('reschedule.confirm.changeOverline')}</Text>
 
             {/* FROM row */}
             <View style={styles.slotRow}>
@@ -191,18 +202,18 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="calendar-remove-outline" size={18} color={Colors.textDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.slotDate, styles.strikethrough]}>{formatDate(safeOrigStart)}</Text>
+                <Text style={[styles.slotDate, styles.strikethrough]}>{formatDate(safeOrigStart, locale)}</Text>
                 <Text style={[styles.slotTime, styles.strikethrough]}>
-                  {formatTimeRange(safeOrigStart, origEnd)} · {durationLabel(safeSessionType)}
+                  {formatTimeRange(safeOrigStart, origEnd)} · {durationLabel(safeSessionType, t)}
                 </Text>
               </View>
               {isPack ? (
                 <View style={styles.badgeGreen}>
-                  <Text style={styles.badgeGreenText}>CRÉDITO</Text>
+                  <Text style={styles.badgeGreenText}>{t('common.tagCredit')}</Text>
                 </View>
               ) : (
                 <View style={styles.badgeGray}>
-                  <Text style={styles.badgeGrayText}>PAGADA</Text>
+                  <Text style={styles.badgeGrayText}>{t('common.tagPaid')}</Text>
                 </View>
               )}
             </View>
@@ -221,9 +232,9 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="calendar-check-outline" size={18} color={Colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.slotDate}>{formatDate(safeNewStart)}</Text>
+                <Text style={styles.slotDate}>{formatDate(safeNewStart, locale)}</Text>
                 <Text style={styles.slotTime}>
-                  {formatTimeRange(safeNewStart, safeNewEnd)} · {durationLabel(safeSessionType)}
+                  {formatTimeRange(safeNewStart, safeNewEnd)} · {durationLabel(safeSessionType, t)}
                 </Text>
               </View>
               <MaterialCommunityIcons name="check-circle" size={20} color={Colors.primary} />
@@ -239,9 +250,9 @@ export default function RescheduleConfirmScreen() {
               style={{ flexShrink: 0, marginTop: 1 }}
             />
             <View style={{ flex: 1 }}>
-              <Text style={styles.reassuranceTitle}>Sin cargo · sin cambio de crédito</Text>
+              <Text style={styles.reassuranceTitle}>{t('reschedule.confirm.reassuranceTitle')}</Text>
               <Text style={styles.reassuranceBody}>
-                La clase anterior fue cancelada automáticamente. Este cambio no genera ningún pago adicional.
+                {t('reschedule.confirm.reassuranceBody')}
               </Text>
             </View>
           </View>
@@ -252,12 +263,12 @@ export default function RescheduleConfirmScreen() {
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() =>
-              Alert.alert('Próximamente', 'Añadir al calendario estará disponible pronto.')
+              Alert.alert(t('common.soonTitle'), t('reschedule.confirm.calendarSoonBody'))
             }
             activeOpacity={0.85}
           >
             <MaterialCommunityIcons name="calendar-plus" size={18} color={Colors.onPrimary} />
-            <Text style={styles.primaryBtnText}>Añadir al calendario</Text>
+            <Text style={styles.primaryBtnText}>{t('addToCalendar.title')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.ghostBtn}
@@ -266,7 +277,7 @@ export default function RescheduleConfirmScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.ghostBtnText}>Volver a Inicio</Text>
+            <Text style={styles.ghostBtnText}>{t('common.backHome')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -291,8 +302,8 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="calendar-sync-outline" size={22} color={Colors.primary} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>¿Confirmar el cambio?</Text>
-                <Text style={styles.sheetSubtitle}>Sin cargo · mismo crédito</Text>
+                <Text style={styles.sheetTitle}>{t('reschedule.confirm.sheetTitle')}</Text>
+                <Text style={styles.sheetSubtitle}>{t('reschedule.confirm.noChargeSameCredit')}</Text>
               </View>
             </View>
 
@@ -302,9 +313,9 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="calendar-remove-outline" size={17} color={Colors.textDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.miniSlotDate, styles.strikethrough]}>{formatDate(safeOrigStart)}</Text>
+                <Text style={[styles.miniSlotDate, styles.strikethrough]}>{formatDate(safeOrigStart, locale)}</Text>
                 <Text style={[styles.miniSlotTime, styles.strikethrough]}>
-                  {formatTimeRange(safeOrigStart, origEnd)} · {durationLabel(safeSessionType)}
+                  {formatTimeRange(safeOrigStart, origEnd)} · {durationLabel(safeSessionType, t)}
                 </Text>
               </View>
             </View>
@@ -319,9 +330,9 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="calendar-check-outline" size={17} color={Colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.miniSlotDate}>{formatDate(safeNewStart)}</Text>
+                <Text style={styles.miniSlotDate}>{formatDate(safeNewStart, locale)}</Text>
                 <Text style={styles.miniSlotTime}>
-                  {formatTimeRange(safeNewStart, safeNewEnd)} · {durationLabel(safeSessionType)}
+                  {formatTimeRange(safeNewStart, safeNewEnd)} · {durationLabel(safeSessionType, t)}
                 </Text>
               </View>
             </View>
@@ -330,8 +341,9 @@ export default function RescheduleConfirmScreen() {
             <View style={styles.ruleRow}>
               <MaterialCommunityIcons name="check-circle-outline" size={16} color={Colors.primary} />
               <Text style={styles.ruleText}>
-                Aún puedes reprogramar: faltan más de{' '}
-                <Text style={styles.ruleBold}>2 h</Text> para el inicio.
+                {t('reschedule.confirm.ruleTextBefore')}
+                <Text style={styles.ruleBold}>2 h</Text>
+                {t('reschedule.confirm.ruleTextAfter')}
               </Text>
             </View>
 
@@ -344,11 +356,11 @@ export default function RescheduleConfirmScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.consequenceTitle}>Qué cambia</Text>
+                <Text style={styles.consequenceTitle}>{t('reschedule.confirm.consequenceTitle')}</Text>
                 <Text style={styles.consequenceBody}>
                   {isPack
-                    ? 'Tu crédito sigue activo, vinculado al nuevo horario.'
-                    : 'Tu pago original permanece válido. No se genera ningún cargo.'}
+                    ? t('reschedule.confirm.consequenceBodyPack')
+                    : t('reschedule.confirm.consequenceBodyPaid')}
                 </Text>
               </View>
             </View>
@@ -364,7 +376,7 @@ export default function RescheduleConfirmScreen() {
               ) : (
                 <>
                   <MaterialCommunityIcons name="check" size={18} color={Colors.onPrimary} />
-                  <Text style={styles.primaryBtnText}>Confirmar cambio · sin cargo</Text>
+                  <Text style={styles.primaryBtnText}>{t('reschedule.confirm.confirmBtn')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -374,7 +386,7 @@ export default function RescheduleConfirmScreen() {
               disabled={submitting}
               activeOpacity={0.7}
             >
-              <Text style={styles.ghostBtnText}>Mantener la hora actual</Text>
+              <Text style={styles.ghostBtnText}>{t('schedule.empty.keepCurrent')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -387,8 +399,8 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="alert-circle-outline" size={23} color={Colors.error} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>Ese hueco se acaba de ocupar</Text>
-                <Text style={styles.sheetSubtitle}>Tu reserva original sigue intacta.</Text>
+                <Text style={styles.sheetTitle}>{t('reschedule.confirm.slotTakenTitle')}</Text>
+                <Text style={styles.sheetSubtitle}>{t('reschedule.confirm.originalIntact')}</Text>
               </View>
             </View>
 
@@ -400,9 +412,9 @@ export default function RescheduleConfirmScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>Tu reserva sigue activa</Text>
+                <Text style={styles.infoCardTitle}>{t('reschedule.confirm.bookingStillActive')}</Text>
                 <Text style={styles.infoCardBody}>
-                  Ningún cambio se ha realizado. Elige otro hueco disponible.
+                  {t('reschedule.confirm.slotTakenBody')}
                 </Text>
               </View>
             </View>
@@ -413,7 +425,7 @@ export default function RescheduleConfirmScreen() {
               activeOpacity={0.85}
             >
               <MaterialCommunityIcons name="calendar-search" size={18} color={Colors.onPrimary} />
-              <Text style={styles.primaryBtnText}>Elegir otro hueco</Text>
+              <Text style={styles.primaryBtnText}>{t('reschedule.confirm.chooseAnother')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -426,9 +438,9 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="link-variant-off" size={23} color={Colors.error} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>Este enlace ya no es válido</Text>
+                <Text style={styles.sheetTitle}>{t('reschedule.confirm.invalidTokenTitle')}</Text>
                 <Text style={styles.sheetSubtitle}>
-                  La reserva puede haber sido procesada ya o haber caducado.
+                  {t('reschedule.confirm.invalidTokenBody')}
                 </Text>
               </View>
             </View>
@@ -438,7 +450,7 @@ export default function RescheduleConfirmScreen() {
               onPress={goHome}
               activeOpacity={0.85}
             >
-              <Text style={styles.primaryBtnText}>Volver a Inicio</Text>
+              <Text style={styles.primaryBtnText}>{t('common.backHome')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -451,9 +463,9 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="clock-alert-outline" size={22} color={Colors.warning} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>Ya no puedes reprogramar online</Text>
+                <Text style={styles.sheetTitle}>{t('reschedule.blockedTitle')}</Text>
                 <Text style={styles.sheetSubtitle}>
-                  El tiempo de reprogramación ha expirado (menos de 2 h para el inicio).
+                  {t('reschedule.confirm.outsideWindowBody')}
                 </Text>
               </View>
             </View>
@@ -463,7 +475,7 @@ export default function RescheduleConfirmScreen() {
               onPress={goHome}
               activeOpacity={0.85}
             >
-              <Text style={styles.primaryBtnText}>Volver a Inicio</Text>
+              <Text style={styles.primaryBtnText}>{t('common.backHome')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -476,8 +488,8 @@ export default function RescheduleConfirmScreen() {
                 <MaterialCommunityIcons name="close-circle-outline" size={23} color={Colors.error} />
               </View>
               <View style={{ flex: 1, paddingTop: 1 }}>
-                <Text style={styles.sheetTitle}>No se pudo reprogramar</Text>
-                <Text style={styles.sheetSubtitle}>Tu reserva original sigue intacta.</Text>
+                <Text style={styles.sheetTitle}>{t('reschedule.confirm.genericTitle')}</Text>
+                <Text style={styles.sheetSubtitle}>{t('reschedule.confirm.originalIntact')}</Text>
               </View>
             </View>
 
@@ -489,9 +501,9 @@ export default function RescheduleConfirmScreen() {
                 style={{ flexShrink: 0, marginTop: 1 }}
               />
               <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>Tu reserva sigue activa</Text>
+                <Text style={styles.infoCardTitle}>{t('reschedule.confirm.bookingStillActive')}</Text>
                 <Text style={styles.infoCardBody}>
-                  Comprueba tu conexión e inténtalo de nuevo.
+                  {t('reschedule.confirm.genericBody')}
                 </Text>
               </View>
             </View>
@@ -505,14 +517,14 @@ export default function RescheduleConfirmScreen() {
               activeOpacity={0.85}
             >
               <MaterialCommunityIcons name="refresh" size={18} color={Colors.onPrimary} />
-              <Text style={styles.primaryBtnText}>Reintentar</Text>
+              <Text style={styles.primaryBtnText}>{t('common.retry')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.ghostBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
-              <Text style={styles.ghostBtnText}>Volver al mapa de huecos</Text>
+              <Text style={styles.ghostBtnText}>{t('reschedule.confirm.backToGrid')}</Text>
             </TouchableOpacity>
           </>
         )}

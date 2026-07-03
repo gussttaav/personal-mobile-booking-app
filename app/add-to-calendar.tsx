@@ -143,7 +143,7 @@ export default function AddToCalendarScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Cerrar"
+          accessibilityLabel={t('common.close')}
         >
           <MaterialCommunityIcons name="close" size={20} color={Colors.textDim} />
         </TouchableOpacity>

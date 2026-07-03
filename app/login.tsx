@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { AuthError } from '@/lib/auth';
 import { useAuth } from '@/lib/auth-context';
+import { useT } from '@/lib/i18n/locale-context';
 
 // S01 · Bienvenida / Iniciar sesión
 // Design source: docs/design/screens/SignIn.dc.html + "Iniciar Sesion.dc.html".
@@ -38,6 +39,7 @@ function TopGlow() {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
+  const t = useT();
   const [status, setStatus] = useState<Status>('idle');
 
   const connecting = status === 'connecting';
@@ -82,12 +84,12 @@ export default function LoginScreen() {
           <Text style={styles.heading}>Gustavo Torres</Text>
 
           <Text style={styles.valueProp}>
-            Tutorías 1:1 de programación, matemáticas e IA con guía experta y directa.
+            {t('login.valueProp')}
           </Text>
 
           <View style={styles.socialProof}>
             <MaterialCommunityIcons name="star" size={14} color={Colors.primary} />
-            <Text style={styles.socialProofText}>4.700 clases · 4,9/5</Text>
+            <Text style={styles.socialProofText}>{t('login.socialProof')}</Text>
           </View>
         </View>
 
@@ -99,7 +101,7 @@ export default function LoginScreen() {
               <View style={[styles.alert, styles.alertError]}>
                 <MaterialCommunityIcons name="alert-circle-outline" size={18} color={Colors.error} />
                 <Text style={[styles.alertText, { color: Colors.error }]}>
-                  No pudimos iniciar sesión, inténtalo de nuevo.
+                  {t('login.error')}
                 </Text>
               </View>
             )}
@@ -107,7 +109,7 @@ export default function LoginScreen() {
               <View style={[styles.alert, styles.alertOffline]}>
                 <MaterialCommunityIcons name="wifi-off" size={18} color={Colors.warning} />
                 <Text style={[styles.alertText, { color: Colors.warning }]}>
-                  Sin conexión. Comprueba tu red e inténtalo de nuevo.
+                  {t('errors.noConnection')}
                 </Text>
               </View>
             )}
@@ -125,7 +127,7 @@ export default function LoginScreen() {
             {connecting ? (
               <>
                 <ActivityIndicator size="small" color="#1f1f1f" />
-                <Text style={styles.googleBtnText}>Iniciando sesión…</Text>
+                <Text style={styles.googleBtnText}>{t('common.signingIn')}</Text>
               </>
             ) : (
               <>
@@ -134,7 +136,7 @@ export default function LoginScreen() {
                   style={styles.googleIcon}
                   contentFit="contain"
                 />
-                <Text style={styles.googleBtnText}>Iniciar sesión con Google</Text>
+                <Text style={styles.googleBtnText}>{t('common.signInGoogle')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -142,19 +144,19 @@ export default function LoginScreen() {
           {/* Apple — reserved slot for iOS, no functionality yet */}
           <View style={styles.appleSlot}>
             <MaterialCommunityIcons name="apple" size={16} color="#555357" />
-            <Text style={styles.appleSlotText}>Próximamente en iOS</Text>
+            <Text style={styles.appleSlotText}>{t('common.comingSoonIos')}</Text>
           </View>
 
           {/* Legal */}
           <View style={styles.legal}>
-            <Text style={styles.legalIntro}>Al continuar, aceptas los</Text>
+            <Text style={styles.legalIntro}>{t('login.legalIntro')}</Text>
             <View style={styles.legalLinks}>
               <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
-                <Text style={styles.legalLink}>Términos de servicio</Text>
+                <Text style={styles.legalLink}>{t('login.terms')}</Text>
               </TouchableOpacity>
               <Text style={styles.legalSep}>·</Text>
               <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
-                <Text style={styles.legalLink}>Política de privacidad</Text>
+                <Text style={styles.legalLink}>{t('login.privacy')}</Text>
               </TouchableOpacity>
             </View>
           </View>

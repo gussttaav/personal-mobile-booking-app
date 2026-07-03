@@ -154,7 +154,7 @@ export default function ProfileScreen() {
         </Text>
       </TouchableOpacity>
 
-      <Text style={styles.footer}>gustavoai.dev · versión 1.0.0</Text>
+      <Text style={styles.footer}>gustavoai.dev · {t('common.version')} 1.0.0</Text>
     </ScrollView>
   );
 }

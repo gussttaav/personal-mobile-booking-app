@@ -295,7 +295,7 @@ export default function SettingsScreen() {
           <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
         </Pressable>
 
-        <Text style={styles.footer}>gustavoai.dev · versión 1.0.0</Text>
+        <Text style={styles.footer}>gustavoai.dev · {t('common.version')} 1.0.0</Text>
       </ScrollView>
     </View>
   );

@@ -8,7 +8,6 @@
 // ── Colors ──────────────────────────────────────────────────────────────────
 
 export const Colors = {
-  // Template token names preserved so ThemedText / ThemedView keep working
   text:            '#e5e1e4',   // --text
   background:      '#131315',   // --bg
   tint:            '#4edea3',   // --green  (primary brand)

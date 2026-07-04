@@ -32,15 +32,22 @@ import {
 import type { AvailabilitySlot, GetScheduleResponse, Locale } from '@/types/api';
 
 // ── Grid geometry ───────────────────────────────────────────────────────────
-// Cells are 60px wide (comfortable touch), 40px tall (compact for 30-min rows).
+// Flush, edge-to-edge cells: 60px wide (comfortable touch), 40px tall (compact
+// for 30-min rows), no gaps or radius. Structure comes from tiered row
+// separators + zebra hour banding + the time gutter, not from margins.
 
-const HOURS_COL_W = 48;
+const HOURS_COL_W = 52; // room for "09:30" + the hour tick
 const HEADER_H = 54;
 const CELL_W = 60;
 const CELL_H = 40;
-const COL_GAP = 5;
-const ROW_GAP = 5;
 const LOADING_ROWS = 8;
+
+// ── Substrate helpers (tiered separators + zebra) ─────────────────────────────
+// slotMinutes is a contiguous 30-min sequence, so hour/half boundaries and hour
+// parity are reliable straight from a cell's `minute`.
+
+const isHourBoundary = (minute: number) => minute % 60 === 0;
+const isOddHour = (minute: number) => Math.floor(minute / 60) % 2 === 1;
 
 // ── Cell-state colors (web continuity; mapped onto theme where present) ───────
 
@@ -263,6 +270,8 @@ function GridCell({
   selected: boolean;
   onPress: () => void;
 }) {
+  const sep = isHourBoundary(cell.minute) ? styles.sepHour : styles.sepHalf;
+
   if (selected) {
     return (
       <Pressable onPress={onPress} style={[styles.cell, styles.cellSelected]} />
@@ -298,10 +307,10 @@ function GridCell({
       );
     case 'unavailable':
     default:
+      // Substrate: no side outline — the tiered top-border + zebra banding
+      // (odd hours) are the cell.
       return (
-        <View
-          style={[styles.cell, { backgroundColor: CELL_COLORS.unavailable.bg, borderColor: CELL_COLORS.unavailable.border }]}
-        />
+        <View style={[styles.cell, isOddHour(cell.minute) && styles.zebraOdd, sep]} />
       );
   }
 }
@@ -329,7 +338,7 @@ function Grid({
   const N = duration === '2h' ? 4 : 2;
   const todayKey = dateKey(today);
   const rows = model.slotMinutes.length;
-  const rowsHeight = ROW_GAP + rows * (CELL_H + ROW_GAP);
+  const rowsHeight = rows * CELL_H;
   const scrollHeight = HEADER_H + rowsHeight;
 
   return (
@@ -341,13 +350,24 @@ function Grid({
             <MaterialCommunityIcons name="clock-outline" size={15} color={Colors.textDim} />
           </View>
           <View style={styles.hoursList}>
-            {model.slotMinutes.map((m) => (
-              <View key={m} style={styles.hourLabelCell}>
-                <Text style={m % 60 === 0 ? styles.hourLabel : styles.halfHourLabel}>
-                  {slotLabel(m)}
-                </Text>
-              </View>
-            ))}
+            {model.slotMinutes.map((m) => {
+              const hour = isHourBoundary(m);
+              return (
+                <View
+                  key={m}
+                  style={[
+                    styles.hourLabelCell,
+                    isOddHour(m) && styles.zebraOdd,
+                    hour ? styles.sepHour : styles.sepHalf,
+                  ]}
+                >
+                  <Text style={hour ? styles.hourLabel : styles.halfHourLabel}>
+                    {slotLabel(m)}
+                  </Text>
+                  {hour && <View style={styles.hourTick} />}
+                </View>
+              );
+            })}
           </View>
         </View>
 
@@ -460,7 +480,9 @@ function Legend() {
         } else if (item.swatch === 'booked') {
           swatchStyle = { backgroundColor: CELL_COLORS.booked.bg, borderColor: CELL_COLORS.booked.border };
         } else {
-          swatchStyle = { backgroundColor: CELL_COLORS.unavailable.bg, borderColor: CELL_COLORS.unavailable.border };
+          // Live unavailable cells are now pure zebra substrate; give the legend
+          // swatch a slightly stronger tint so it stays visible at 13px.
+          swatchStyle = { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: CELL_COLORS.unavailable.border };
         }
         return (
           <View key={item.key} style={styles.legendItem}>
@@ -551,8 +573,8 @@ function LoadingGrid() {
             {Array.from({ length: 5 }).map((_, c) => (
               <View key={c} style={styles.bodyColumn}>
                 {Array.from({ length: LOADING_ROWS }).map((_, r) => (
-                  <View key={r} style={styles.cell}>
-                    <SkeletonBlock width={CELL_W - 8} height={CELL_H - 8} borderRadius={Radius.md} />
+                  <View key={r} style={[styles.cell, styles.sepHalf]}>
+                    <SkeletonBlock width={CELL_W - 4} height={CELL_H - 4} borderRadius={Radius.xs} />
                   </View>
                 ))}
               </View>
@@ -1059,27 +1081,48 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   hoursList: {
-    paddingTop: ROW_GAP,
+    paddingTop: 0,
   },
   hourLabelCell: {
     height: CELL_H,
-    marginBottom: ROW_GAP,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 5,
+    justifyContent: 'flex-start', // labels sit at the top of the row
+    paddingTop: 4,
+    paddingRight: 6, // clearance for the inner-edge tick
   },
   hourLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
     fontFamily: FontFamily.body,
-    color: Colors.textDim,
+    color: Colors.textMuted,
   },
   halfHourLabel: {
-    fontSize: 8.5,
+    fontSize: 9,
     fontWeight: '400',
     fontFamily: FontFamily.body,
     color: Colors.textDim,
-    opacity: 0.55,
+    opacity: 0.6,
+  },
+  hourTick: {
+    position: 'absolute',
+    right: 0,
+    top: -1, // straddles the 2px hour separator line at the top of the row
+    width: 8,
+    height: 2,
+    backgroundColor: 'rgba(78, 222, 163, 0.5)',
+  },
+
+  // Tiered row separators + zebra hour banding (grid substrate)
+  sepHour: {
+    borderTopWidth: 2,
+    borderTopColor: 'rgba(78, 222, 163, 0.22)',
+  },
+  sepHalf: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  zebraOdd: {
+    backgroundColor: 'rgba(255, 255, 255, 0.015)',
   },
 
   // Days header (inside the horizontal scroll)
@@ -1087,13 +1130,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: HEADER_H,
     alignItems: 'center',
-    paddingLeft: COL_GAP,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
   dayHead: {
     width: CELL_W,
-    marginRight: COL_GAP,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
@@ -1117,21 +1158,19 @@ const styles = StyleSheet.create({
   // Cells (inside the horizontal scroll, below the days header)
   cellsRow: {
     flexDirection: 'row',
-    paddingLeft: COL_GAP,
-    paddingTop: ROW_GAP,
   },
   loadingBody: {
     flex: 1,
   },
   bodyColumn: {
     width: CELL_W,
-    marginRight: COL_GAP,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.05)',
   },
   cell: {
     width: CELL_W,
     height: CELL_H,
-    marginBottom: ROW_GAP,
-    borderRadius: Radius.md,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
@@ -1141,6 +1180,7 @@ const styles = StyleSheet.create({
   cellSelected: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
+    borderRadius: 0,
     boxShadow: [{ offsetX: 0, offsetY: 0, blurRadius: 14, spreadDistance: 0, color: 'rgba(78, 222, 163, 0.45)' }],
   },
 

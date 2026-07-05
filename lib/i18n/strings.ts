@@ -82,7 +82,7 @@ const es = {
   },
   login: {
     valueProp: 'Tutorías 1:1 de programación, matemáticas e IA con guía experta y directa.',
-    socialProof: '4.700 clases · 4,9/5',
+    socialProof: '+4.700 clases · 4,9/5',
     error: 'No pudimos iniciar sesión, inténtalo de nuevo.',
     legalIntro: 'Al continuar, aceptas los',
     terms: 'Términos de servicio',

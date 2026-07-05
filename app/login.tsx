@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,10 +12,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PRIVACY_URL, TERMS_URL } from '@/constants/config';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { AuthError } from '@/lib/auth';
 import { useAuth } from '@/lib/auth-context';
-import { useT } from '@/lib/i18n/locale-context';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 // S01 · Bienvenida / Iniciar sesión
 // Design source: docs/design/screens/SignIn.dc.html + "Iniciar Sesion.dc.html".
@@ -39,10 +41,13 @@ function TopGlow() {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
-  const t = useT();
+  const { locale, t } = useLocale();
   const [status, setStatus] = useState<Status>('idle');
 
   const connecting = status === 'connecting';
+
+  // Best-effort external link; never crash if the URL can't be opened.
+  const openLegal = (url: string) => Linking.openURL(url).catch(() => {});
 
   async function handleGoogle() {
     if (connecting) return;
@@ -151,11 +156,21 @@ export default function LoginScreen() {
           <View style={styles.legal}>
             <Text style={styles.legalIntro}>{t('login.legalIntro')}</Text>
             <View style={styles.legalLinks}>
-              <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
+              <TouchableOpacity
+                hitSlop={8}
+                activeOpacity={0.7}
+                onPress={() => openLegal(TERMS_URL[locale])}
+                accessibilityRole="link"
+              >
                 <Text style={styles.legalLink}>{t('login.terms')}</Text>
               </TouchableOpacity>
               <Text style={styles.legalSep}>·</Text>
-              <TouchableOpacity hitSlop={8} activeOpacity={0.7}>
+              <TouchableOpacity
+                hitSlop={8}
+                activeOpacity={0.7}
+                onPress={() => openLegal(PRIVACY_URL[locale])}
+                accessibilityRole="link"
+              >
                 <Text style={styles.legalLink}>{t('login.privacy')}</Text>
               </TouchableOpacity>
             </View>

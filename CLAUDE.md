@@ -97,12 +97,17 @@ app/
     │   ├── reschedule.tsx         — S13 Reprogramar · 2h gate → S05 mode:'reschedule'
     │   └── reschedule-confirm.tsx — S13 confirm sheet + terminal states
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
-    │   ├── session-type.tsx   — S04 Tipo de sesión (stack initial route)
+    │   ├── session-type.tsx   — S04 Tipo de sesión (stack initial route; the free
+    │   │                        15-min intro card shows only for new accounts —
+    │   │                        hasBookings:false via GET /api/credits)
     │   ├── schedule.tsx       — S05 Cuadrícula semanal (mode: 'pay'→S06 / 'credit'→S07 /
-    │   │                        'reschedule'→reschedule-confirm; refetches availability
-    │   │                        on regained focus)
+    │   │                        'free'→confirm-free / 'reschedule'→reschedule-confirm;
+    │   │                        'free' uses a 15-min grid step, others 30-min; refetches
+    │   │                        availability on regained focus)
     │   ├── confirm.tsx        — S06 Confirmar y pagar (Stripe, async, poll-confirm)
     │   ├── confirm-credit.tsx — S07 Confirmar con crédito (synchronous POST /api/book)
+    │   ├── confirm-free.tsx   — Confirmar sesión gratuita (synchronous POST /api/book,
+    │   │                        sessionType 'free15min', no payment/credit)
     │   └── success.tsx        — S08 Reserva confirmada
     ├── (packs)/           — Tab: Packs (gift-outline / gift)
     │   ├── packs.tsx      — S09 Packs (stack initial route)
@@ -140,7 +145,8 @@ app/
 - `app/_layout.tsx` — app init (see nav tree); provider stack + route guards.
 - `lib/grid-time.ts` — pure tz/grid math for S05: `weeklyHours` frame → device-tz
   hour rows (DST-correct via `Intl`); `buildGridModel()` → the four cell states;
-  `getDeviceTimeZone()`. Tested.
+  `getDeviceTimeZone()`. Step-parameterized via `gridUnitsFor(duration)` — '15min'
+  → 15-min step / 1 cell (free intro), '1h'/'2h' → 30-min step / 2·4 cells. Tested.
 - `lib/payment-confirmation.ts` — pure confirmation pollers (no React/timers;
   `now`/`sleep` injectable, resolve once): `pollPaymentConfirmation()` (S06) and
   `pollPackConfirmation()` (S10) poll `/api/payment-confirmation/channel` to a

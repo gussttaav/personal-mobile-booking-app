@@ -34,7 +34,6 @@ function findCents(pricing: GetPricingResponse, productKey: 'session1h' | 'sessi
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Duration = '1h' | '2h';
 type ScreenState = 'loading' | 'ready' | 'error';
 
 interface Prices {
@@ -126,11 +125,18 @@ export default function SessionTypeScreen() {
   const t = useT();
   const [state, setState] = useState<ScreenState>('loading');
   const [prices, setPrices] = useState<Prices | null>(null);
+  // The free 15-min intro is offered to new accounts only (no bookings yet). The
+  // API enforces no limit, so this is a client-side gate; fail closed (hide it) if
+  // the credits check can't load, and never block pricing on it.
+  const [showFree, setShowFree] = useState(false);
 
   const load = useCallback(async () => {
     setState('loading');
     try {
-      const pricing = await api.getPricing();
+      const [pricing, credits] = await Promise.all([
+        api.getPricing(),
+        api.getCredits().catch(() => null),
+      ]);
       const oneHourCents = findCents(pricing, 'session1h');
       const twoHourCents = findCents(pricing, 'session2h');
       if (oneHourCents == null || twoHourCents == null) {
@@ -138,6 +144,7 @@ export default function SessionTypeScreen() {
         return;
       }
       setPrices({ oneHourCents, twoHourCents });
+      setShowFree(credits?.hasBookings === false);
       setState('ready');
     } catch {
       setState('error');
@@ -148,10 +155,18 @@ export default function SessionTypeScreen() {
     load();
   }, [load]);
 
-  const selectDuration = useCallback((duration: Duration) => {
+  const selectDuration = useCallback((duration: '1h' | '2h') => {
     router.push({
       pathname: '/(tabs)/(booking)/schedule',
       params: { duration },
+    });
+  }, []);
+
+  // Free intro books directly (no payment) — the grid runs in mode:'free'.
+  const selectFree = useCallback(() => {
+    router.push({
+      pathname: '/(tabs)/(booking)/schedule',
+      params: { mode: 'free' },
     });
   }, []);
 
@@ -187,6 +202,16 @@ export default function SessionTypeScreen() {
 
         {state === 'ready' && prices != null && (
           <View style={styles.cardList}>
+            {showFree && (
+              <DurationCard
+                title={t('common.duration15min')}
+                subtitle={t('sessionType.cardFreeSubtitle')}
+                price=""
+                priceCaption=""
+                badge={t('common.tagFree')}
+                onPress={selectFree}
+              />
+            )}
             <DurationCard
               title={t('common.duration1h')}
               subtitle={t('sessionType.card1hSubtitle')}

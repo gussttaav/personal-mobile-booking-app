@@ -4,6 +4,7 @@ import {
   buildGridModel,
   civilWeekday,
   dateKey,
+  gridUnitsFor,
   minutesInTz,
   mondayOf,
   partsInTz,
@@ -338,5 +339,61 @@ describe('buildGridModel — N-cell block classification', () => {
     const cell210 = model.columns[0].cells.find((c) => c.minute === 210)!;
     expect(cell210.state).toBe('no-fit');
     expect(cell210.slot).not.toBeNull(); // slot present for mid-block membership in other cells' blocks
+  });
+});
+
+// ── gridUnitsFor + the free 15-min grid (step 15, N=1) ──────────────────────────
+
+describe('gridUnitsFor', () => {
+  it('maps each session length to its grid step and block count', () => {
+    expect(gridUnitsFor('15min')).toEqual({ stepMinutes: 15, blockCount: 1 });
+    expect(gridUnitsFor('1h')).toEqual({ stepMinutes: 30, blockCount: 2 });
+    expect(gridUnitsFor('2h')).toEqual({ stepMinutes: 30, blockCount: 4 });
+  });
+});
+
+describe("buildGridModel — free 15-min grid (duration '15min')", () => {
+  // 15-min slot helper (availability fetched at duration:15 for the free flow).
+  function slot15(startIso: string): AvailabilitySlot {
+    const start = new Date(startIso);
+    const end = new Date(start.getTime() + 900_000); // 15 min
+    return { start: start.toISOString(), end: end.toISOString(), label: '', localLabel: '' };
+  }
+
+  it('rows step by 15 min across the working block', () => {
+    // Madrid 09:00–13:00 CEST = NY 03:00–07:00 EDT. Cells fully inside the block
+    // start every 15 min from 03:00 (180) to 12:45 Madrid = NY 06:45 (405).
+    const model = buildGridModel({
+      columns: [{ year: 2026, month: 6, day: 24 }],
+      deviceTz: 'America/New_York',
+      schedule: madridSchedule(),
+      availabilityByDate: {},
+      now: farFuture,
+      duration: '15min',
+    });
+    expect(model.slotMinutes).toEqual([
+      180, 195, 210, 225, 240, 255, 270, 285, 300, 315, 330, 345, 360, 375, 390, 405,
+    ]);
+  });
+
+  it('every free 15-min cell is available (N=1), gaps are booked', () => {
+    const model = buildGridModel({
+      columns: [{ year: 2026, month: 6, day: 24 }],
+      deviceTz: 'America/New_York',
+      schedule: madridSchedule(),
+      availabilityByDate: {
+        '2026-06-24': [
+          slot15('2026-06-24T07:00:00.000Z'), // NY 03:00 = 180
+          slot15('2026-06-24T07:15:00.000Z'), // NY 03:15 = 195
+        ],
+      },
+      now: farFuture,
+      duration: '15min',
+    });
+    const byMinute = Object.fromEntries(model.columns[0].cells.map((c) => [c.minute, c.state]));
+    expect(byMinute[180]).toBe('available'); // has a slot → bookable on its own (N=1)
+    expect(byMinute[195]).toBe('available');
+    expect(byMinute[210]).toBe('booked');    // working hour, no slot
+    expect(model.hasAnyBookable).toBe(true);
   });
 });

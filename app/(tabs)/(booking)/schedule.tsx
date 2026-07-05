@@ -24,12 +24,16 @@ import {
   civilDateInTz,
   dateKey,
   getDeviceTimeZone,
+  gridUnitsFor,
   weekColumns,
   type CivilDate,
+  type GridDuration,
   type GridCell as GridCellModel,
   type GridModel,
 } from '@/lib/grid-time';
 import type { AvailabilitySlot, GetScheduleResponse, Locale } from '@/types/api';
+
+type TFn = (key: TranslationKey) => string;
 
 // ── Grid geometry ───────────────────────────────────────────────────────────
 // Flush, edge-to-edge cells: 60px wide (comfortable touch), 40px tall (compact
@@ -106,13 +110,19 @@ function weekRangeLabel(cols: CivilDate[], locale: Locale): string {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Duration = '1h' | '2h';
+type Duration = GridDuration; // '15min' (free intro) | '1h' | '2h'
 type ScreenState = 'loading' | 'ready' | 'error';
+
+// Label for a duration (dock/banner). '15min' → "15 min", else 1h/2h copy.
+function durationLabel(duration: Duration, t: TFn): string {
+  if (duration === '15min') return t('common.duration15min');
+  return duration === '2h' ? t('common.duration2h') : t('common.duration1h');
+}
 
 type Selection = {
   dateKey: string;             // YYYY-MM-DD
   startMinute: number;         // device-local start of block
-  endMinute: number;           // exclusive end = startMinute + N*30
+  endMinute: number;           // exclusive end = startMinute + N*step
   startSlot: AvailabilitySlot; // first cell's slot (startIso for POST /api/book)
   endSlot: AvailabilitySlot;   // last cell's slot (.end = block end ISO)
 };
@@ -161,7 +171,6 @@ function RescheduleBanner({ origStartsAt, duration }: { origStartsAt: string; du
   const wd = d.toLocaleDateString(bcp47(locale), { weekday: 'short' }).replace('.', '');
   const wdCap = wd.charAt(0).toUpperCase() + wd.slice(1);
   const label = `${wdCap} ${d.getDate()} ${monthShort(d.getMonth() + 1, locale)} · ${h}:${m}`;
-  const durationLabel = duration === '2h' ? t('common.duration2h') : t('common.duration1h');
   return (
     <View style={styles.rescheduleBanner}>
       <View style={styles.rescheduleBannerFrom}>
@@ -173,7 +182,7 @@ function RescheduleBanner({ origStartsAt, duration }: { origStartsAt: string; du
       <View style={styles.rescheduleLockPill}>
         <MaterialCommunityIcons name="lock-outline" size={11} color={Colors.textDim} />
         <Text style={styles.rescheduleLockText}>
-          {t('schedule.sameTypeNoCharge').replace('{duration}', durationLabel)}
+          {t('schedule.sameTypeNoCharge').replace('{duration}', durationLabel(duration, t))}
         </Text>
       </View>
     </View>
@@ -335,7 +344,7 @@ function Grid({
   onSelect: (s: Selection) => void;
 }) {
   const { locale } = useLocale();
-  const N = duration === '2h' ? 4 : 2;
+  const { stepMinutes: step, blockCount: N } = gridUnitsFor(duration);
   const todayKey = dateKey(today);
   const rows = model.slotMinutes.length;
   const rowsHeight = rows * CELL_H;
@@ -422,7 +431,7 @@ function Grid({
                           let forwardOk = idx + N <= freeCells.length;
                           if (forwardOk) {
                             for (let k = 1; k < N; k++) {
-                              if (freeCells[idx + k].minute !== cell.minute + k * 30) {
+                              if (freeCells[idx + k].minute !== cell.minute + k * step) {
                                 forwardOk = false;
                                 break;
                               }
@@ -436,7 +445,7 @@ function Grid({
                           onSelect({
                             dateKey: col.key,
                             startMinute: block[0].minute,
-                            endMinute: block[0].minute + N * 30,
+                            endMinute: block[0].minute + N * step,
                             startSlot: block[0].slot!,
                             endSlot: block[block.length - 1].slot!,
                           });
@@ -614,20 +623,26 @@ export default function ScheduleScreen() {
     lockedSessionType?: string;
     origStartsAt?: string;
   }>();
-  // Credit mode: always 1h (toggle hidden). Reschedule mode: locked to original
-  // sessionType — no payment, no duration change. Pay mode: S04-chosen duration.
-  const mode: 'pay' | 'credit' | 'reschedule' =
+  // Free mode: 15-min intro (grid step 15, single cell), books directly with no
+  // payment. Credit mode: always 1h (toggle hidden). Reschedule mode: locked to
+  // original sessionType — no payment, no duration change. Pay mode: S04-chosen.
+  const mode: 'pay' | 'credit' | 'reschedule' | 'free' =
     params.mode === 'credit' ? 'credit'
     : params.mode === 'reschedule' ? 'reschedule'
+    : params.mode === 'free' ? 'free'
     : 'pay';
   const isReschedule = mode === 'reschedule';
   const rescheduleToken = params.rescheduleToken;
   const lockedSessionType = params.lockedSessionType;
   const origStartsAt = params.origStartsAt;
   const duration: Duration = isReschedule
-    ? (lockedSessionType === 'session2h' ? '2h' : '1h')
+    ? (lockedSessionType === 'session2h' ? '2h' : lockedSessionType === 'free15min' ? '15min' : '1h')
+    : mode === 'free' ? '15min'
     : mode === 'credit' ? '1h'
     : params.duration === '2h' ? '2h' : '1h';
+  // Availability granularity must match the grid step (15-min slots for a 15-min
+  // session — the free intro OR rescheduling a booked free intro).
+  const availDuration = gridUnitsFor(duration).stepMinutes;
 
   const deviceTz = useMemo(() => getDeviceTimeZone(), []);
   const today = useMemo(() => civilDateInTz(new Date(), deviceTz), [deviceTz]);
@@ -662,7 +677,7 @@ export default function ScheduleScreen() {
         const weekCols = weekColumns(today, offset);
         const entries = await Promise.all(
           weekCols.map(async (c) => {
-            const r = await api.getAvailability({ date: dateKey(c), duration: 30, tz: deviceTz });
+            const r = await api.getAvailability({ date: dateKey(c), duration: availDuration, tz: deviceTz });
             return [dateKey(c), r.slots] as const;
           }),
         );
@@ -673,7 +688,7 @@ export default function ScheduleScreen() {
         setState('error');
       }
     },
-    [today, deviceTz],
+    [today, deviceTz, availDuration],
   );
 
   // (Re)load whenever the visible week changes; clear cross-week selection.
@@ -725,16 +740,17 @@ export default function ScheduleScreen() {
     continuingRef.current = true;
     setIsContinuing(true);
 
-    const N = duration === '2h' ? 4 : 2;
+    const { stepMinutes, blockCount: N } = gridUnitsFor(duration);
+    const stepMs = stepMinutes * 60_000;
     try {
-      const r = await api.getAvailability({ date: selected.dateKey, duration: 30, tz: deviceTz });
+      const r = await api.getAvailability({ date: selected.dateKey, duration: availDuration, tz: deviceTz });
       setAvailByDate((prev) => ({ ...prev, [selected.dateKey]: r.slots }));
       setNow(new Date());
 
-      // Verify all N 30-min slots in the block are still present
+      // Verify all N step-sized slots in the block are still present
       const startMs = new Date(selected.startSlot.start).getTime();
       const allPresent = Array.from({ length: N }, (_, k) => {
-        const expectedIso = new Date(startMs + k * 1_800_000).toISOString();
+        const expectedIso = new Date(startMs + k * stepMs).toISOString();
         return r.slots.some((s) => s.start === expectedIso);
       }).every(Boolean);
 
@@ -761,6 +777,12 @@ export default function ScheduleScreen() {
           origStartsAt: origStartsAt ?? '',
         },
       });
+    } else if (mode === 'free') {
+      // Free intro is synchronous (confirm-free → POST /api/book), 15 min, no payment.
+      router.push({
+        pathname: '/(tabs)/(booking)/confirm-free',
+        params: { start: selected.startSlot.start },
+      });
     } else if (mode === 'credit') {
       // Credit path is synchronous (S07 → POST /api/book), always 1h — no duration.
       router.push({
@@ -776,7 +798,7 @@ export default function ScheduleScreen() {
     // Reset so the button is usable again if the user comes back from S06/S07/reschedule-confirm.
     continuingRef.current = false;
     setIsContinuing(false);
-  }, [selected, deviceTz, duration, mode, isReschedule, rescheduleToken, lockedSessionType, origStartsAt]);
+  }, [selected, deviceTz, duration, availDuration, mode, isReschedule, rescheduleToken, lockedSessionType, origStartsAt]);
 
   const selectionLabel = useMemo(() => {
     if (!selected || selected.dateKey === '') return null;
@@ -798,7 +820,7 @@ export default function ScheduleScreen() {
           title={isReschedule ? t('common.reschedule') : undefined}
           subtitle={isReschedule ? t('schedule.rescheduleSubtitle') : undefined}
         />
-        {!isReschedule && mode !== 'credit' && <DurationToggle duration={duration} onChange={switchDuration} />}
+        {mode === 'pay' && <DurationToggle duration={duration} onChange={switchDuration} />}
         {isReschedule && origStartsAt ? (
           <RescheduleBanner origStartsAt={origStartsAt} duration={duration} />
         ) : null}
@@ -873,7 +895,7 @@ export default function ScheduleScreen() {
               <>
                 <Text style={styles.dockTime}>{selectionLabel}</Text>
                 <Text style={styles.dockSub}>
-                  {t('schedule.dockSession').replace('{duration}', duration === '2h' ? t('common.duration2h') : t('common.duration1h'))}
+                  {t('schedule.dockSession').replace('{duration}', durationLabel(duration, t))}
                 </Text>
               </>
             ) : (

@@ -148,10 +148,27 @@ export function weekColumns(today: CivilDate, weekOffset: number): CivilDate[] {
 
 export type CellState = 'available' | 'booked' | 'unavailable' | 'no-fit';
 
+/** Session length: '15min' (free intro) → 1 cell of 15 min; '1h'/'2h' → 2/4 cells of 30 min. */
+export type GridDuration = '15min' | '1h' | '2h';
+
+/**
+ * Grid step (minutes per cell) and block length (cells per bookable session) for
+ * a session length. The free intro uses a finer 15-min step and a single cell;
+ * paid/credit sessions keep the 30-min step (1h→2 cells, 2h→4 cells).
+ */
+export function gridUnitsFor(duration: GridDuration): { stepMinutes: 15 | 30; blockCount: 1 | 2 | 4 } {
+  switch (duration) {
+    case '15min': return { stepMinutes: 15, blockCount: 1 };
+    case '2h':    return { stepMinutes: 30, blockCount: 4 };
+    case '1h':
+    default:      return { stepMinutes: 30, blockCount: 2 };
+  }
+}
+
 export interface GridCell {
-  minute: number; // device-local minutes since midnight (30-min boundary, e.g. 540=09:00, 570=09:30)
+  minute: number; // device-local minutes since midnight, aligned to the grid step (e.g. 540=09:00, 555=09:15)
   state: CellState;
-  slot: AvailabilitySlot | null; // the 30-min slot when state is available or no-fit
+  slot: AvailabilitySlot | null; // the step-sized slot when state is available or no-fit
 }
 
 export interface GridColumn {
@@ -162,7 +179,7 @@ export interface GridColumn {
 }
 
 export interface GridModel {
-  slotMinutes: number[]; // sorted device-local minutes at 30-min boundaries
+  slotMinutes: number[]; // sorted device-local minutes at the grid step (30 min, or 15 for '15min')
   columns: GridColumn[];
   hasAnyBookable: boolean; // any cell selectable for the chosen session length
 }
@@ -171,17 +188,17 @@ export interface BuildGridArgs {
   columns: CivilDate[]; // 7 device-local civil dates
   deviceTz: string;
   schedule: GetScheduleResponse;
-  /** device-local YYYY-MM-DD → that day's 30-min availability slots */
+  /** device-local YYYY-MM-DD → that day's availability slots (fetched at the same step) */
   availabilityByDate: Record<string, AvailabilitySlot[]>;
   now: Date;
-  /** Session length: determines N cells per block (1h→2, 2h→4). Grid step is always 30 min. */
-  duration: '1h' | '2h';
+  /** Session length: sets grid step + cells per block via gridUnitsFor (15min→15/1, 1h→30/2, 2h→30/4). */
+  duration: GridDuration;
 }
 
-/** True if a 30-min cell starting at `startMinute` (schedule-tz) is fully inside any block. */
-function inWorkingHours(weekday: number, startMinute: number, schedule: GetScheduleResponse): boolean {
+/** True if a `step`-min cell starting at `startMinute` (schedule-tz) is fully inside any block. */
+function inWorkingHours(weekday: number, startMinute: number, step: number, schedule: GetScheduleResponse): boolean {
   const blocks = schedule.weeklyHours[String(weekday)] ?? [];
-  const endMinute = startMinute + 30;
+  const endMinute = startMinute + step;
   return blocks.some((b) => b.startMinute <= startMinute && b.endMinute >= endMinute);
 }
 
@@ -199,7 +216,7 @@ function inWorkingHours(weekday: number, startMinute: number, schedule: GetSched
  */
 export function buildGridModel(args: BuildGridArgs): GridModel {
   const { columns, deviceTz, schedule, availabilityByDate, now, duration } = args;
-  const N = duration === '2h' ? 4 : 2;
+  const { stepMinutes: step, blockCount: N } = gridUnitsFor(duration);
   const minNoticeCutoff = now.getTime() + schedule.minNoticeHours * 3_600_000;
 
   type RawState = 'unavailable' | 'free' | 'booked';
@@ -226,13 +243,13 @@ export function buildGridModel(args: BuildGridArgs): GridModel {
 
     const rawCells: RawCell[] = [];
 
-    for (let m = 0; m < 1440; m += 30) {
+    for (let m = 0; m < 1440; m += step) {
       const instant = zonedTimeToUtc({ ...date, hour: Math.floor(m / 60), minute: m % 60 }, deviceTz);
       const sp = partsInTz(instant, schedule.timezone);
       const schedMinute = sp.hour * 60 + sp.minute;
       const schedDow = civilWeekday({ year: sp.year, month: sp.month, day: sp.day });
 
-      if (!inWorkingHours(schedDow, schedMinute, schedule)) continue;
+      if (!inWorkingHours(schedDow, schedMinute, step, schedule)) continue;
 
       if (instant.getTime() < minNoticeCutoff) {
         rawCells.push({ minute: m, instant, raw: 'unavailable', slot: null });
@@ -255,7 +272,7 @@ export function buildGridModel(args: BuildGridArgs): GridModel {
   const boundaryMinutes = Array.from(minuteSet).sort((a, b) => a - b);
   const slotMinutes: number[] = [];
   if (boundaryMinutes.length > 0) {
-    for (let m = boundaryMinutes[0]; m <= boundaryMinutes[boundaryMinutes.length - 1]; m += 30) {
+    for (let m = boundaryMinutes[0]; m <= boundaryMinutes[boundaryMinutes.length - 1]; m += step) {
       slotMinutes.push(m);
     }
   }
@@ -280,7 +297,7 @@ export function buildGridModel(args: BuildGridArgs): GridModel {
       let forwardOk = i + N <= freeCells.length;
       if (forwardOk) {
         for (let k = 1; k < N; k++) {
-          if (freeCells[i + k].minute !== base + k * 30) { forwardOk = false; break; }
+          if (freeCells[i + k].minute !== base + k * step) { forwardOk = false; break; }
         }
       }
 
@@ -289,7 +306,7 @@ export function buildGridModel(args: BuildGridArgs): GridModel {
       if (backwardOk) {
         const blockStart = freeCells[i - (N - 1)].minute;
         for (let k = 0; k < N; k++) {
-          if (freeCells[i - (N - 1) + k].minute !== blockStart + k * 30) { backwardOk = false; break; }
+          if (freeCells[i - (N - 1) + k].minute !== blockStart + k * step) { backwardOk = false; break; }
         }
       }
 

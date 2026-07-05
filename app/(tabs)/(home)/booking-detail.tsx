@@ -41,12 +41,17 @@ function formatTime(iso: string): string {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h', t: TFn): string {
-  const label = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
-  return `${formatTime(startIso)} – ${formatTime(endIso)} · ${label}`;
+function durationLabel(duration: '15min' | '1h' | '2h', t: TFn): string {
+  if (duration === '15min') return t('common.duration15min');
+  return duration === '2h' ? t('common.duration2h') : t('common.duration1h');
 }
 
-function durationFromSessionType(sessionType: string): '1h' | '2h' {
+function formatTimeRange(startIso: string, endIso: string, duration: '15min' | '1h' | '2h', t: TFn): string {
+  return `${formatTime(startIso)} – ${formatTime(endIso)} · ${durationLabel(duration, t)}`;
+}
+
+function durationFromSessionType(sessionType: string): '15min' | '1h' | '2h' {
+  if (sessionType === 'free15min') return '15min';
   return sessionType === 'session2h' ? '2h' : '1h';
 }
 
@@ -221,7 +226,7 @@ export default function BookingDetailScreen() {
                 <Text style={styles.heroTimeEnd}> – {formatTime(endsAt)}</Text>
               </View>
               <Text style={styles.heroMeta}>
-                {duration === '1h' ? t('common.duration1h') : t('common.duration2h')} · {t('common.tutorName')}
+                {durationLabel(duration, t)} · {t('common.tutorName')}
                 {status === 'active' ? ` · ${t('bookingDetail.roomReady')}` : ''}
               </Text>
             </>

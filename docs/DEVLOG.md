@@ -189,6 +189,44 @@ no-refresh-on-non-401, no-loop-on-failure).
 
 ---
 
+### ADR-8: Free 15-min intro — true 15-min grid + client-side new-user gate
+
+**Decision.** Add a free 15-minute intro session as a first-class booking flow:
+S04 offers a free card → S05 in `mode:'free'` renders a **true 15-min-step grid**
+→ `confirm-free.tsx` books it synchronously via `POST /api/book`
+(`sessionType:'free15min'`, no payment, no credit) → S08. The free card is shown
+**only to new accounts** (`GET /api/credits` → `hasBookings === false`).
+
+**Context.** The backend already fully supported `free15min` — `POST /api/book`
+takes it with no payment/`rescheduleToken`, `GET /api/availability` takes
+`duration:15`, and the type + every downstream/display screen (cancel, detail,
+reschedule, calendar, video-prejoin, BookingRow) already handled it. The gap was
+purely the **creation path**. Two shape-defining choices were made with the
+product owner: (1) a *true* 15-min grid rather than booking 15 min inside a 30-min
+cell; (2) restrict the intro to new users.
+
+**Design.** The S05 grid step was hardcoded to 30 min in many places
+(`lib/grid-time.ts` loops/contiguity and `schedule.tsx` tap/continue math).
+Rather than special-case free, the step and block-count were parameterized behind
+`gridUnitsFor(duration)` (`'15min'→{15,1}`, `'1h'→{30,2}`, `'2h'→{30,4}`) and
+threaded through `buildGridModel` and the screen. `N=1` needed no new branch — the
+existing Pass-2 forward/backward loops are skipped when `N===1`, so every free
+cell resolves to `available`. The free flow fetches availability at `duration:15`;
+all real IANA offsets are multiples of 15 min, so 15-min slots stay aligned to the
+15-min cell minutes. `confirm-free.tsx` mirrors `confirm-credit.tsx` minus all
+credit logic (no balance load, no cross-sell); it recomputes `endIso = start +
+15min` rather than trusting the passed slot end.
+
+**Consequences.** The new-user gate is **client-side only** — the API enforces no
+limit and exposes no "already used a free intro" signal, so `hasBookings` is a
+proxy and the gate is bypassable; it fails closed (hidden) if the credits check
+can't load. Accepted until/unless the backend grows an eligibility flag. The
+15-min grid is ~2× as tall as the 30-min grid (more rows/hour) but reuses the same
+rendering; cell height was left at 40px. Grid math covered by new cases in
+`lib/__tests__/grid-time.test.ts` (`gridUnitsFor`, 15-min step, N=1 availability).
+
+---
+
 ## Part 2 — Backend-contract findings that unlocked mobile
 
 Records of what we discovered about the live Next.js API — the gaps we depended

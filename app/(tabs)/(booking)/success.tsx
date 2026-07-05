@@ -30,15 +30,19 @@ function formatDate(iso: string, locale: Locale): string {
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${day} ${month}`;
 }
 
-// "18:00 – 19:00 · 1 hora"
-function formatTimeRange(startIso: string, endIso: string, duration: '1h' | '2h', locale: Locale, t: TFn): string {
+// "18:00 – 19:00 · 1 hora" / "17:00 – 17:15 · 15 min"
+function formatTimeRange(startIso: string, endIso: string, duration: '15min' | '1h' | '2h', locale: Locale, t: TFn): string {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleTimeString(bcp47(locale), { hour: '2-digit', minute: '2-digit', hour12: false });
-  const label = duration === '1h' ? t('common.duration1h') : t('common.duration2h');
+  const label =
+    duration === '15min' ? t('common.duration15min')
+    : duration === '2h' ? t('common.duration2h')
+    : t('common.duration1h');
   return `${fmt(startIso)} – ${fmt(endIso)} · ${label}`;
 }
 
-function durationFromSessionType(sessionType: string): '1h' | '2h' {
+function durationFromSessionType(sessionType: string): '15min' | '1h' | '2h' {
+  if (sessionType === 'free15min') return '15min';
   return sessionType === 'session2h' ? '2h' : '1h';
 }
 

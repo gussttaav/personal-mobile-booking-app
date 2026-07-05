@@ -110,6 +110,8 @@ export default function CancelScreen() {
   const submittingRef = useRef(false);
 
   const isPack = safeSessionType === 'pack';
+  // Free intro: no payment and no credit — cancelling refunds nothing.
+  const isFree = safeSessionType === 'free15min';
 
   async function handleCancel() {
     if (submittingRef.current) return;
@@ -187,6 +189,19 @@ export default function CancelScreen() {
                 <View style={styles.successCardText}>
                   <Text style={styles.successCardTitle}>{t('cancel.success.creditTitle')}</Text>
                   <Text style={styles.successCardBody}>{t('cancel.success.creditBody')}</Text>
+                </View>
+              </View>
+            </View>
+          ) : isFree ? (
+            /* Free intro — nothing charged, nothing to refund */
+            <View style={[styles.successCard, styles.successCardGreen]}>
+              <View style={styles.successCardRow}>
+                <View style={[styles.successIconBox, styles.successIconBoxGreen]}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={23} color={Colors.primary} />
+                </View>
+                <View style={styles.successCardText}>
+                  <Text style={styles.successCardTitle}>{t('cancel.success.freeTitle')}</Text>
+                  <Text style={styles.successCardBody}>{t('cancel.success.freeBody')}</Text>
                 </View>
               </View>
             </View>
@@ -312,6 +327,10 @@ export default function CancelScreen() {
                 <View style={styles.badgeGreen}>
                   <Text style={styles.badgeGreenText}>{t('cancel.confirm.badgeCredit')}</Text>
                 </View>
+              ) : isFree ? (
+                <View style={styles.badgeGreen}>
+                  <Text style={styles.badgeGreenText}>{t('common.tagFree')}</Text>
+                </View>
               ) : (
                 <View style={styles.badgeGray}>
                   <Text style={styles.badgeGrayText}>{t('cancel.confirm.badgePaid')}</Text>
@@ -343,6 +362,21 @@ export default function CancelScreen() {
                     {t('cancel.confirm.consequencePackTitle')}
                   </Text>
                   <Text style={styles.consequenceBody}>{t('cancel.confirm.consequencePackBody')}</Text>
+                </View>
+              </View>
+            ) : isFree ? (
+              <View style={[styles.consequenceCard, styles.consequenceGreen]}>
+                <MaterialCommunityIcons
+                  name="check-circle-outline"
+                  size={19}
+                  color={Colors.primary}
+                  style={{ flexShrink: 0, marginTop: 1 }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.consequenceTitle}>
+                    {t('cancel.confirm.consequenceFreeTitle')}
+                  </Text>
+                  <Text style={styles.consequenceBody}>{t('cancel.confirm.consequenceFreeBody')}</Text>
                 </View>
               </View>
             ) : (

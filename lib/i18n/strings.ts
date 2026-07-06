@@ -52,6 +52,12 @@ const es = {
         'Reserva tu primera tutoría 1:1 con Gustavo y empieza a avanzar en lo que más te cuesta.',
       cta: 'Reservar primera clase',
     },
+    emptyReturning: {
+      title: 'Sigue avanzando',
+      subtitle:
+        'Reserva tu próxima clase 1:1 con Gustavo y sigue mejorando en lo que más te cuesta.',
+      cta: 'Reservar clase',
+    },
     crossSell: {
       title: 'Ahorra con un pack',
       discount: '-15%',
@@ -675,6 +681,12 @@ const en: Dictionary = {
       subtitle:
         'Book your first 1:1 tutoring session with Gustavo and start making progress where it matters most.',
       cta: 'Book your first class',
+    },
+    emptyReturning: {
+      title: 'Keep the momentum going',
+      subtitle:
+        "Book your next 1:1 class with Gustavo and keep improving where it matters most.",
+      cta: 'Book a class',
     },
     crossSell: {
       title: 'Save with a pack',

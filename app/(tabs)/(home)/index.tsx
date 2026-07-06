@@ -97,6 +97,10 @@ interface HomeData {
   // Derived robustly: GET /api/credits nulls `packSize` once a pack is fully
   // consumed, so we ALSO infer ownership from any pack booking on record.
   ownedPack: boolean;
+  // True once the user has taken at least one REAL class (any booking whose
+  // sessionType is not 'free15min'). Drives the empty-state copy: returning
+  // learners get "keep learning" messaging instead of the first-class pitch.
+  returningLearner: boolean;
   userName: string;
 }
 
@@ -109,6 +113,7 @@ export default function InicioScreen() {
     upcomingList: [],
     credits: null,
     ownedPack: false,
+    returningLearner: false,
     userName: '',
   });
 
@@ -145,17 +150,21 @@ export default function InicioScreen() {
         creditsRes.packSize != null ||
         bookingsRes.bookings.some((b) => b.sessionType === 'pack' || b.packSize != null);
 
+      // Has the user ever taken a real class? The free 15-min intro doesn't count,
+      // so a user whose only booking is 'free15min' is still treated as new.
+      const returningLearner = bookingsRes.bookings.some((b) => b.sessionType !== 'free15min');
+
       if (futureOrActive.length === 0 && creditsRes.credits === 0) {
-        setData({ nextClass: null, upcomingList: [], credits: creditsRes, ownedPack, userName });
+        setData({ nextClass: null, upcomingList: [], credits: creditsRes, ownedPack, returningLearner, userName });
         setState('empty');
       } else {
-        setData({ nextClass, upcomingList, credits: creditsRes, ownedPack, userName });
+        setData({ nextClass, upcomingList, credits: creditsRes, ownedPack, returningLearner, userName });
         setState('with-classes');
       }
     } catch {
       // On error, fall to empty state so the screen never crashes
       const fallbackName = getStoredSession()?.user.name ?? '';
-      setData({ nextClass: null, upcomingList: [], credits: null, ownedPack: false, userName: fallbackName });
+      setData({ nextClass: null, upcomingList: [], credits: null, ownedPack: false, returningLearner: false, userName: fallbackName });
       setState('empty');
     }
   }, []);
@@ -169,7 +178,8 @@ export default function InicioScreen() {
   );
 
   if (state === 'loading') return <LoadingSkeleton />;
-  if (state === 'empty') return <EmptyState userName={data.userName} />;
+  if (state === 'empty')
+    return <EmptyState userName={data.userName} returningLearner={data.returningLearner} />;
   return <WithClasses data={data} />;
 }
 
@@ -218,10 +228,13 @@ function LoadingSkeleton() {
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyState({ userName }: { userName: string }) {
+function EmptyState({ userName, returningLearner }: { userName: string; returningLearner: boolean }) {
   const insets = useSafeAreaInsets();
   const t = useT();
   const name = userName.split(' ')[0] || '';
+  // Returning learners (have taken a real class before) get "keep learning" copy;
+  // new users keep the first-class pitch.
+  const k = returningLearner ? 'home.emptyReturning' : 'home.empty';
 
   return (
     <View style={styles.screen}>
@@ -248,15 +261,15 @@ function EmptyState({ userName }: { userName: string }) {
           <View style={styles.emptyIconCircle}>
             <MaterialCommunityIcons name="calendar-plus" size={30} color={Colors.primary} />
           </View>
-          <Text style={styles.emptyTitle}>{t('home.empty.title')}</Text>
-          <Text style={styles.emptySubtext}>{t('home.empty.subtitle')}</Text>
+          <Text style={styles.emptyTitle}>{t(`${k}.title`)}</Text>
+          <Text style={styles.emptySubtext}>{t(`${k}.subtitle`)}</Text>
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() => router.push('/(tabs)/(booking)/session-type')}
             activeOpacity={0.85}
           >
             <MaterialCommunityIcons name="plus" size={20} color={Colors.onPrimary} />
-            <Text style={styles.primaryBtnText}>{t('home.empty.cta')}</Text>
+            <Text style={styles.primaryBtnText}>{t(`${k}.cta`)}</Text>
           </TouchableOpacity>
         </View>
 

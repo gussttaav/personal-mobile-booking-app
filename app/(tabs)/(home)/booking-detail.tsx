@@ -1,3 +1,6 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -7,9 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -190,7 +190,7 @@ export default function BookingDetailScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 200 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing[6] }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Hero card ──────────────────────────────────────────────────────── */}
@@ -297,10 +297,9 @@ export default function BookingDetailScreen() {
             {t('bookingDetail.policyBanner')}
           </Text>
         </View>
-      </ScrollView>
 
-      {/* ── Sticky action bar ──────────────────────────────────────────────────── */}
-      <View style={styles.stickyBar}>
+        {/* ── Action section ─────────────────────────────────────────────────── */}
+        <View style={styles.actions}>
         {/* JOIN button */}
         <TouchableOpacity
           style={[styles.joinBtn, isJoinable ? styles.joinBtnActive : styles.joinBtnIdle]}
@@ -356,7 +355,8 @@ export default function BookingDetailScreen() {
             <Text style={[styles.secondaryBtnText, styles.cancelBtnText]}>{t('bookingDetail.cancel')}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -603,19 +603,10 @@ const styles = StyleSheet.create({
     color: Colors.textDim,
   },
 
-  // Sticky bar
-  stickyBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(19, 19, 21, 0.96)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
-    paddingTop: Spacing[3],
-    paddingBottom: Spacing[3],
-    paddingHorizontal: Spacing[4],
-    gap: Spacing[2],
+  // Action section (in-flow, grouped under the content)
+  actions: {
+    marginTop: Spacing[2],
+    gap: Spacing[3],
   },
 
   // Join button
@@ -651,13 +642,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontFamily: FontFamily.body,
     color: Colors.textDim,
-    marginTop: -Spacing[1],
+    marginTop: -Spacing[2],
   },
 
   // Secondary row
   secondaryRow: {
     flexDirection: 'row',
     gap: Spacing[2],
+    marginTop: Spacing[2],
   },
   secondaryBtn: {
     flex: 1,

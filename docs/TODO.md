@@ -25,6 +25,15 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
   prior route. Marked TODO at the refresh hook in `lib/auth-context.tsx`.
 - **S09/S10 pack expiry.** Omitted because `GetCreditsResponse` has no expiry
   field yet (TODO in BalanceCard).
+- **Migrate the local formatter copies onto `lib/format.ts`.** S20 introduced the
+  shared module; `formatEur` still has local copies in `(packs)/packs.tsx`,
+  `(packs)/pay.tsx`, `(booking)/confirm.tsx`, `(booking)/confirm-credit.tsx` and
+  `(booking)/session-type.tsx`, and the date/duration helpers in
+  `components/BookingRow.tsx` + `(home)/booking-detail.tsx`. Mechanical, but left
+  out of the S20 diff to keep it reviewable.
+- **S20 rebook does not preselect the past slot.** "Reservar otra igual" re-enters
+  the booking flow at the right session type/duration, but the user picks a new
+  time from scratch (there is no repeat-this-slot endpoint).
 
 ## Backend-hardening (Next.js API — other repo)
 

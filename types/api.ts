@@ -18,6 +18,7 @@ export type ApiErrorCode =
   | 'OUTSIDE_CANCEL_WINDOW'
   | 'CANCEL_TOKEN_CONSUMED'
   | 'BOOKING_NOT_FOUND'
+  | 'INVALID_CURSOR'
   | 'UNAUTHORIZED'
   | 'ALREADY_SUBSCRIBED'
   | 'REVIEW_BOOKING_NOT_FOUND'
@@ -278,6 +279,49 @@ export interface Booking {
 
 export interface GetMyBookingsResponse {
   bookings: Booking[];
+}
+
+export type BookingStatus = 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+
+export interface BookingReview {
+  rating: number;
+  comment: string | null;
+}
+
+/**
+ * A PAST booking (GET /api/my-bookings/history). Distinct from `Booking`: every
+ * status is returned, and there are no cancel/join tokens — a past class can be
+ * neither cancelled nor joined.
+ */
+export interface HistoryBooking {
+  /** Booking UUID. Stable — the list key and the display reference. */
+  id: string;
+  /** MAY be '' when no calendar event was created — guard the review CTA on it. */
+  eventId: string;
+  sessionType: SessionType;
+  status: BookingStatus;
+  startsAt: string;
+  endsAt: string;
+  /** Only present for sessionType 'pack'. */
+  packSize?: number;
+  note: string | null;
+  /** What the student actually paid for this one class. null for free15min/legacy. */
+  amountCents: number | null;
+  currency: string | null;
+  review: BookingReview | null;
+}
+
+export interface GetMyBookingsHistoryParams {
+  /** Page size, 1–50. Defaults to 20 server-side. */
+  limit?: number;
+  /** Opaque keyset token from the previous page. Omit for the first page. */
+  cursor?: string;
+}
+
+export interface GetMyBookingsHistoryResponse {
+  bookings: HistoryBooking[];
+  /** null means the last page. */
+  nextCursor: string | null;
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────────────

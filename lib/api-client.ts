@@ -7,6 +7,8 @@ import type {
   GetChatSessionChannelParams,
   GetChatSessionChannelResponse,
   GetCreditsResponse,
+  GetMyBookingsHistoryParams,
+  GetMyBookingsHistoryResponse,
   GetMyBookingsResponse,
   GetPaymentConfirmationChannelParams,
   GetPaymentConfirmationChannelResponse,
@@ -205,6 +207,12 @@ export const api = {
 
   getMyBookings(): Promise<GetMyBookingsResponse> {
     return request('GET', '/api/my-bookings');
+  },
+
+  getMyBookingsHistory(
+    params?: GetMyBookingsHistoryParams,
+  ): Promise<GetMyBookingsHistoryResponse> {
+    return request('GET', '/api/my-bookings/history', { params });
   },
 
   postReview(body: PostReviewRequest): Promise<PostReviewResponse> {

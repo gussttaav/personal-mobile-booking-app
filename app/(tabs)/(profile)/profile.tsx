@@ -126,20 +126,38 @@ export default function ProfileScreen() {
         )
       )}
 
-      {/* settings entry */}
-      <Pressable
-        style={styles.settingsCard}
-        onPress={() => router.push('/(tabs)/(profile)/settings')}
-      >
-        <View style={styles.settingsIcon}>
-          <MaterialCommunityIcons name="cog-outline" size={19} color={Colors.textMuted} />
-        </View>
-        <View style={styles.settingsTextWrap}>
-          <Text style={styles.settingsTitle}>{t('profile.settingsRow')}</Text>
-          <Text style={styles.settingsSubtitle}>{t('profile.settingsRowDesc')}</Text>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={19} color={Colors.textDim} />
-      </Pressable>
+      {/* access group — history + settings */}
+      <View style={styles.accessGroup}>
+        <Pressable
+          style={styles.accessRow}
+          onPress={() => router.push('/(tabs)/(profile)/history')}
+        >
+          <View style={styles.settingsIcon}>
+            <MaterialCommunityIcons name="history" size={19} color={Colors.textMuted} />
+          </View>
+          <View style={styles.settingsTextWrap}>
+            <Text style={styles.settingsTitle}>{t('profile.historyRow')}</Text>
+            <Text style={styles.settingsSubtitle}>{t('profile.historyRowDesc')}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={19} color={Colors.textDim} />
+        </Pressable>
+
+        <View style={styles.accessDivider} />
+
+        <Pressable
+          style={styles.accessRow}
+          onPress={() => router.push('/(tabs)/(profile)/settings')}
+        >
+          <View style={styles.settingsIcon}>
+            <MaterialCommunityIcons name="cog-outline" size={19} color={Colors.textMuted} />
+          </View>
+          <View style={styles.settingsTextWrap}>
+            <Text style={styles.settingsTitle}>{t('profile.settingsRow')}</Text>
+            <Text style={styles.settingsSubtitle}>{t('profile.settingsRowDesc')}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={19} color={Colors.textDim} />
+        </Pressable>
+      </View>
 
       {/* sign out */}
       <TouchableOpacity
@@ -246,15 +264,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textMuted,
   },
-  settingsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing[3],
+  accessGroup: {
     borderRadius: Radius['3xl'],
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surfaceLow,
+    overflow: 'hidden',
+  },
+  accessRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[3],
     padding: Spacing[4],
+  },
+  accessDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginHorizontal: Spacing[4],
   },
   settingsIcon: {
     width: 38,

@@ -33,12 +33,15 @@ const RATING_LABEL_KEY = {
 
 const MAX_COMMENT = 1000;
 
+/** The only route `returnTo` may redirect the exit to (S20 · Historial de reservas). */
+const HISTORY_ROUTE = '/(tabs)/(profile)/history' as const;
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function ReviewScreen() {
   const insets = useSafeAreaInsets();
   const t = useT();
-  const { eventId } = useLocalSearchParams<{ eventId?: string }>();
+  const { eventId, returnTo } = useLocalSearchParams<{ eventId?: string; returnTo?: string }>();
   const safeEventId = eventId ?? '';
 
   const [phase, setPhase] = useState<Phase>('rating');
@@ -135,7 +138,14 @@ export default function ReviewScreen() {
     setPhase('thanks');
   }
 
+  // Where the flow lands when it finishes. Callers may redirect it via `returnTo`
+  // (S20 sends the user back to their history), but only to a known route — never
+  // to an arbitrary param-supplied path.
   function exitToHome() {
+    if (returnTo === HISTORY_ROUTE) {
+      router.replace(HISTORY_ROUTE);
+      return;
+    }
     router.replace('/(tabs)/(home)');
   }
 

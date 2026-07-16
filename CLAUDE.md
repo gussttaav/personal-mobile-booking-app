@@ -56,6 +56,12 @@ own backend.
   via New Arch), NOT `shadowColor`/`shadowRadius` (iOS-only, silently ignored on
   Android). Apply only to views WITH a background — on a transparent view Android
   renders it as a dark silhouette.
+- **Booking history (`/api/my-bookings/history`) has two traps:** `completed`/
+  `no_show` are settled by a **daily cron**, so a class that ended hours ago can
+  still read `confirmed` — treat `confirmed && endsAt < now` as completed
+  (`effectiveStatus()` in `lib/history.ts`), never as an unknown state. And
+  `eventId` **may be `""`** — gate the review CTA on a non-empty value, since
+  `POST /api/reviews` keys off it.
 - **Chat keyboard on Android:** SDK 54's edge-to-edge default doesn't pan for the
   soft keyboard; use Reanimated `useAnimatedKeyboard` (not KeyboardAvoidingView /
   the raw Keyboard API) to lift the chat sheet. The sheet needs a definite
@@ -114,6 +120,10 @@ app/
     │   └── pay.tsx        — S10 Pago del pack (Stripe, poll-confirm)
     └── (profile)/         — Tab: Perfil (account-outline / account)
         ├── profile.tsx    — S17 Perfil (stack initial route)
+        ├── history.tsx    — S20 Historial de reservas (past classes; loads the WHOLE
+        │                    history up front — the header count + stats are totals)
+        ├── history-detail.tsx — S20 detail · read-only past class (Dejar reseña →
+        │                    /review with returnTo; Reservar otra igual)
         └── settings.tsx   — S18 Ajustes
 ```
 - Screens outside `(tabs)` automatically hide the tab bar (Expo Router behaviour).
@@ -153,6 +163,13 @@ app/
   terminal state or a 30s ceiling. Payments are POLL-ONLY. Tested.
 - `lib/chat.ts` — pure chat reconciliation: `mergeMessages()` (dedup by `id`,
   sort by index), `parseMessageIndex()`. Tested.
+- `lib/history.ts` — pure S20 logic: `fetchAllHistory()` (walks the keyset cursor
+  to the last page; page fetcher injected), `effectiveStatus()` (the settlement-lag
+  rule — see gotchas), `groupByMonth()`, `historyStats()`. Tested.
+- `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
+  `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
+  `durationFromSessionType`. NEW screens import from here. (Older screens still
+  carry local copies — see docs/TODO.md.)
 - `lib/use-chat-session.ts` — S15 Pass B Realtime lifecycle hook (handshake →
   merge backlog → `supabase.channel().on('broadcast').subscribe()`; send via
   `api.postChatSession`; reconcile-on-SUBSCRIBED; idempotent teardown). CHAT-ONLY.

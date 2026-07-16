@@ -828,7 +828,9 @@ Persists the user's preferred locale to the database (`users.locale`) and sets t
 
 ### `GET /api/my-bookings`
 
-Returns all of the authenticated student's bookings (upcoming and past).
+Returns the authenticated student's **confirmed** bookings. This is the *upcoming
+sessions* surface — for past classes use
+[`GET /api/my-bookings/history`](#get-apimy-bookingshistory) instead.
 
 | Property | Value |
 |---|---|
@@ -841,6 +843,7 @@ Returns all of the authenticated student's bookings (upcoming and past).
 {
   "bookings": [
     {
+      "eventId":     "google_calendar_event_id",
       "token":       "opaque-cancel-token",
       "joinToken":   "opaque-join-token",
       "sessionType": "pack",
@@ -852,21 +855,126 @@ Returns all of the authenticated student's bookings (upcoming and past).
 }
 ```
 
+`eventId` is returned directly — pass it to `POST /api/zoom/token`, `POST /api/reviews`,
+and `GET /api/chat-session/channel`. No deep-link or secondary lookup is needed.
 `packSize` is only present for `sessionType: "pack"` bookings.
 `token` is the cancel token; use it with `POST /api/cancel`.
-`joinToken` can be used to build the join URL (`/sesion/:joinToken`) or with
-`POST /api/zoom/token` (which takes `eventId`, not `joinToken` — resolve `eventId`
-from the session/booking screen via a deep-link or server-side lookup).
+`joinToken` builds the join URL (`/sesion/:joinToken`).
 
-> **Note:** The response includes all bookings regardless of status (confirmed,
-> completed, cancelled). The mobile app must filter by `startsAt` to separate
-> upcoming from past sessions.
+> **Only `confirmed` bookings are returned.** Cancelled, completed and no-show
+> bookings are filtered out server-side. Ordering is by `startsAt` **ascending**,
+> and there is no time filter — a class that has already ended still appears here
+> until the daily cleanup cron settles it to `completed`/`no_show` (see the status
+> lifecycle under `/api/my-bookings/history`). Filter by `endsAt > now` client-side
+> to get the genuinely upcoming list.
 
 **Errors:**
 
 | Status | `error` | Condition |
 |---|---|---|
 | 401 | (message) | Not authenticated |
+
+---
+
+### `GET /api/my-bookings/history`
+
+Returns one page of the student's **past** bookings, newest first, enriched with the
+status, the price actually paid, the student's note, and their review. This backs the
+booking-history screen.
+
+Distinct from `GET /api/my-bookings` in every dimension: it returns **every** status
+(a cancelled class is still part of your history), only **past** bookings, in
+**descending** order, and it is **paginated**. It never returns cancel/join tokens —
+a past booking can be neither cancelled nor joined.
+
+| Property | Value |
+|---|---|
+| Auth required | Yes — 401 if absent |
+| CSRF | No |
+| Rate limit | 60 req/min per IP |
+
+**Query parameters:**
+
+| Param | Type | Required | Notes |
+|---|---|---|---|
+| `limit` | `number` | No | Page size, `1`–`50`. Defaults to `20`. Out-of-range → **400** |
+| `cursor` | `string` | No | Opaque keyset token from the previous page's `nextCursor`. Omit for the first page |
+
+**Success `200`:**
+```json
+{
+  "bookings": [
+    {
+      "id":          "9f3c1e7a-2b44-4c31-9f10-0a7d5e2b8c44",
+      "eventId":     "google_calendar_event_id",
+      "sessionType": "pack",
+      "status":      "completed",
+      "startsAt":    "2026-06-14T17:00:00.000Z",
+      "endsAt":      "2026-06-14T18:00:00.000Z",
+      "packSize":    10,
+      "note":        "Quiero repasar hooks",
+      "amountCents": 3000,
+      "currency":    "eur",
+      "review":      { "rating": 5, "comment": "Genial" }
+    }
+  ],
+  "nextCursor": "2026-06-14T17:00:00.000Z_9f3c1e7a-2b44-4c31-9f10-0a7d5e2b8c44"
+}
+```
+
+**Field reference:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `string` | Booking UUID. Stable — use it as the display reference and as a list key |
+| `eventId` | `string` | Calendar event id. **May be `""`** if no calendar event was created — guard the review CTA on a non-empty value |
+| `sessionType` | `string` | `free15min` \| `session1h` \| `session2h` \| `pack` |
+| `status` | `string` | `confirmed` \| `completed` \| `cancelled` \| `no_show` — see lifecycle below |
+| `packSize` | `number` | Present only when `sessionType` is `"pack"` |
+| `note` | `string \| null` | The note the student attached at booking time |
+| `amountCents` | `number \| null` | What the student **actually paid** for this one class. `null` for `free15min` and for legacy bookings with no payment record |
+| `currency` | `string \| null` | ISO code, lowercase. `null` whenever `amountCents` is `null` |
+| `review` | `object \| null` | `null` when the class has not been reviewed. Otherwise `{ rating: 1–5, comment: string \| null }` |
+| `nextCursor` | `string \| null` | Pass as `cursor` for the next page. **`null` means the last page** |
+
+**How `amountCents` is derived:** from the recorded Stripe payment, not from the live
+price list. Prices are admin-editable, so reading the current price would retroactively
+rewrite what an old class cost. A **pack** class reports the pack's charge divided by its
+size (a €300 pack of 10 → `3000`); a **single session** reports its own charge; a
+`free15min` reports `null`.
+
+> **Payment method** is not returned — card is currently the only method.
+
+**Booking status lifecycle:**
+
+| Status | Set when |
+|---|---|
+| `confirmed` | On creation. Every booking starts here |
+| `cancelled` | The student or tutor cancelled it |
+| `completed` | Class ended **and** the student joined the Zoom session |
+| `no_show` | Class ended and the student **never joined** |
+
+> **Settlement lag.** `completed`/`no_show` are set by a **daily** cron, not at the
+> moment the class ends. So a class that finished a few hours ago can still read
+> `confirmed`. Treat `status === "confirmed" && endsAt < now` as *pending
+> finalization* — render it as completed/finished rather than as an unknown state.
+> `no_show` is surfaced deliberately: the student paid and missed the class.
+
+**Pagination:** keyset, not offset. Follow `nextCursor` until it is `null`. Two bookings
+can legitimately share the same `startsAt` (a cancelled class and the confirmed one that
+replaced it), which is why the cursor encodes both the timestamp and the booking id —
+pass it back verbatim and do not construct one by hand. A malformed cursor is **rejected**
+with `400 INVALID_CURSOR` rather than silently restarting from page one.
+
+**Errors:**
+
+| Status | `error` | Condition |
+|---|---|---|
+| 401 | (message) | Not authenticated |
+| 400 | `INVALID_REQUEST` | `limit` is not an integer in `1`–`50` |
+| 400 | `INVALID_CURSOR` | `cursor` is malformed |
+| 429 | (message) | Rate limit exceeded |
+| 500 | `INTERNAL_ERROR` | Unexpected server error |
 
 ---
 
@@ -1014,6 +1122,7 @@ Checks whether the authenticated student is subscribed to a given list.
 | `GET /api/pricing` | 60/min | Per IP |
 | `GET /api/schedule` | 60/min | Per IP |
 | `GET /api/credits` | 60/min | Per IP |
+| `GET /api/my-bookings/history` | 60/min | Per IP |
 | `POST /api/zoom/token` | 60/min | Per IP |
 | `POST /api/chat` (authenticated) | 20/min | Per user email |
 | `POST /api/chat-session` | 20/min | Per IP |
@@ -1039,6 +1148,7 @@ Checks whether the authenticated student is subscribed to a given list.
 | `OUTSIDE_CANCEL_WINDOW` | 400 | Session starts in < 2 hours (cancellation window closed) |
 | `CANCEL_TOKEN_CONSUMED` | 400 | Cancel token already used |
 | `BOOKING_NOT_FOUND` | 400 | Booking not found for the given identifier |
+| `INVALID_CURSOR` | 400 | Malformed pagination cursor (`GET /api/my-bookings/history`) |
 | `UNAUTHORIZED` | 403 | Authenticated user is not the owner of this resource |
 | `ALREADY_SUBSCRIBED` | 409 | User is already on this mailing list |
 | `REVIEW_BOOKING_NOT_FOUND` | 404 | No eligible booking found for review |

@@ -6,7 +6,9 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
 ## App follow-ups (this repo)
 
 - **Replace the Apple `merchantIdentifier` placeholder** (Stripe plugin,
-  `app.json`) with the real merchant id before iOS ships. Ship blocker (iOS).
+  `app.json`) with the real merchant id before iOS ships. Ship blocker for iOS
+  only — it's Apple Pay config, consumed solely by the iOS build; does NOT
+  block Play Store (Android) publishing.
 - **iOS camera/mic permission request path.** Currently Android-only (RN core
   `PermissionsAndroid`); the iOS request is a marked TODO in S14. Also the iOS
   `ONLY_ACTIVE_ARCH` Podfile tweak for the Zoom SDK is deferred (iOS-only).

@@ -241,10 +241,11 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
   NOT translated.
 
 ### Deferred / follow-ups
-Full list in [docs/TODO.md](docs/TODO.md). Ship blockers to flag: the
-`GOOGLE_REVIEW_URL` placeholder (`constants/config.ts`) and the Apple
-`merchantIdentifier` placeholder (`app.json`, iOS) must be replaced before
-shipping.
+Full list in [docs/TODO.md](docs/TODO.md). Ship blocker to flag: the Apple
+`merchantIdentifier` placeholder (`app.json`) must be replaced with the real
+merchant id before an **iOS** ship — it's Apple Pay only (Stripe plugin),
+consumed solely by the iOS build, so it does NOT block Play Store (Android)
+publishing.
 
 ## Maintaining this file
 

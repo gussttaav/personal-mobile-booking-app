@@ -26,8 +26,10 @@ own backend.
     app for now; iOS `merchantIdentifier` is a PLACEHOLDER — see docs/TODO.md)
   - expo-secure-store (plugin: `configureAndroidBackup`)
   - expo-calendar (plugin: `calendarPermission`; auto-adds READ/WRITE_CALENDAR)
-  - expo-notifications (no config plugin yet — add when a custom icon/sound
-    exists; `POST_NOTIFICATIONS` declared in `android.permissions`)
+  - expo-notifications (local class-reminder scheduling is LIVE via JS only — no
+    config plugin, no rebuild; `POST_NOTIFICATIONS` declared in
+    `android.permissions`. Add the config plugin only for a custom icon/sound —
+    that needs a dev-client rebuild. See `lib/notifications-native.ts`.)
   - @zoom/react-native-videosdk **pinned EXACT 2.5.10** — legacy-arch SDK running
     through RN's New-Arch interop shim; ships no config plugin (autolinking
     handles it); requires **minSdkVersion 28** (via `expo-build-properties`,
@@ -66,6 +68,14 @@ own backend.
   soft keyboard; use Reanimated `useAnimatedKeyboard` (not KeyboardAvoidingView /
   the raw Keyboard API) to lift the chat sheet. The sheet needs a definite
   `height` (not `maxHeight`) or its `flex:1` list collapses to 0.
+- **Class reminders (`lib/notifications-native.ts`) rules:** an Android channel
+  (`setNotificationChannelAsync`) is REQUIRED (minSdk 28) or the notification
+  silently never shows. A reminder's identity is `eventId@fireAtMs` stashed in
+  `content.data` (never read the fire date off the trigger — it's not reliable
+  cross-platform); only touch notifications whose `data.kind === 'class-reminder'`.
+  `syncClassReminders` must NOT cancel when the bookings fetch fails (a blip would
+  wipe valid reminders) — it bails instead. Use the SDK-54 handler fields
+  (`shouldShowBanner`/`shouldShowList`/…), not the deprecated `shouldShowAlert`.
 
 ### Design source of truth
 - Brand tokens as code: `docs/design/design-system/` (`colors_and_type.css` =
@@ -168,8 +178,20 @@ app/
   rule — see gotchas), `groupByMonth()`, `historyStats()`. Tested.
 - `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
   `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
-  `durationFromSessionType`. NEW screens import from here. (Older screens still
-  carry local copies — see docs/TODO.md.)
+  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"). NEW
+  screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
+- `lib/class-reminders.ts` — PURE class-reminder logic (no React/expo, `now`
+  injectable): `computeDesiredReminders()` (fireAt = start − lead, drops non-future,
+  caps at `MAX_SCHEDULED_REMINDERS`=60 for iOS's 64-pending limit) +
+  `reconcileReminders()` (diff by identity `eventId@fireAtMs`). Tested.
+- `lib/notifications-native.ts` — the ONLY module that calls expo-notifications
+  (untested; effectful). `syncClassReminders(bookings?)` — fire-and-forget,
+  in-flight-guarded orchestrator: loads prefs+permission, reconciles OS-scheduled
+  reminders against the current bookings, schedules/cancels the diff (copy resolved
+  via `translate` at schedule time). Disabled/not-granted → `cancelAllReminders()`.
+  Triggered from Home focus (reuses the fetched list), S18 toggle/lead-time change,
+  and `_layout` session-ready (sign-out cancels all). Module-scope
+  `setNotificationHandler` lives in `app/_layout.tsx`.
 - `lib/use-chat-session.ts` — S15 Pass B Realtime lifecycle hook (handshake →
   merge backlog → `supabase.channel().on('broadcast').subscribe()`; send via
   `api.postChatSession`; reconcile-on-SUBSCRIBED; idempotent teardown). CHAT-ONLY.
@@ -177,8 +199,8 @@ app/
   persistence disabled). CHAT-ONLY.
 - `lib/notification-store.ts` — expo-secure-store wrapper for the S18 notification
   PREFERENCE (`{ enabled, leadTimeMinutes }`) under `app.notification-prefs`.
-  Local-only; `DEFAULT_NOTIFICATION_PREFS` = enabled:false/leadTime:10. Scheduling
-  is deferred.
+  Local-only; `DEFAULT_NOTIFICATION_PREFS` = enabled:false/leadTime:10. The prefs
+  drive scheduling in `lib/class-reminders.ts` / `lib/notifications-native.ts`.
 - `lib/i18n/` — see i18n below.
 
 ### Conventions

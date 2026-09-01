@@ -12,12 +12,14 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
 - **iOS camera/mic permission request path.** Currently Android-only (RN core
   `PermissionsAndroid`); the iOS request is a marked TODO in S14. Also the iOS
   `ONLY_ACTIVE_ARCH` Podfile tweak for the Zoom SDK is deferred (iOS-only).
-- **Local notification scheduling.** S18 captures the preference only
-  (`lib/notification-store.ts`). Actual reminder scheduling
-  (`Notifications.scheduleNotificationAsync` synced to the booking lifecycle
-  using `leadTimeMinutes`) is a marked TODO in `settings.tsx`. When a custom
-  notification icon/sound is added, also add the expo-notifications config plugin
-  (needs a dev-client rebuild).
+- **Class-reminder residuals.** Local reminder scheduling is now DONE
+  (`lib/class-reminders.ts` + `lib/notifications-native.ts`, synced from Home
+  focus / settings / session). Two sub-items stay deferred: (a) **deep-link on
+  tap** — a tapped reminder currently just opens the app to Inicio; routing to
+  booking-detail would need the booking identifiers (incl. join/cancel tokens) in
+  the OS payload + a response listener + cold-start routing; (b) **custom
+  notification icon/sound** — needs the expo-notifications config plugin (a
+  dev-client rebuild); without it Android shows the default app-icon silhouette.
 - **Wire S08 → S11 `goDetail`.** S08 passes `eventId`, but S11 booking-detail
   reads `token`; the path is not yet wired.
 - **Wire the S12 contact stubs.** "Avisar a Gustavo" / "Escribir a Gustavo" are

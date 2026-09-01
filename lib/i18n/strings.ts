@@ -94,6 +94,13 @@ const es = {
     terms: 'Términos de servicio',
     privacy: 'Política de privacidad',
   },
+  notifications: {
+    reminder: {
+      channelName: 'Recordatorios de clase',
+      title: 'Tu clase empieza pronto',
+      body: 'Empieza en {lead}, a las {time}.',
+    },
+  },
   settings: {
     title: 'Ajustes',
     notifications: {
@@ -758,6 +765,13 @@ const en: Dictionary = {
     legalIntro: 'By continuing, you agree to the',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
+  },
+  notifications: {
+    reminder: {
+      channelName: 'Class reminders',
+      title: 'Your class starts soon',
+      body: 'Starts in {lead}, at {time}.',
+    },
   },
   settings: {
     title: 'Settings',

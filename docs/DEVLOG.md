@@ -601,3 +601,52 @@ The i18n machinery/approach is ADR-6; this is the rollout record.
   get two explicit keys (`…One`/`…Other`, as in
   `confirmCredit.credit.remainingOne/Other`). Sub-components that render strings
   call `useLocale()` themselves rather than threading `t` through props.
+
+### Local notification scheduling (class reminders, 2026-09-01)
+
+The follow-on to the S18 preference-only work: schedule an OS-local reminder
+before each upcoming class using the stored `leadTimeMinutes`.
+
+- SPLIT, per the `history.ts`/`payment-confirmation.ts` convention: pure decision
+  logic in `lib/class-reminders.ts` (injectable `now`, no React/expo, unit-tested)
+  + a thin effectful `lib/notifications-native.ts` (the ONLY caller of
+  expo-notifications; untested). `computeDesiredReminders(bookings, prefs, now)`
+  → fireAt = start − lead, drop non-strictly-future (also drops started/past
+  classes), sort soonest-first, cap at `MAX_SCHEDULED_REMINDERS`=60 (iOS's 64
+  pending-notification limit). `reconcileReminders(desired, scheduled)` diffs by
+  identity `eventId@fireAtMs` → `{ toCancelIds, toSchedule }` (unchanged = no-op;
+  a moved fire time cancels the old + schedules the new).
+- NO CENTRAL BOOKINGS STORE (the app re-fetches per screen), so sync is driven by
+  a single idempotent `syncClassReminders(bookings?)` fired from three points:
+  Home's focus `load()` (passes the already-fetched list — no extra request; and
+  since create/cancel/reschedule all return to Home, this one hook covers the whole
+  lifecycle + refreshes stale localized copy after a language change), S18
+  toggle/lead-time changes (self-fetch), and `_layout` on session-ready (self-fetch;
+  covers cold start + elapsed-while-closed; sign-out → `cancelAllReminders`). Keyed
+  on `useAuth().session`, NOT `onAuthExchange` (which skips cold-start hydration).
+- ROBUSTNESS: an in-flight mutex (Home-focus + session-ready can overlap and the
+  list→reconcile→apply sequence isn't atomic); the orchestrator never throws
+  (reminders are a convenience); and crucially a bookings-fetch failure BAILS
+  WITHOUT CANCELLING, so a network blip can't wipe valid reminders. Identity +
+  `fireAtMs` are stashed in `content.data` because the trigger doesn't reliably
+  surface the fire date cross-platform; we only ever touch
+  `data.kind==='class-reminder'`.
+- NATIVE: `Notifications.setNotificationHandler` at module scope in
+  `app/_layout.tsx` (SDK-54 fields `shouldShowBanner`/`shouldShowList`/… —
+  `shouldShowAlert` is deprecated) so a reminder that fires foregrounded still
+  shows. An Android channel (`setNotificationChannelAsync`, importance HIGH) is
+  created lazily inside sync — REQUIRED on minSdk 28 or the notification silently
+  never displays. Verified: NO new native dep, NO app.json plugin change, NO
+  dev-client rebuild — every call is a JS runtime call into the already-linked
+  module (`npx expo config --type prebuild` unchanged; `tsc` clean against the
+  installed expo-notifications 0.32.17 types).
+- COPY: new `notifications.reminder.*` keys (ES/EN) — "countdown + time" body
+  ("Empieza en {lead}, a las {time}." / "Starts in {lead}, at {time}."), tokens
+  `.replace`d at schedule time (`leadTimeLabel` promoted to `lib/format.ts`, shared
+  with the S18 pills; `formatTime` for the time).
+- DEFERRED (docs/TODO.md): deep-link on tap — a tapped reminder just opens the app
+  to Inicio (chosen to keep the OS payload minimal, no join/cancel secrets, no
+  response-listener/cold-start routing); and a custom notification icon/sound
+  (needs the config plugin + a rebuild). RUNTIME on-device behaviour could not be
+  exercised here (no emulator in the build env) — verified via the 16-case unit
+  test, tsc, and the prebuild-config check.

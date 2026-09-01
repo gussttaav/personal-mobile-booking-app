@@ -29,6 +29,11 @@ export function formatTime(iso: string): string {
   return `${h}:${m}`;
 }
 
+/** Reminder lead time as a short label: "10 min" / "1 h" (matches the S18 pills). */
+export function leadTimeLabel(minutes: number): string {
+  return minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`;
+}
+
 export function durationFromSessionType(sessionType: SessionType): Duration {
   if (sessionType === 'free15min') return '15min';
   return sessionType === 'session2h' ? '2h' : '1h';

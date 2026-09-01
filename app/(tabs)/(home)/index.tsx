@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
 import { getStoredSession } from '@/lib/auth';
+import { syncClassReminders } from '@/lib/notifications-native';
 import { BookingRow } from '@/components/BookingRow';
 import { Card } from '@/components/Card';
 import { CreditBalanceCard } from '@/components/CreditBalanceCard';
@@ -128,6 +129,11 @@ export default function InicioScreen() {
         api.getMyBookings(),
         api.getCredits(),
       ]);
+
+      // Reconcile class reminders against the freshly-fetched list (reuses it — no
+      // extra request). This is the primary sync point: create/cancel/reschedule all
+      // return to Home, and a language change refreshes localized copy here too.
+      void syncClassReminders(bookingsRes.bookings);
 
       const now = Date.now();
       const upcoming = bookingsRes.bookings

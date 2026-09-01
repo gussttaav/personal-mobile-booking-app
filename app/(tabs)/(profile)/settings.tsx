@@ -7,6 +7,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useAuth } from '@/lib/auth-context';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { leadTimeLabel } from '@/lib/format';
+import { syncClassReminders } from '@/lib/notifications-native';
 import {
   DEFAULT_NOTIFICATION_PREFS,
   loadNotificationPrefs,
@@ -19,10 +21,9 @@ import type { Locale } from '@/types/api';
 // S18 · Ajustes — settings list: notification preference (toggle + reminder lead
 // time), calendar permission, language (ES/EN) and sign-out.
 //
-// SCOPE: this captures the notification PREFERENCE + handles OS permission only.
-// TODO (deferred follow-on): actual reminder scheduling — sync notifications with
-// the booking lifecycle (Notifications.scheduleNotificationAsync) using the stored
-// leadTimeMinutes. Not done here on purpose.
+// Changing the preference or lead time re-syncs the scheduled class reminders via
+// syncClassReminders() (lib/notifications-native.ts) — enabling schedules them,
+// disabling cancels them, a new lead time re-times them.
 
 type PermStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -32,10 +33,6 @@ const LANGUAGE_OPTIONS: { value: Locale; labelKey: 'settings.language.es' | 'set
 ];
 
 const LEAD_TIMES = [5, 10, 15, 30, 60];
-
-function leadLabel(minutes: number): string {
-  return minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`;
-}
 
 export default function SettingsScreen() {
   const { locale, setLocale, t } = useLocale();
@@ -83,6 +80,7 @@ export default function SettingsScreen() {
       const updated = { ...prefs, enabled: false };
       setPrefs(updated);
       await persistNotificationPrefs(updated);
+      void syncClassReminders(); // disabled → cancels all scheduled reminders
       return;
     }
     // Enabling: request OS permission first.
@@ -94,6 +92,7 @@ export default function SettingsScreen() {
       const updated = { ...prefs, enabled };
       setPrefs(updated);
       await persistNotificationPrefs(updated);
+      void syncClassReminders(); // granted → schedules reminders for upcoming classes
     } finally {
       setRequestingNotif(false);
     }
@@ -103,6 +102,7 @@ export default function SettingsScreen() {
     const updated = { ...prefs, leadTimeMinutes: minutes };
     setPrefs(updated);
     await persistNotificationPrefs(updated);
+    void syncClassReminders(); // new lead time → re-times existing reminders
   }
 
   async function onConnectCalendar() {
@@ -206,7 +206,7 @@ export default function SettingsScreen() {
                     onPress={() => chooseLeadTime(m)}
                     style={[styles.pill, active && styles.pillActive]}
                   >
-                    <Text style={[styles.pillText, active && styles.pillTextActive]}>{leadLabel(m)}</Text>
+                    <Text style={[styles.pillText, active && styles.pillTextActive]}>{leadTimeLabel(m)}</Text>
                   </Pressable>
                 );
               })}

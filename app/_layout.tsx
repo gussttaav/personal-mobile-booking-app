@@ -3,6 +3,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { ZoomVideoSdkProvider } from '@zoom/react-native-videosdk';
 import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -10,6 +11,7 @@ import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { LocaleProvider } from '@/lib/i18n/locale-context';
+import { cancelAllReminders, syncClassReminders } from '@/lib/notifications-native';
 import { STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
 
 // Hold the native splash until the bootstrap resolves the session, so the login
@@ -18,6 +20,17 @@ SplashScreen.preventAutoHideAsync();
 
 GoogleSignin.configure({
   webClientId: '676995776728-cj85r0hoia2rmtcllodmiqci0nbs3bkc.apps.googleusercontent.com',
+});
+
+// Show class reminders even when the app is foregrounded (the default suppresses
+// them). Set once at JS load. SDK-54 fields — `shouldShowAlert` is deprecated.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
 });
 
 // Zoom Video SDK init config. Stable module-level object so the provider doesn't
@@ -34,6 +47,15 @@ function RootNavigator() {
   useEffect(() => {
     if (isReady) SplashScreen.hideAsync();
   }, [isReady]);
+
+  // Keep class reminders in sync with the session. Self-fetches bookings, so it
+  // covers cold start and time elapsed while the app was closed (past reminders
+  // drop). Keyed on `session` — NOT onAuthExchange, which skips cold-start
+  // hydration. Sign-out (session → null) clears every reminder we scheduled.
+  useEffect(() => {
+    if (session != null) void syncClassReminders();
+    else void cancelAllReminders();
+  }, [session]);
 
   // Keep the native splash up until the persisted session has been read.
   if (!isReady) return null;

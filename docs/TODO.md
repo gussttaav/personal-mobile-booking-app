@@ -20,8 +20,6 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
   the OS payload + a response listener + cold-start routing; (b) **custom
   notification icon/sound** — needs the expo-notifications config plugin (a
   dev-client rebuild); without it Android shows the default app-icon silhouette.
-- **Wire the S12 contact stubs.** "Avisar a Gustavo" / "Escribir a Gustavo" are
-  currently `Alert` stubs.
 - **True return-to-context after re-auth.** S02 re-auth currently lands on Inicio
   (the `(tabs)` group remounts at its initial route); the routing captures no
   prior route. Marked TODO at the refresh hook in `lib/auth-context.tsx`.

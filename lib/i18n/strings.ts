@@ -322,11 +322,11 @@ const es = {
     reschedule: 'Reprogramar',
     continue: 'Continuar',
     backToDetail: 'Volver al detalle',
-    cantAttendTitle: '¿No puedes asistir?',
-    cantAttendBody: 'Avísale a Gustavo directamente y buscad una solución.',
-    notifyGustavo: 'Avisar a Gustavo',
     soonTitle: 'Próximamente',
-    soonBody: 'El chat con Gustavo estará disponible próximamente.',
+    stillFailing: '¿Sigue fallando?',
+    writeToGustavo: 'Escribir a Gustavo',
+    noMailAppTitle: 'No se pudo abrir el correo',
+    noMailAppBody: 'Escríbenos directamente a {email}',
     timeRemaining: {
       started: 'Tu clase ha comenzado.',
       hoursMins: 'Tu clase empieza en {h} h {m} min.',
@@ -384,10 +384,9 @@ const es = {
       subtitle: 'Algo ha fallado. Tu reserva sigue activa.',
       stillActiveTitle: 'Tu reserva sigue activa',
       stillActiveBody: 'No se ha realizado ningún cambio en tu reserva.',
-      stillFailing: '¿Sigue fallando?',
-      contactLink: 'Escribir a Gustavo',
-      contactTitle: 'Contacto',
-      contactBody: 'Escríbele a Gustavo por los medios habituales.',
+      emailSubject: 'No he podido cancelar mi reserva',
+      emailBody:
+        'Hola Gustavo:\n\nHe intentado cancelar mi clase del {date} desde la app y no lo consigo. ¿Puedes ayudarme?\n\nGracias.',
     },
     errInvalid: {
       title: 'Esta reserva ya no existe o ya fue cancelada',
@@ -649,6 +648,9 @@ const es = {
       genericTitle: 'No se pudo reprogramar',
       genericBody: 'Comprueba tu conexión e inténtalo de nuevo.',
       backToGrid: 'Volver al mapa de huecos',
+      emailSubject: 'No he podido reprogramar mi reserva',
+      emailBody:
+        'Hola Gustavo:\n\nHe intentado cambiar la hora de mi clase del {date} desde la app y no lo consigo. ¿Puedes ayudarme?\n\nGracias.',
     },
   },
   bookingDetail: {
@@ -994,11 +996,11 @@ const en: Dictionary = {
     reschedule: 'Reschedule',
     continue: 'Continue',
     backToDetail: 'Back to details',
-    cantAttendTitle: "Can't make it?",
-    cantAttendBody: 'Let Gustavo know directly and find a solution together.',
-    notifyGustavo: 'Notify Gustavo',
     soonTitle: 'Coming soon',
-    soonBody: 'Chat with Gustavo will be available soon.',
+    stillFailing: 'Still failing?',
+    writeToGustavo: 'Message Gustavo',
+    noMailAppTitle: "Couldn't open email",
+    noMailAppBody: 'Email us directly at {email}',
     timeRemaining: {
       started: 'Your class has started.',
       hoursMins: 'Your class starts in {h} h {m} min.',
@@ -1056,10 +1058,9 @@ const en: Dictionary = {
       subtitle: 'Something went wrong. Your booking is still active.',
       stillActiveTitle: 'Your booking is still active',
       stillActiveBody: 'No changes have been made to your booking.',
-      stillFailing: 'Still failing?',
-      contactLink: 'Message Gustavo',
-      contactTitle: 'Contact',
-      contactBody: 'Message Gustavo through the usual channels.',
+      emailSubject: "I couldn't cancel my booking",
+      emailBody:
+        "Hi Gustavo,\n\nI tried to cancel my class on {date} from the app and it's not working. Can you help?\n\nThanks.",
     },
     errInvalid: {
       title: 'This booking no longer exists or was already cancelled',
@@ -1321,6 +1322,9 @@ const en: Dictionary = {
       genericTitle: "Couldn't reschedule",
       genericBody: 'Check your connection and try again.',
       backToGrid: 'Back to the slot map',
+      emailSubject: "I couldn't reschedule my booking",
+      emailBody:
+        "Hi Gustavo,\n\nI tried to change the time of my class on {date} from the app and it's not working. Can you help?\n\nThanks.",
     },
   },
   bookingDetail: {

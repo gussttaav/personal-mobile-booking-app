@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { openGustavoEmail } from '@/lib/contact';
 import { getDeviceTimeZone } from '@/lib/grid-time';
 import { rescheduleFlag } from '@/lib/reschedule-flag';
 import { useLocale } from '@/lib/i18n/locale-context';
@@ -526,6 +527,25 @@ export default function RescheduleConfirmScreen() {
             >
               <Text style={styles.ghostBtnText}>{t('reschedule.confirm.backToGrid')}</Text>
             </TouchableOpacity>
+            <View style={styles.contactRow}>
+              <Text style={styles.contactMuted}>{t('common.stillFailing')}</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  openGustavoEmail({
+                    subject: t('reschedule.confirm.emailSubject'),
+                    body: t('reschedule.confirm.emailBody').replace(
+                      '{date}',
+                      `${formatDate(safeOrigStart, locale)} · ${formatHHMM(safeOrigStart)}`,
+                    ),
+                    noMailAppTitle: t('common.noMailAppTitle'),
+                    noMailAppBody: t('common.noMailAppBody'),
+                  })
+                }
+                activeOpacity={0.7}
+              >
+                <Text style={styles.contactLink}>{t('common.writeToGustavo')}</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
       </View>
@@ -780,6 +800,27 @@ const styles = StyleSheet.create({
   },
   strikethrough: {
     textDecorationLine: 'line-through',
+  },
+
+  // ── Contact row (err_generic) ───────────────────────────────────────────
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing[2],
+    paddingTop: Spacing[3],
+    paddingBottom: Spacing[2],
+  },
+  contactMuted: {
+    ...TypeScale.caption,
+    fontFamily: FontFamily.body,
+    color: Colors.textDim,
+  },
+  contactLink: {
+    ...TypeScale.caption,
+    fontFamily: FontFamily.body,
+    fontWeight: '600',
+    color: Colors.primary,
   },
 
   // ── SUCCESS styles ───────────────────────────────────────────────────────

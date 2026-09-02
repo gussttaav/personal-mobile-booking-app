@@ -6,6 +6,11 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_ZOVMNnQJR9wPpGsptsb_LQ_iSQb_r19
 
 export const GOOGLE_REVIEW_URL = 'https://g.page/r/CeUEcIsZXTyiEBM/review';
 
+// Direct line to Gustavo — the fallback contact when an in-app action keeps
+// failing (see lib/contact.ts). NOT an alternative to the 2h cancel/reschedule
+// rule; that boundary has no override.
+export const CONTACT_EMAIL = 'contacto@gustavoai.dev';
+
 // Legal pages, per UI language (EN pages live under /en/…).
 export const TERMS_URL = {
   es: 'https://gustavoai.dev/terminos',

@@ -159,6 +159,12 @@ app/
 
 ### Key files
 - `constants/config.ts` — `API_BASE` (prod: https://www.gustavoai.dev);
+  `CONTACT_EMAIL` (`contacto@gustavoai.dev` — the direct line to Gustavo).
+- `lib/contact.ts` — `openGustavoEmail({subject, body, noMailAppTitle,
+  noMailAppBody})`: opens the mail composer pre-filled, alert-fallback if no mail
+  app. The ONLY sanctioned "contact Gustavo" path, and ONLY a failure escape
+  hatch (cancel/reschedule `err_generic`). The 2h cancel/reschedule rule has NO
+  override — inside the window the blocked sheets offer no alternative.
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`,
   `refreshSession` (single-flight silent refresh), `signOutGoogle`,
   `hydrateSession`, `AuthSession`/`AuthUser` types, `AuthError`,

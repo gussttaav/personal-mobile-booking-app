@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { openGustavoEmail } from '@/lib/contact';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -456,35 +456,11 @@ export default function CancelScreen() {
               </View>
             </View>
 
-            <View style={[styles.infoCard, styles.infoCardGreen]}>
-              <MaterialCommunityIcons
-                name="chat-outline"
-                size={18}
-                color={Colors.primary}
-                style={{ flexShrink: 0, marginTop: 1 }}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.infoCardTitle}>{t('common.cantAttendTitle')}</Text>
-                <Text style={styles.infoCardBody}>
-                  {t('common.cantAttendBody')}
-                </Text>
-              </View>
-            </View>
-
             <TouchableOpacity
-              style={styles.tealOutlineBtn}
-              onPress={() =>
-                Alert.alert(
-                  t('common.soonTitle'),
-                  t('common.soonBody'),
-                )
-              }
-              activeOpacity={0.85}
+              style={[styles.ghostBtn, { marginTop: Spacing[2] }]}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
             >
-              <MaterialCommunityIcons name="chat-processing-outline" size={18} color={Colors.primary} />
-              <Text style={styles.tealOutlineBtnText}>{t('common.notifyGustavo')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.ghostBtn} onPress={() => router.back()} activeOpacity={0.7}>
               <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
             </TouchableOpacity>
           </>
@@ -534,14 +510,22 @@ export default function CancelScreen() {
               <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
             </TouchableOpacity>
             <View style={styles.contactRow}>
-              <Text style={styles.contactMuted}>{t('cancel.errGeneric.stillFailing')}</Text>
+              <Text style={styles.contactMuted}>{t('common.stillFailing')}</Text>
               <TouchableOpacity
                 onPress={() =>
-                  Alert.alert(t('cancel.errGeneric.contactTitle'), t('cancel.errGeneric.contactBody'))
+                  openGustavoEmail({
+                    subject: t('cancel.errGeneric.emailSubject'),
+                    body: t('cancel.errGeneric.emailBody').replace(
+                      '{date}',
+                      `${formatDate(safeStartsAt, locale)} · ${formatTimeHHMM(safeStartsAt)}`,
+                    ),
+                    noMailAppTitle: t('common.noMailAppTitle'),
+                    noMailAppBody: t('common.noMailAppBody'),
+                  })
                 }
                 activeOpacity={0.7}
               >
-                <Text style={styles.contactLink}>{t('cancel.errGeneric.contactLink')}</Text>
+                <Text style={styles.contactLink}>{t('common.writeToGustavo')}</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -779,10 +763,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainer,
     borderColor: Colors.border,
   },
-  infoCardGreen: {
-    backgroundColor: 'rgba(78,222,163,0.06)',
-    borderColor: 'rgba(78,222,163,0.22)',
-  },
   infoCardTitle: {
     ...TypeScale.label,
     fontFamily: FontFamily.body,
@@ -853,26 +833,6 @@ const styles = StyleSheet.create({
     ...TypeScale.label,
     fontFamily: FontFamily.body,
     color: Colors.textMuted,
-  },
-  tealOutlineBtn: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(78,222,163,0.40)',
-    backgroundColor: 'rgba(78,222,163,0.10)',
-    borderRadius: Radius.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing[2],
-    marginTop: Spacing[2],
-    marginBottom: Spacing[2],
-  },
-  tealOutlineBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: FontFamily.body,
-    color: Colors.primary,
-    lineHeight: 20,
   },
 
   // ── Contact row (err_generic) ────────────────────────────────────────────

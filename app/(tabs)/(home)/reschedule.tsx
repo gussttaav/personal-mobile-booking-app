@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -93,36 +93,11 @@ export default function RescheduleScreen() {
           </View>
         </View>
 
-        <View style={styles.infoCardGreen}>
-          <MaterialCommunityIcons
-            name="chat-outline"
-            size={18}
-            color={Colors.primary}
-            style={{ flexShrink: 0, marginTop: 1 }}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.infoTitle}>{t('common.cantAttendTitle')}</Text>
-            <Text style={styles.infoBody}>
-              {t('common.cantAttendBody')}
-            </Text>
-          </View>
-        </View>
-
         <TouchableOpacity
-          style={styles.tealBtn}
-          onPress={() =>
-            Alert.alert(
-              t('common.soonTitle'),
-              t('common.soonBody'),
-            )
-          }
-          activeOpacity={0.85}
+          style={[styles.ghostBtn, { marginTop: Spacing[2] }]}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name="chat-processing-outline" size={18} color={Colors.primary} />
-          <Text style={styles.tealBtnText}>{t('common.notifyGustavo')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.ghostBtn} onPress={() => router.back()} activeOpacity={0.7}>
           <Text style={styles.ghostBtnText}>{t('common.backToDetail')}</Text>
         </TouchableOpacity>
       </View>
@@ -196,18 +171,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainer,
     borderColor: Colors.border,
   },
-  infoCardGreen: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing[3],
-    borderRadius: Radius['2xl'],
-    borderWidth: 1,
-    paddingVertical: Spacing[3],
-    paddingHorizontal: 14,
-    marginBottom: Spacing[3],
-    backgroundColor: 'rgba(78,222,163,0.06)',
-    borderColor: 'rgba(78,222,163,0.22)',
-  },
   infoTitle: {
     ...TypeScale.label,
     fontFamily: FontFamily.body,
@@ -220,26 +183,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     color: Colors.textDim,
     lineHeight: 18,
-  },
-  tealBtn: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(78,222,163,0.40)',
-    backgroundColor: 'rgba(78,222,163,0.10)',
-    borderRadius: Radius.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing[2],
-    marginTop: Spacing[2],
-    marginBottom: Spacing[2],
-  },
-  tealBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: FontFamily.body,
-    color: Colors.primary,
-    lineHeight: 20,
   },
   ghostBtn: {
     height: 48,

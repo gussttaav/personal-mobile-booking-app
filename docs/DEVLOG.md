@@ -386,8 +386,8 @@ behaviour of each screen is summarized in `CLAUDE.md`'s navigation tree.
   `PostCancelResponse.creditsRestored` is the authoritative success signal.
   Success → `router.replace('/(tabs)/(home)')` triggers Home's `useFocusEffect`
   refetch, removing the cancelled booking. All error codes have dedicated phases;
-  403/500/network → err_generic. "Avisar/Escribir a Gustavo" are Alert stubs
-  (TODO — see docs/TODO.md).
+  403/500/network → err_generic. Contact-Gustavo wiring: see "S12/S13 contact
+  stubs" below.
 - RULE-BEARING COPY kept faithful (verified against
   `docs/design/design-brief.md` Flow E): the paid-cancel refund line is extracted
   as-is — `cancel.refundBody` = "…en 1–3 días hábiles (menos la comisión de
@@ -671,3 +671,29 @@ before each upcoming class using the stored `leadTimeMinutes`.
   (needs the config plugin + a rebuild). RUNTIME on-device behaviour could not be
   exercised here (no emulator in the build env) — verified via the 16-case unit
   test, tsc, and the prebuild-config check.
+
+### S12/S13 contact stubs → email fallback (2026-09-02)
+
+Replaced the three "coming soon" `Alert` stubs in the cancel/reschedule lifecycle.
+
+- PRODUCT CALL (maintainer): the 2h cancel/reschedule rule is absolute — inside
+  the window it "is simply not allowed, no alternative should be considered." So
+  the `blocked` / `err_outside_window` sheets in S12 cancel AND the S13
+  `reschedule.tsx` gate LOST their "Avisar a Gustavo" button *and* the green
+  "¿No puedes asistir? — avísale a Gustavo" info card. Those sheets now just state
+  the rule + "Volver al detalle". No contact affordance where the rule bites.
+- The ONLY place a contact path survives is a genuine failure: `err_generic`
+  (403/500/network) in S12 cancel and reschedule-confirm — both now show
+  **retry + "Escribir a Gustavo"**, the latter opening the device mail composer
+  via new `lib/contact.ts` `openGustavoEmail(...)` → `mailto:CONTACT_EMAIL`
+  (`contacto@gustavoai.dev`, new `constants/config.ts` const) with a pre-filled
+  subject + body (the body carries the class date/time so Gustavo can identify
+  the booking). `Linking.openURL(...).catch()` → alert showing the address if no
+  mail app handles the intent.
+- i18n: retired `common.{cantAttendTitle,cantAttendBody,notifyGustavo,soonBody}`
+  and `cancel.errGeneric.{stillFailing,contactLink,contactTitle,contactBody}`.
+  Promoted `common.{stillFailing,writeToGustavo}` + added
+  `common.{noMailAppTitle,noMailAppBody}` (`{email}` token) and per-flow
+  `{cancel.errGeneric,reschedule.confirm}.{emailSubject,emailBody}` (`{date}`
+  token). `common.soonTitle` kept — still used by the S13 add-to-calendar stub.
+- No native dep, no rebuild (`Linking` is RN core). tsc + eslint + 94 tests green.

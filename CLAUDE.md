@@ -108,7 +108,8 @@ app/
     ├── _layout.tsx        — 4-tab Tabs navigator (MaterialCommunityIcons, outline/filled)
     ├── (home)/            — Tab: Inicio (home-outline / home)
     │   ├── index.tsx      — S03 Inicio   ← the ONLY route at "/" (see note below)
-    │   ├── booking-detail.tsx     — S11 Detalle de la reserva
+    │   ├── booking-detail.tsx     — S11 Detalle (thin re-export of the shared
+    │   │                            components/BookingDetailScreen; reached from S03)
     │   ├── cancel.tsx             — S12 Cancelar reserva (2h gate)
     │   ├── reschedule.tsx         — S13 Reprogramar · 2h gate → S05 mode:'reschedule'
     │   └── reschedule-confirm.tsx — S13 confirm sheet + terminal states
@@ -124,7 +125,10 @@ app/
     │   ├── confirm-credit.tsx — S07 Confirmar con crédito (synchronous POST /api/book)
     │   ├── confirm-free.tsx   — Confirmar sesión gratuita (synchronous POST /api/book,
     │   │                        sessionType 'free15min', no payment/credit)
-    │   └── success.tsx        — S08 Reserva confirmada
+    │   ├── success.tsx        — S08 Reserva confirmada
+    │   └── booking-detail.tsx — S11 Detalle (thin re-export of the SAME shared
+    │                            components/BookingDetailScreen; reached from S08 so
+    │                            "back" pops to S08 in-stack — see note below)
     ├── (packs)/           — Tab: Packs (gift-outline / gift)
     │   ├── packs.tsx      — S09 Packs (stack initial route)
     │   └── pay.tsx        — S10 Pago del pack (Stripe, poll-confirm)
@@ -144,6 +148,14 @@ app/
   `index.tsx`, so exactly one route owns `/` and the app reliably cold-starts on
   Inicio. Keep any new tab's landing screen a named route. (Why: docs/DEVLOG.md
   ADR-4.)
+- **`booking-detail` is registered in TWO groups on purpose** — `(home)` (reached
+  from Home) and `(booking)` (reached from S08 success). Both are thin re-exports
+  of `components/BookingDetailScreen`, so the detail pushes onto whichever tab's
+  stack the user is on and "back" returns there (S08 stays reachable in-stack
+  after booking). This is safe — unlike the "/" case, they sit under different
+  group `_layout`s (distinct route nodes) and are always navigated via the
+  group-qualified pathname, so Expo Router never treats them as a conflict. Do NOT
+  "dedupe" them into one file. (Why: docs/DEVLOG.md, S08→S11 peek.)
 
 ### Key files
 - `constants/config.ts` — `API_BASE` (prod: https://www.gustavoai.dev);

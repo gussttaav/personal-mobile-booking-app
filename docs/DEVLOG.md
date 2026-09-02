@@ -338,8 +338,29 @@ behaviour of each screen is summarized in `CLAUDE.md`'s navigation tree.
   secondary row (Calendario → S19, Reprogramar → S13, Cancelar → S12). Data comes
   from params passed by Home (token, joinToken, sessionType, startsAt, endsAt,
   packSize) — no API fetch. Routes to S13 with `{ token, startsAt, sessionType }`.
-  The S08→S11 path (`goDetail`) is NOT yet wired — S08 passes `eventId` not
-  `token`; deferred (see docs/TODO.md).
+- S08→S11 `goDetail` wired (2026-09-02): S08 now forwards the full param set S11
+  expects (`token`, joinToken, eventId, sessionType, startsAt, endsAt), not just
+  `eventId`. The cancel/reschedule `token` is `res.cancelToken` from
+  `POST /api/book`, threaded through S08 by the two synchronous flows (credit,
+  free). The paid (Stripe) flow's `ConfirmedBooking` carries NO cancel token, so
+  that path reaches S11 with `token:''`; S11 therefore hides Reprogramar/Cancelar
+  when the token is empty (`canManage`) rather than surfacing actions that would
+  fail with an invalid token — the class can still be managed later from Home,
+  where the token comes off the bookings list. (packSize isn't available at S08,
+  so a pack booking shows the generic "1 crédito" pay label, not the sized one.)
+- S11 IN-STACK PEEK (2026-09-02): first cut routed S08→`(home)/booking-detail`,
+  but that's a cross-tab jump — it switched to Inicio and stranded S08 in the
+  Reservar stack, so "back" landed on Home, not S08. Fix: the screen body moved to
+  `components/BookingDetailScreen.tsx` and is now registered by TWO thin
+  re-export routes — `(home)/booking-detail.tsx` (from Home) and a NEW
+  `(booking)/booking-detail.tsx` (from S08). S08 pushes the `(booking)` route, so
+  the detail lives on the same stack as S08 and "back" pops to it. Both files
+  resolve to the display URL `/booking-detail` but sit under different group
+  `_layout`s (distinct route nodes) and are always navigated group-qualified, so
+  Expo Router's route-tree builder never flags a conflict (the conflict throw in
+  getRoutesCore fires only for same-directory/same-specificity collisions — e.g.
+  the two-index-at-"/" case of ADR-4 — not for group siblings). Chosen over a
+  "finish flow → show in Inicio" variant per the maintainer.
 - S13 reschedule (3-file): `reschedule.tsx` is the 2h gatekeeper — synchronous
   check on mount, shows a blocked bottom-sheet if < 2h before original start,
   else `router.replace` → S05 `mode:'reschedule'` (rescheduleToken,

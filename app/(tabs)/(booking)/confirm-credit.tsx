@@ -275,6 +275,7 @@ export default function ConfirmCreditScreen() {
           endIso: end,
           sessionType: 'pack',
           joinToken: res.joinToken,
+          cancelToken: res.cancelToken,
           emailFailed: String(res.emailFailed),
           remainingCredits: String(Math.max(0, credits - 1)),
         },

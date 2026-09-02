@@ -202,6 +202,7 @@ export default function ConfirmFreeScreen() {
           endIso: end,
           sessionType: 'free15min',
           joinToken: res.joinToken,
+          cancelToken: res.cancelToken,
           emailFailed: String(res.emailFailed),
         },
       });

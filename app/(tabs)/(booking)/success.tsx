@@ -57,6 +57,7 @@ export default function BookingSuccessScreen() {
     endIso?: string;
     sessionType?: string;
     joinToken?: string;
+    cancelToken?: string;
     emailFailed?: string;
     remainingCredits?: string;
   }>();
@@ -66,6 +67,10 @@ export default function BookingSuccessScreen() {
   const end = params.endIso ?? '';
   const sessionType = (params.sessionType ?? 'session1h') as SessionType;
   const joinToken = params.joinToken ?? '';
+  // Cancel/reschedule token — present only for the synchronous credit/free flows
+  // (POST /api/book returns it). The paid (Stripe) flow's confirmation has none,
+  // so this stays '' there and S11 hides its token-gated actions.
+  const cancelToken = params.cancelToken ?? '';
   const emailFailed = params.emailFailed === 'true';
   const duration = durationFromSessionType(sessionType);
   // Credit (pack) bookings pass the post-booking balance. 0 → that was the last
@@ -86,9 +91,23 @@ export default function BookingSuccessScreen() {
   }, [eventId, start, sessionType]);
 
   const goDetail = useCallback(() => {
-    // S11 detalle is still a placeholder; route toward it with what we have.
-    router.push({ pathname: '/(tabs)/(home)/booking-detail', params: { eventId } });
-  }, [eventId]);
+    // Push the detail onto THIS (booking) stack — not the (home) route — so
+    // "back" pops to S08 instead of jumping tabs to Inicio. Forward the full
+    // param set S11 expects (same shape Home passes) so the booking renders in
+    // full; `token` (cancel/reschedule) is only present for the credit/free
+    // flows, so the paid flow's S11 hides its token-gated actions.
+    router.push({
+      pathname: '/(tabs)/(booking)/booking-detail',
+      params: {
+        token: cancelToken,
+        joinToken,
+        eventId,
+        sessionType,
+        startsAt: start,
+        endsAt: end,
+      },
+    });
+  }, [cancelToken, joinToken, eventId, sessionType, start, end]);
 
   const goPacks = useCallback(() => {
     router.push('/(tabs)/(packs)/packs');

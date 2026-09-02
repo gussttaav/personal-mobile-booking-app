@@ -697,3 +697,37 @@ Replaced the three "coming soon" `Alert` stubs in the cancel/reschedule lifecycl
   `{cancel.errGeneric,reschedule.confirm}.{emailSubject,emailBody}` (`{date}`
   token). `common.soonTitle` kept — still used by the S13 add-to-calendar stub.
 - No native dep, no rebuild (`Linking` is RN core). tsc + eslint + 94 tests green.
+
+### App identity: name + dark-icon fixes + notification small icon (2026-09-02)
+
+Maintainer reported three things on-device: the app-drawer icon and the push
+notification's leading (circular) icon both **blend into dark** backgrounds, and
+the launcher label reads `personal-mobile-booking-app` (truncated). Root-caused to
+**two** things, not three: the adaptive-icon background was `#131315` (== the page
+bg) — invisible on a black home screen AND in the dark notification shade (that
+leading circle is the launcher icon) — and `expo.name` drove the label. The
+status-bar SMALL icon was already fine (Android auto-silhouettes to white).
+
+Decisions + changes (batched into ONE pending dev-client rebuild — all three are
+prebuild-baked native resources, none are OTA/JS):
+- **Name.** `expo.name` → `"Gustavo Prof"` (launcher label + notification header +
+  iOS display name). `slug`/`extra.eas.projectId` untouched, so EAS linkage is
+  unaffected. NOTE: this is distinct from the Play Store *listing* title (Play
+  Console, ≤30 chars, no build) — that is set there, not in the repo.
+- **Adaptive icon background.** `#131315` → `#2a2a2c` (`--surface-high`). Maintainer
+  picked "elevated dark" to stay nocturne; the example value floated (`#201f22`)
+  was only ~13 levels above `#131315` and would still blend, so we used
+  `--surface-high` for a real tonal edge. Dropped the redundant solid-color
+  `backgroundImage` (`android-icon-background.png`, now UNUSED) — `backgroundColor`
+  is the single source of truth. Regenerated `icon.png` (iOS/base, opaque) by
+  compositing the existing green-G foreground over `#2a2a2c`.
+- **Notification small icon.** Activated the `expo-notifications` config plugin
+  (`icon` + `color` `#4edea3`). expo-notifications 0.32.17 was ALREADY a linked
+  dependency (JS scheduling shipped earlier), so this adds NO new native module —
+  only a generated drawable + manifest meta-data, which is why it still needs a
+  rebuild. `notification-icon.png` = the foreground G's alpha painted white, cropped
+  to the glyph + ~12% margin (fills ~76%, vs the safe-zone foreground's ~51%) so it
+  reads at status-bar size; Android uses the alpha channel only, `color` tints the
+  in-shade small icon + badge.
+- Verified: `npx expo config --type prebuild` clean (name/adaptiveIcon/plugin all
+  resolve, exit 0). On-device appearance can only be confirmed after the rebuild.

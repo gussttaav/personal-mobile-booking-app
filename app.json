@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "personal-mobile-booking-app",
+    "name": "Gustavo Prof",
     "slug": "personal-mobile-booking-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,9 +18,8 @@
     "android": {
       "package": "dev.gustavoai.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#131315",
+        "backgroundColor": "#2a2a2c",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
@@ -76,6 +75,13 @@
           "android": {
             "minSdkVersion": 28
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#4edea3"
         }
       ]
     ],

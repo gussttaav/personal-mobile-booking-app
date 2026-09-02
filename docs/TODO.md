@@ -18,8 +18,10 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
   tap** — a tapped reminder currently just opens the app to Inicio; routing to
   booking-detail would need the booking identifiers (incl. join/cancel tokens) in
   the OS payload + a response listener + cold-start routing; (b) **custom
-  notification icon/sound** — needs the expo-notifications config plugin (a
-  dev-client rebuild); without it Android shows the default app-icon silhouette.
+  notification SOUND** — the custom small ICON is now DONE (expo-notifications
+  config plugin `icon`/`color` in `app.json`, effective on the next dev-client
+  rebuild); a custom sound would still need the plugin's `sounds` array (another
+  rebuild) and is left deferred.
 - **True return-to-context after re-auth.** S02 re-auth currently lands on Inicio
   (the `(tabs)` group remounts at its initial route); the routing captures no
   prior route. Marked TODO at the refresh hook in `lib/auth-context.tsx`.

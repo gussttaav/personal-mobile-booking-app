@@ -26,10 +26,15 @@ own backend.
     app for now; iOS `merchantIdentifier` is a PLACEHOLDER — see docs/TODO.md)
   - expo-secure-store (plugin: `configureAndroidBackup`)
   - expo-calendar (plugin: `calendarPermission`; auto-adds READ/WRITE_CALENDAR)
-  - expo-notifications (local class-reminder scheduling is LIVE via JS only — no
-    config plugin, no rebuild; `POST_NOTIFICATIONS` declared in
-    `android.permissions`. Add the config plugin only for a custom icon/sound —
-    that needs a dev-client rebuild. See `lib/notifications-native.ts`.)
+  - expo-notifications (local class-reminder scheduling is LIVE via JS only;
+    `POST_NOTIFICATIONS` declared in `android.permissions`. The config plugin IS
+    now added — it sets the Android small (status-bar) icon to
+    `assets/images/notification-icon.png` (a white-on-transparent G silhouette;
+    Android uses the alpha only) and the accent `color` `#4edea3`. That drawable +
+    manifest meta-data is baked at prebuild, so it takes effect only on the next
+    dev-client rebuild; the JS scheduling itself needs no rebuild. A custom
+    notification SOUND would need the plugin's `sounds` array (another rebuild) —
+    still deferred. See `lib/notifications-native.ts`.)
   - @zoom/react-native-videosdk **pinned EXACT 2.5.10** — legacy-arch SDK running
     through RN's New-Arch interop shim; ships no config plugin (autolinking
     handles it); requires **minSdkVersion 28** (via `expo-build-properties`,

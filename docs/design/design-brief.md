@@ -73,7 +73,10 @@ much as what was kept — do not design entry points for these:
 - **View past bookings** and **view your own reviews** — deferred.
 - **View payment history / receipts** — web only.
 - **Edit name** — deferred (name comes from the Google profile).
-- **Delete account** — web only.
+- **Delete account** — was cut as web-only in v1.0 scope; **now shipped in-app**
+  (S21, entered from S18 Ajustes) because Apple 5.1.1(v) and Google Play's
+  data-deletion policy require in-app deletion for apps that support account
+  creation. See docs/DEVLOG.md ADR-9.
 - **All admin actions** — no admin panel on mobile.
 - **Later-tier mobile extras** — credit-pack-expiring push, biometric unlock,
   home-screen widget, offline view of bookings. Out for v1.0.

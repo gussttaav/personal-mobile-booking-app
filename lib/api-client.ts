@@ -2,6 +2,9 @@ import { API_BASE } from '../constants/config';
 import { getStoredSession } from './auth';
 import type {
   ApiErrorBody,
+  DeleteAccountRequest,
+  DeleteAccountResponse,
+  GetAccountResponse,
   GetAvailabilityParams,
   GetAvailabilityResponse,
   GetChatSessionChannelParams,
@@ -62,9 +65,21 @@ export class ApiError extends Error {
 
 type RefreshHook = () => Promise<boolean>;
 let _refreshHook: RefreshHook | null = null;
+let _refreshEnabled = true;
 
 export function registerRefreshHook(fn: RefreshHook): void {
   _refreshHook = fn;
+}
+
+/**
+ * Arms / disarms the 401 refresh path. It must be DISARMED the moment an account
+ * is deleted: refreshing re-exchanges a Google ID token at /api/auth/mobile, and
+ * that endpoint upserts the user — a single stray 401 after the delete would
+ * silently recreate the account the student just erased. Re-armed on sign-in
+ * (lib/auth-context.tsx).
+ */
+export function setRefreshEnabled(enabled: boolean): void {
+  _refreshEnabled = enabled;
 }
 
 // ── Core fetch wrapper ────────────────────────────────────────────────────────
@@ -103,7 +118,7 @@ async function attemptRequest<T>(
 
   // Only a 401 triggers a refresh, and at most once per request (isRetry caps it):
   // a still-401 after refresh, or any other status (403/429/500…), falls through.
-  if (res.status === 401 && !isRetry && _refreshHook) {
+  if (res.status === 401 && !isRetry && _refreshHook && _refreshEnabled) {
     const refreshed = await _refreshHook();
     if (refreshed) return attemptRequest<T>(method, path, options, true);
     // Refresh gave up — fall through and surface the 401 below.
@@ -195,6 +210,17 @@ export const api = {
 
   getCredits(): Promise<GetCreditsResponse> {
     return request('GET', '/api/credits');
+  },
+
+  /** Advisory deletion verdict — safe to call on screen open, it writes nothing. */
+  getAccount(): Promise<GetAccountResponse> {
+    return request('GET', '/api/account');
+  },
+
+  /** Irreversible. On success the caller MUST run the post-deletion teardown
+   *  (useAuth().completeAccountDeletion) before anything else touches the network. */
+  deleteAccount(body: DeleteAccountRequest): Promise<DeleteAccountResponse> {
+    return request('DELETE', '/api/account', { body });
   },
 
   getPricing(): Promise<GetPricingResponse> {

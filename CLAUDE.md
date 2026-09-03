@@ -79,6 +79,16 @@ own backend.
   soft keyboard; use Reanimated `useAnimatedKeyboard` (not KeyboardAvoidingView /
   the raw Keyboard API) to lift the chat sheet. The sheet needs a definite
   `height` (not `maxHeight`) or its `flex:1` list collapses to 0.
+- **Account deletion (S21) — disarm the refresh BEFORE dropping credentials.** The
+  bearer stays valid for up to an hour after `DELETE /api/account`, protected
+  routes `ensureUser()`-upsert, and `POST /api/auth/mobile` registers the user —
+  so a single stray 401→silent-refresh after the delete silently recreates the
+  account. `useAuth().completeAccountDeletion()` is the ONE sanctioned teardown:
+  `setRefreshEnabled(false)` → `purgeSession()` → cancel reminders → clear the
+  session (the guard routes to /login). Never hand-roll it. The verdict from
+  `GET /api/account` is ADVISORY — render off `reason`, never off the counts (a
+  pack-class booking blocks with `packCredits: 0`), and a 409 on submit means
+  re-fetch the verdict, not an error screen.
 - **Class reminders (`lib/notifications-native.ts`) rules:** an Android channel
   (`setNotificationChannelAsync`) is REQUIRED (minSdk 28) or the notification
   silently never shows. A reminder's identity is `eventId@fireAtMs` stashed in
@@ -149,7 +159,10 @@ app/
         │                    history up front — the header count + stats are totals)
         ├── history-detail.tsx — S20 detail · read-only past class (Dejar reseña →
         │                    /review with returnTo; Reservar otra igual)
-        └── settings.tsx   — S18 Ajustes
+        ├── settings.tsx   — S18 Ajustes
+        └── delete-account.tsx — S21 Eliminar cuenta (gated: verdict → blocked-pack /
+                             blocked-bookings / type-your-email confirm; entered from
+                             S18 only — the store-required in-app deletion path)
 ```
 - Screens outside `(tabs)` automatically hide the tab bar (Expo Router behaviour).
 - Each tab group has its own `_layout.tsx` wrapping a `<Stack>` with
@@ -183,18 +196,23 @@ app/
   override — inside the window the blocked sheets offer no alternative.
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`,
   `refreshSession` (single-flight silent refresh), `signOutGoogle`,
-  `hydrateSession`, `AuthSession`/`AuthUser` types, `AuthError`,
+  `hydrateSession`, `purgeSession` (post-deletion credential purge — clears the
+  in-memory bearer FIRST and survives a failing Google sign-out),
+  `AuthSession`/`AuthUser` types, `AuthError`,
   `getStoredSession`/`setStoredSession` (synchronous in-memory cache). Screens
   import auth from here — never call `GoogleSignin` or the auth endpoint directly.
 - `lib/token-store.ts` — expo-secure-store wrapper; whole session as one JSON blob
   under `auth.session` (`loadPersistedSession`/`persistSession`/`clearPersistedSession`).
 - `lib/auth-context.tsx` — `AuthProvider`/`useAuth`: reactive `session`+`isReady`
-  (+`expired`) driving the `<Stack.Protected>` guards; exposes `signIn`/`signOut`.
+  (+`expired`) driving the `<Stack.Protected>` guards; exposes
+  `signIn`/`signOut`/`completeAccountDeletion` (the S21 teardown; `signIn` re-arms
+  the refresh it disarmed).
 - `types/api.ts` — TS interfaces for all API request/response shapes + domain
   error codes.
 - `lib/api-client.ts` — typed fetch wrapper; use `api.*` from here, never call
   `fetch` directly. Reads the bearer synchronously via `getStoredSession()`;
-  `registerRefreshHook(fn)` (wired by auth-context); `ApiError` `{ status, code,
+  `registerRefreshHook(fn)` (wired by auth-context) + `setRefreshEnabled(bool)`
+  (the deletion disarm — see gotchas); `ApiError` `{ status, code,
   requiresAuth? }`.
 - `app/_layout.tsx` — app init (see nav tree); provider stack + route guards.
 - `lib/grid-time.ts` — pure tz/grid math for S05: `weeklyHours` frame → device-tz
@@ -210,6 +228,11 @@ app/
 - `lib/history.ts` — pure S20 logic: `fetchAllHistory()` (walks the keyset cursor
   to the last page; page fetcher injected), `effectiveStatus()` (the settlement-lag
   rule — see gotchas), `groupByMonth()`, `historyStats()`. Tested.
+- `lib/account-deletion.ts` — PURE S21 logic: `gateFor()` (verdict → which of the
+  three deletion screens; keys off `reason`, never the counts),
+  `confirmEmailMatches()` (trimmed, case-insensitive — same rule the server
+  applies) and `classifyDeleteFailure()` (404 `USER_NOT_FOUND` = success, 409 =
+  re-fetch the verdict). Tested.
 - `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
   `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
   `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"). NEW

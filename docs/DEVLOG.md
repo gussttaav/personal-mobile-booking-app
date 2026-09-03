@@ -227,6 +227,54 @@ rendering; cell height was left at 40px. Grid math covered by new cases in
 
 ---
 
+### ADR-9: Account deletion lives in S18 (Ajustes), not S17 (Perfil)
+
+**Context.** ACCOUNT-DELETE-01 added `GET`/`DELETE /api/account`, and both stores
+now require in-app deletion for any app that supports account creation (Apple
+5.1.1(v), Google Play's data-deletion policy) — so the v1.0 "delete account: web
+only" scope cut (docs/design/design-brief.md) had to be reversed. The entry point
+could go on S17 Perfil (the account-identity screen, which already shows the
+avatar, email and a sign-out button) or on S18 Ajustes.
+
+**Decision.** The entry point is a quiet row in a new **Cuenta** section at the
+BOTTOM of S18, below sign-out, pushing a dedicated screen
+(`(profile)/delete-account.tsx`, S21). Perfil gets nothing.
+
+**Why.**
+- S17 is the screen a student opens to look at their balance and history; it is
+  reached in one tap from the tab bar, and its only footer control is *Cerrar
+  sesión*. Putting an irreversible action next to a routine one, on a
+  frequently-visited screen, is exactly the mis-tap the contract's "an unhurried
+  entry point, not a primary action" guidance warns against.
+- S18 is already the destination for account-shaped state (notification prefs,
+  calendar permission, language) and is one level deeper. Perfil's own row
+  subtitle already promises "Notificaciones, idioma y **privacidad**".
+- The flow is multi-step and stateful (verdict fetch → one of three screens →
+  typed-email confirmation → in-flight lock), which is a screen, not a sheet
+  hanging off a profile card.
+
+**The teardown is the load-bearing part.** The bearer is stateless and stays valid
+for up to an hour after the account is gone; protected routes `ensureUser()`-upsert
+and `POST /api/auth/mobile` registers the user. This app auto-refreshes on 401
+(ADR-7), so the *existing* recovery path would have resurrected the deleted
+account on the very next background request. Hence `setRefreshEnabled(false)` in
+`lib/api-client.ts`, called FIRST by `useAuth().completeAccountDeletion()` and
+re-armed only by an interactive `signIn()`. `purgeSession()` (a deletion-specific
+sibling of `signOutGoogle()`) drops the in-memory bearer before anything else and
+does not let a failing `GoogleSignin.signOut()` leave the stored session behind.
+
+**Consequences.** The gate's three outcomes are rendered off `reason`, never off
+the counts — rule 2 (every cancellable class is a pack class) blocks with
+`packCredits: 0`, so a count-driven screen would print "0 unused classes"; it gets
+its own copy (`blockedPack.bodyPackClasses`). The verdict is advisory: a 409 on
+submit re-fetches it and re-renders the matching blocked screen instead of showing
+an error. Both blocked screens ship a working action (compose an email to Gustavo,
+or go to the upcoming-classes screen) — a dead end would not satisfy the store
+policies that forced this work. Deletion also cancels the OS-scheduled class
+reminders, which point at bookings that no longer exist.
+
+---
+
 ## Part 2 — Backend-contract findings that unlocked mobile
 
 Records of what we discovered about the live Next.js API — the gaps we depended
@@ -776,3 +824,38 @@ Still open at the end of this entry: EAS env vars not yet created (need the live
 Stripe key + the separate production Supabase project's values), no Play Console
 app yet, and the production SHA-1s not yet registered on the Google OAuth Android
 client.
+
+### Account deletion (S21) — gated in-app erase (2026-09-03)
+
+Implemented ACCOUNT-DELETE-01 end to end: `GET /api/account` (advisory verdict) +
+`DELETE /api/account` (`{ confirmEmail }`, irreversible), both on a **shared
+10/hour-per-account** budget. Placement reasoning and the refresh-disarm rule are
+ADR-9; the contract is now transcribed into `docs/api/api-contract.md` under a new
+**Account** section.
+
+Shape of the work:
+- `lib/account-deletion.ts` (pure, tested — 17 cases): `gateFor()` maps a verdict
+  to one of three screens keying off `reason`; `confirmEmailMatches()` mirrors the
+  server's trimmed/case-insensitive comparison; `classifyDeleteFailure()` folds the
+  status/code matrix into five outcomes, of which `404 USER_NOT_FOUND` is a
+  **success** (the account is already gone — that is what was asked for).
+- `api.getAccount()` / `api.deleteAccount()`. The wrapper already serializes a body
+  for every non-`GET` method, so the `DELETE`-with-a-body trap the contract warns
+  about doesn't apply here; nothing else changed in the request path.
+- `useAuth().completeAccountDeletion()` runs the teardown in the mandated order and
+  ends by nulling the session, which flips the existing `<Stack.Protected>` guard —
+  no manual navigator reset. The "deleted" confirmation is an `Alert`, deliberately:
+  it is imperative and survives this screen unmounting under the guard flip, where
+  an in-screen success state could not (and nothing can pass params through a
+  guard-driven redirect to `/login`).
+- S18 gained a **Cuenta** section (last row on the screen); S21 renders four states
+  plus in-flight, all bilingual (`deleteAccount.*`, copy aligned with the web app's
+  strings from §8 of the contract). The typed-email field grows a Reanimated
+  keyboard spacer — SDK 54's edge-to-edge Android default doesn't pan (same rule as
+  the chat sheet).
+
+No native dependency, so this ships **OTA**. `npm test` 108/108, `tsc --noEmit`
+clean, `expo lint` clean for the new files. Not yet exercised against a live
+server: the curl sequence in §9 of the contract (and the on-device checks it calls
+out — body survival, a 409 arriving on submit, and backgrounding after a delete
+landing on the signed-out root) is still to run against staging.

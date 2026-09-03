@@ -4,12 +4,14 @@ import {
   AuthError,
   exchangeGoogleToken,
   hydrateSession,
+  purgeSession,
   refreshSession,
   signInWithGoogle,
   signOutGoogle,
   type AuthSession,
 } from './auth';
-import { registerRefreshHook } from './api-client';
+import { registerRefreshHook, setRefreshEnabled } from './api-client';
+import { cancelAllReminders } from './notifications-native';
 
 // ── Auth context ────────────────────────────────────────────────────────────
 // Holds the reactive session state that drives launch-time routing in the root
@@ -32,6 +34,10 @@ type AuthContextValue = {
    *  sign-in screen can render error / offline states. */
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Post-deletion teardown. Call it the moment DELETE /api/account succeeds,
+   *  before any navigation and before anything else touches the network — see
+   *  app/(tabs)/(profile)/delete-account.tsx. */
+  completeAccountDeletion: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -95,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       expired,
       async signIn() {
         try {
+          // Re-arm the 401 refresh path in case a deletion disarmed it.
+          setRefreshEnabled(true);
           const idToken = await signInWithGoogle();
           const restored = await exchangeGoogleToken(idToken);
           setSession(restored);
@@ -107,6 +115,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         await signOutGoogle();
+        setSession(null);
+        setExpired(false);
+      },
+      // Order is load-bearing. The bearer stays cryptographically valid for up to
+      // an hour after the account is gone, and both a stray authenticated request
+      // (routes upsert via ensureUser) and a silent refresh (/api/auth/mobile
+      // registers the user) would recreate the account the student just erased.
+      // So: disarm the refresh FIRST, then drop every credential, then the local
+      // traces, and only then flip the guard.
+      async completeAccountDeletion() {
+        setRefreshEnabled(false);
+        await purgeSession();
+        // OS-scheduled class reminders point at bookings that no longer exist.
+        await cancelAllReminders().catch(() => {});
         setSession(null);
         setExpired(false);
       },

@@ -731,3 +731,48 @@ prebuild-baked native resources, none are OTA/JS):
   in-shade small icon + badge.
 - Verified: `npx expo config --type prebuild` clean (name/adaptiveIcon/plugin all
   resolve, exit 0). On-device appearance can only be confirmed after the rebuild.
+
+### Production release configuration — OTA, env split, EAS profiles (2026-09-03)
+
+First move toward a Play Store release. The app had a working EAS link
+(`projectId` + a three-profile `eas.json`) but nothing production-shaped: the
+`production` profile carried only `autoIncrement`, and `constants/config.ts`
+hardcoded **staging** values — `API_BASE = https://staging.gustavoai.dev` and,
+less obviously, a Stripe **test** publishable key (`pk_test_…`). A production
+build off that config would have pointed real users at staging and shown them a
+payment sheet that charges nothing.
+
+Decisions:
+- **expo-updates added BEFORE the first build, deliberately.** OTA needs a native
+  module in the shipped binary; adding it after the first release would have cost
+  a second build + Play review just to unlock it. Since no production build
+  existed yet, it was free. `runtimeVersion` policy is **`fingerprint`**, not the
+  `appVersion` default `eas update:configure` writes — `appVersion` keys
+  compatibility to the hand-maintained `expo.version` string, so forgetting to
+  bump it after a native change would let an incompatible JS bundle reach an old
+  binary. `fingerprint` derives the key from the actual native module set, which
+  is the guarantee we want.
+- **Env split via `EXPO_PUBLIC_*` + EAS environment variables**, not an
+  `app.config.js` variant switch. All four values (API base, Stripe *publishable*
+  key, Supabase URL + *anon* key) are public client-side values, so none needs
+  secret handling; storing them as EAS env vars keeps `eas build` and `eas update`
+  reading the same source, which a build-profile-only `env` block would not
+  (`eas update` bundles JS on the CLI's own environment).
+- **Release builds throw on a missing var; only dev falls back to staging.** A
+  silent staging fallback in a production binary is the exact failure this work
+  exists to prevent, and the `staging` build catches a misconfiguration before any
+  user sees it. The `update:*` npm scripts hardcode `--environment` for the same
+  reason — an OTA published without it would ship a bundle with no vars at all.
+
+Gotcha found: `eas update:configure` rewrote `android.permissions` with the
+**resolved** config (plugin-injected `READ_CALENDAR`/`WRITE_CALENDAR` included)
+and appended it twice, duplicating all five entries. Restored the hand-maintained
+three-entry list; `npx expo config --type prebuild --json` re-verified the
+resolved output (5 unique permissions, `runtimeVersion: fingerprint`,
+`versionCode: undefined` per `appVersionSource: remote`). `npm test` 94/94,
+`tsc --noEmit` clean.
+
+Still open at the end of this entry: EAS env vars not yet created (need the live
+Stripe key + the separate production Supabase project's values), no Play Console
+app yet, and the production SHA-1s not yet registered on the Google OAuth Android
+client.

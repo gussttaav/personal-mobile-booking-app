@@ -35,6 +35,12 @@ own backend.
     dev-client rebuild; the JS scheduling itself needs no rebuild. A custom
     notification SOUND would need the plugin's `sounds` array (another rebuild) —
     still deferred. See `lib/notifications-native.ts`.)
+  - expo-updates (OTA JS delivery). `runtimeVersion` policy is **`fingerprint`**
+    (top-level in `app.json`) — an update only reaches a binary with an identical
+    native fingerprint, so incompatible JS can never be pushed. NOT present in the
+    current dev-client binary (added after the last rebuild); OTA never runs in a
+    dev build anyway, so day-to-day development is unaffected — it takes effect
+    from the next `preview`/`production` build onward.
   - @zoom/react-native-videosdk **pinned EXACT 2.5.10** — legacy-arch SDK running
     through RN's New-Arch interop shim; ships no config plugin (autolinking
     handles it); requires **minSdkVersion 28** (via `expo-build-properties`,
@@ -163,8 +169,13 @@ app/
   "dedupe" them into one file. (Why: docs/DEVLOG.md, S08→S11 peek.)
 
 ### Key files
-- `constants/config.ts` — `API_BASE` (prod: https://www.gustavoai.dev);
-  `CONTACT_EMAIL` (`contacto@gustavoai.dev` — the direct line to Gustavo).
+- `constants/config.ts` — environment-dependent values (`API_BASE`,
+  `STRIPE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) read from
+  `EXPO_PUBLIC_*` build-time vars via the local `fromEnv()` helper; dev falls back
+  to staging, **release builds THROW on a missing var** rather than silently
+  falling back (see Release below). Static values stay inline: `CONTACT_EMAIL`
+  (`contacto@gustavoai.dev` — the direct line to Gustavo), `GOOGLE_REVIEW_URL`,
+  `TERMS_URL`/`PRIVACY_URL`.
 - `lib/contact.ts` — `openGustavoEmail({subject, body, noMailAppTitle,
   noMailAppBody})`: opens the mail composer pre-filled, alert-fallback if no mail
   app. The ONLY sanctioned "contact Gustavo" path, and ONLY a failure escape
@@ -232,6 +243,12 @@ app/
   batch native deps (a new one needs a dev-client rebuild).
 - Auth only via `lib/auth.ts`; all backend calls via `api` from
   `lib/api-client.ts` (screens never call `fetch` directly).
+- **Environment-dependent values go through `constants/config.ts`, never inline.**
+  A new one is a `fromEnv(process.env.EXPO_PUBLIC_X, …)` export plus an
+  `eas env:create` in BOTH the `preview` and `production` EAS environments
+  (`preview` is what the `staging` build profile reads). Metro
+  inlines `EXPO_PUBLIC_*` textually — always reference `process.env.EXPO_PUBLIC_X`
+  as a literal, never a computed key.
 - **Scope fence:** `lib/supabase.ts` + `lib/use-chat-session.ts` are CHAT-ONLY.
   Payments are POLL-ONLY (`lib/payment-confirmation.ts`) — do NOT reuse the
   Realtime path for payments. (Why: docs/DEVLOG.md ADR-1, ADR-3.)
@@ -284,6 +301,32 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
   as-is (`cancel.refundBody`, "…menos la comisión de Stripe" / "…minus the Stripe
   fee" — not softened). Pack product names ("Pack Esencial"/"Pack Intensivo") are
   NOT translated.
+
+### Release / distribution (Android)
+- **Two update channels.** JS-only changes ship OTA via EAS Update; anything
+  native (a dependency, a permission, an `app.json` plugin, an SDK bump) needs a
+  new build + Play submission. The `fingerprint` runtimeVersion policy enforces
+  the boundary — it will refuse to serve an update to a mismatched binary.
+- **eas.json profiles** → `development` (apk, dev client, staging defaults),
+  `staging` (apk, internal distribution, **production values** — the release
+  candidate you sideload to test before promoting), `production` (**app-bundle**,
+  `autoIncrement`). Each profile pins both a `channel` and an `environment`.
+  Profile + channel names track the git branches (`staging` / `main` →
+  `production`); the `environment` axis keeps EAS's fixed name `preview`, since
+  EAS provides exactly `development`/`preview`/`production` there.
+- **`appVersionSource: remote`** — EAS owns `versionCode`; do NOT add one to
+  `app.json`. Bump `expo.version` by hand for a user-visible version name.
+- **Always publish updates via the npm scripts** (`npm run update:staging` /
+  `update:production`) — they pass `--environment`, without which the OTA bundle
+  is built with NO `EXPO_PUBLIC_*` vars and every client throws on launch.
+- **Google Sign-In needs the production SHA-1s.** The Play build is signed with a
+  different certificate than dev builds, and Play App Signing re-signs on Google's
+  side, so BOTH the EAS upload-keystore SHA-1 and the Play App Signing SHA-1 must
+  be registered on the Google OAuth **Android** client (package
+  `dev.gustavoai.mobile`). Missing them = sign-in works in dev, fails in
+  production.
+- The Play Store *listing* title is set in Play Console (≤30 chars), independent
+  of `expo.name`.
 
 ### Deferred / follow-ups
 Full list in [docs/TODO.md](docs/TODO.md). Ship blocker to flag: the Apple

@@ -72,6 +72,7 @@ function madridSchedule(overrides: Partial<GetScheduleResponse> = {}): GetSchedu
     weeklyHours: { '0': block, '1': block, '2': block, '3': block, '4': block, '5': block, '6': block },
     timezone: 'Europe/Madrid',
     minNoticeHours: 5,
+    cancelMinNoticeHours: 2,
     bookingWindowWeeks: 8,
     ...overrides,
   };

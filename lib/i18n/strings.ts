@@ -168,8 +168,8 @@ const es = {
       eraseCredits: 'Tus créditos y packs',
       eraseReviews: 'Tus reseñas y tus notas para Gustavo',
       erasePayments: 'Tus registros de pago',
-      imminent: 'Además, {n} clases que empiezan en menos de 2 horas serán canceladas sin derecho a reembolso.',
-      imminentOne: 'Además, 1 clase que empieza en menos de 2 horas será cancelada sin derecho a reembolso.',
+      imminent: 'Además, {n} clases que empiezan en menos de {hours} h serán canceladas sin derecho a reembolso.',
+      imminentOne: 'Además, 1 clase que empieza en menos de {hours} h será cancelada sin derecho a reembolso.',
       typeEmail: 'Escribe {email} para confirmar',
       placeholder: 'tu correo',
       mismatch: 'El correo no coincide con el de tu cuenta.',
@@ -357,6 +357,10 @@ const es = {
     duration1h: '1 hora',
     duration2h: '2 horas',
     duration15min: '15 min',
+    durationMonthsOne: '{n} mes',
+    durationMonthsOther: '{n} meses',
+    durationDaysOne: '{n} día',
+    durationDaysOther: '{n} días',
     seePacks: 'Ver packs',
     signInGoogle: 'Iniciar sesión con Google',
     signingIn: 'Iniciando sesión…',
@@ -415,7 +419,7 @@ const es = {
       badgeCredit: 'CRÉDITO',
       badgePaid: 'PAGADA',
       ruleBefore: 'Cancelación gratuita: faltan más de ',
-      ruleHours: '2 h',
+      ruleHours: '{hours} h',
       ruleAfter: ' para el inicio.',
       consequencePackTitle: 'Se devuelve 1 crédito a tu Pack Esencial',
       consequencePackBody: 'Automático e inmediato.',
@@ -427,9 +431,9 @@ const es = {
     },
     blocked: {
       title: 'Ya no puedes cancelar online',
-      subtitleOutside: 'Tu clase empieza en menos de 2 h.',
+      subtitleOutside: 'Tu clase empieza en menos de {hours} h.',
       respectTitle: 'Por respeto al tiempo reservado',
-      respectBody: 'Con menos de 2 h de antelación no podemos ofrecer cancelación gratuita online.',
+      respectBody: 'Con menos de {hours} h de antelación no podemos ofrecer cancelación gratuita online.',
     },
     errGeneric: {
       title: 'No hemos podido cancelar',
@@ -458,7 +462,7 @@ const es = {
       body: 'Tu banco rechazó el cargo. No se te ha cobrado. Prueba con otra tarjeta.',
     },
     pay: {
-      caption: 'Pago seguro con Stripe · cancela gratis hasta 2 h antes',
+      caption: 'Pago seguro con Stripe · cancela gratis hasta {hours} h antes',
     },
     confirmando: {
       title: 'Procesando pago…',
@@ -535,7 +539,7 @@ const es = {
       cta: 'Elegir otro horario',
     },
     confirmCta: 'Confirmar reserva gratuita',
-    caption: 'Sin pago · cancela gratis hasta 2 h antes',
+    caption: 'Sin pago · cancela gratis hasta {hours} h antes',
   },
   success: {
     pill: 'Confirmada',
@@ -583,7 +587,7 @@ const es = {
       renewTrailing: 'Paga por adelantado',
       chooseTitle: 'Elige tu pack',
     },
-    footer: 'Pago seguro con Stripe · los créditos caducan a los 12 meses de la compra',
+    footer: 'Pago seguro con Stripe · los créditos caducan a los {validity} de la compra',
   },
   packPay: {
     backToPacks: 'Volver a Packs',
@@ -599,7 +603,7 @@ const es = {
       discount: 'Descuento del pack',
       total: 'Total a pagar',
     },
-    creditsNote: 'Los {size} créditos se añaden a tu cuenta tras confirmar el pago y caducan a los 12 meses.',
+    creditsNote: 'Los {size} créditos se añaden a tu cuenta tras confirmar el pago y caducan a los {validity}.',
     confirming: {
       title: 'Pago recibido · confirmando',
       sub: 'Tu cargo de {eur} se ha completado. Estamos activando tus créditos — suele tardar unos segundos.',
@@ -671,7 +675,7 @@ const es = {
   reschedule: {
     blockedTitle: 'Ya no puedes reprogramar online',
     windowTitle: 'Ventana de reprogramación cerrada',
-    windowBody: 'El cambio de hora se cierra 2 h antes del inicio de la clase.',
+    windowBody: 'El cambio de hora se cierra {hours} h antes del inicio de la clase.',
     confirm: {
       successPill: 'CLASE REPROGRAMADA',
       successTitle: 'Clase reprogramada',
@@ -696,7 +700,7 @@ const es = {
       invalidTokenTitle: 'Este enlace ya no es válido',
       invalidTokenBody: 'La reserva puede haber sido procesada ya o haber caducado.',
       outsideWindowBody:
-        'El tiempo de reprogramación ha expirado (menos de 2 h para el inicio).',
+        'El tiempo de reprogramación ha expirado (menos de {hours} h para el inicio).',
       genericTitle: 'No se pudo reprogramar',
       genericBody: 'Comprueba tu conexión e inténtalo de nuevo.',
       backToGrid: 'Volver al mapa de huecos',
@@ -721,7 +725,7 @@ const es = {
     payPack: '1 crédito · Pack',
     payFree: 'Clase gratuita',
     paySingle: 'Sesión individual',
-    policyBanner: 'Cancela o reprograma gratis hasta 2 h antes',
+    policyBanner: 'Cancela o reprograma gratis hasta {hours} h antes',
     join: 'Unirse a la clase',
     joinHint: 'Disponible 15 min antes',
     calendar: 'Calendario',
@@ -894,8 +898,8 @@ const en: Dictionary = {
       eraseCredits: 'Your credits and packs',
       eraseReviews: 'Your reviews and your notes for Gustavo',
       erasePayments: 'Your payment records',
-      imminent: 'In addition, {n} classes starting in less than 2 hours will be cancelled with no refund.',
-      imminentOne: 'In addition, 1 class starting in less than 2 hours will be cancelled with no refund.',
+      imminent: 'In addition, {n} classes starting in less than {hours} h will be cancelled with no refund.',
+      imminentOne: 'In addition, 1 class starting in less than {hours} h will be cancelled with no refund.',
       typeEmail: 'Type {email} to confirm',
       placeholder: 'your email',
       mismatch: "That address doesn't match your account.",
@@ -1083,6 +1087,10 @@ const en: Dictionary = {
     duration1h: '1 hour',
     duration2h: '2 hours',
     duration15min: '15 min',
+    durationMonthsOne: '{n} month',
+    durationMonthsOther: '{n} months',
+    durationDaysOne: '{n} day',
+    durationDaysOther: '{n} days',
     seePacks: 'See packs',
     signInGoogle: 'Sign in with Google',
     signingIn: 'Signing in…',
@@ -1141,7 +1149,7 @@ const en: Dictionary = {
       badgeCredit: 'CREDIT',
       badgePaid: 'PAID',
       ruleBefore: 'Free cancellation: more than ',
-      ruleHours: '2 h',
+      ruleHours: '{hours} h',
       ruleAfter: ' until the start.',
       consequencePackTitle: '1 credit is returned to your Pack Esencial',
       consequencePackBody: 'Automatic and immediate.',
@@ -1153,9 +1161,9 @@ const en: Dictionary = {
     },
     blocked: {
       title: 'You can no longer cancel online',
-      subtitleOutside: 'Your class starts in less than 2 h.',
+      subtitleOutside: 'Your class starts in less than {hours} h.',
       respectTitle: 'Out of respect for the booked time',
-      respectBody: "With less than 2 h notice we can't offer free online cancellation.",
+      respectBody: "With less than {hours} h notice we can't offer free online cancellation.",
     },
     errGeneric: {
       title: "We couldn't cancel",
@@ -1184,7 +1192,7 @@ const en: Dictionary = {
       body: "Your bank declined the charge. You haven't been charged. Try another card.",
     },
     pay: {
-      caption: 'Secure payment with Stripe · cancel free up to 2 h before',
+      caption: 'Secure payment with Stripe · cancel free up to {hours} h before',
     },
     confirmando: {
       title: 'Processing payment…',
@@ -1261,7 +1269,7 @@ const en: Dictionary = {
       cta: 'Choose another time',
     },
     confirmCta: 'Confirm free booking',
-    caption: 'No payment · cancel free up to 2 h before',
+    caption: 'No payment · cancel free up to {hours} h before',
   },
   success: {
     pill: 'Confirmed',
@@ -1309,7 +1317,7 @@ const en: Dictionary = {
       renewTrailing: 'Pay upfront',
       chooseTitle: 'Choose your pack',
     },
-    footer: 'Secure payment with Stripe · credits expire 12 months after purchase',
+    footer: 'Secure payment with Stripe · credits expire {validity} after purchase',
   },
   packPay: {
     backToPacks: 'Back to Packs',
@@ -1325,7 +1333,7 @@ const en: Dictionary = {
       discount: 'Pack discount',
       total: 'Total to pay',
     },
-    creditsNote: 'The {size} credits are added to your account once payment is confirmed and expire after 12 months.',
+    creditsNote: 'The {size} credits are added to your account once payment is confirmed and expire after {validity}.',
     confirming: {
       title: 'Payment received · confirming',
       sub: "Your {eur} charge is complete. We're activating your credits — it usually takes a few seconds.",
@@ -1397,7 +1405,7 @@ const en: Dictionary = {
   reschedule: {
     blockedTitle: 'You can no longer reschedule online',
     windowTitle: 'Rescheduling window closed',
-    windowBody: 'Time changes close 2 h before the class starts.',
+    windowBody: 'Time changes close {hours} h before the class starts.',
     confirm: {
       successPill: 'CLASS RESCHEDULED',
       successTitle: 'Class rescheduled',
@@ -1422,7 +1430,7 @@ const en: Dictionary = {
       invalidTokenTitle: 'This link is no longer valid',
       invalidTokenBody: 'The booking may have already been processed or expired.',
       outsideWindowBody:
-        'The rescheduling window has expired (less than 2 h before it starts).',
+        'The rescheduling window has expired (less than {hours} h before it starts).',
       genericTitle: "Couldn't reschedule",
       genericBody: 'Check your connection and try again.',
       backToGrid: 'Back to the slot map',
@@ -1447,7 +1455,7 @@ const en: Dictionary = {
     payPack: '1 credit · Pack',
     payFree: 'Free class',
     paySingle: '1:1 session',
-    policyBanner: 'Cancel or reschedule free up to 2 h before',
+    policyBanner: 'Cancel or reschedule free up to {hours} h before',
     join: 'Join the class',
     joinHint: 'Available 15 min before',
     calendar: 'Calendar',

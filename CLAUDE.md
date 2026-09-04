@@ -123,8 +123,9 @@ own backend.
 ```
 app/
 ├── _layout.tsx            — root Stack; GoogleSignin.configure + SplashScreen +
-│                            AuthProvider + LocaleProvider + StripeProvider +
-│                            ZoomVideoSdkProvider (root singleton); <Stack.Protected> guards
+│                            AuthProvider + ConfigProvider + LocaleProvider +
+│                            StripeProvider + ZoomVideoSdkProvider (root singleton);
+│                            <Stack.Protected> guards
 ├── login.tsx              — S01 Bienvenida / Iniciar sesión
 ├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
 ├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
@@ -141,8 +142,8 @@ app/
     │   ├── index.tsx      — S03 Inicio   ← the ONLY route at "/" (see note below)
     │   ├── booking-detail.tsx     — S11 Detalle (thin re-export of the shared
     │   │                            components/BookingDetailScreen; reached from S03)
-    │   ├── cancel.tsx             — S12 Cancelar reserva (2h gate)
-    │   ├── reschedule.tsx         — S13 Reprogramar · 2h gate → S05 mode:'reschedule'
+    │   ├── cancel.tsx             — S12 Cancelar reserva (cancelMinNoticeHours gate)
+    │   ├── reschedule.tsx         — S13 Reprogramar · cancelMinNoticeHours gate → S05 mode:'reschedule'
     │   └── reschedule-confirm.tsx — S13 confirm sheet + terminal states
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
     │   ├── session-type.tsx   — S04 Tipo de sesión (stack initial route; the free
@@ -202,8 +203,9 @@ app/
 - `lib/contact.ts` — `openGustavoEmail({subject, body, noMailAppTitle,
   noMailAppBody})`: opens the mail composer pre-filled, alert-fallback if no mail
   app. The ONLY sanctioned "contact Gustavo" path, and ONLY a failure escape
-  hatch (cancel/reschedule `err_generic`). The 2h cancel/reschedule rule has NO
-  override — inside the window the blocked sheets offer no alternative.
+  hatch (cancel/reschedule `err_generic`). The cancel/reschedule window rule has NO
+  override — inside the window the blocked sheets offer no alternative. The window
+  length is server-driven (`cancelMinNoticeHours` via `useConfig`), not hardcoded.
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`,
   `refreshSession` (single-flight silent refresh), `signOutGoogle`,
   `hydrateSession`, `purgeSession` (post-deletion credential purge — clears the
@@ -217,6 +219,14 @@ app/
   (+`expired`) driving the `<Stack.Protected>` guards; exposes
   `signIn`/`signOut`/`completeAccountDeletion` (the S21 teardown; `signIn` re-arms
   the refresh it disarmed).
+- `lib/config-context.tsx` — `ConfigProvider`/`useConfig`: the admin-editable
+  booking policy carried by `/api/schedule`, fetched ONCE on session-ready and
+  refreshed on app foreground, cached module-level (auth-style synchronous cache +
+  reactive state) and shared app-wide. Exposes `cancelMinNoticeHours` (the
+  cancel/reschedule window, default 2 — see below) + the raw `schedule`;
+  `ensureSchedule()` is the single memoized fetch the booking grid reuses so
+  `/api/schedule` is hit once. ADVISORY on the client — the server re-enforces the
+  window (`OUTSIDE_CANCEL_WINDOW`/`OUTSIDE_RESCHEDULE_WINDOW`).
 - `types/api.ts` — TS interfaces for all API request/response shapes + domain
   error codes.
 - `lib/api-client.ts` — typed fetch wrapper; use `api.*` from here, never call
@@ -245,8 +255,10 @@ app/
   re-fetch the verdict). Tested.
 - `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
   `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
-  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"). NEW
-  screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
+  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"),
+  `formatValidityCompact`/`formatValidity` (pack validity from `packValidityDays`,
+  in DAYS — shows whole 30-day months as "6 m"/"6 meses" else exact days; tested).
+  NEW screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
 - `lib/class-reminders.ts` — PURE class-reminder logic (no React/expo, `now`
   injectable): `computeDesiredReminders()` (fireAt = start − lead, drops non-future,
   caps at `MAX_SCHEDULED_REMINDERS`=60 for iOS's 64-pending limit) +

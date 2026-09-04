@@ -6,6 +6,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
+import { formatValidity, formatValidityCompact } from '@/lib/format';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -135,11 +136,11 @@ function BalanceCard({ credits, packSize }: { credits: number; packSize: number 
 
 // ── ValueProps (sin pack) ─────────────────────────────────────────────────────
 
-function ValueProps() {
+function ValueProps({ validityDays }: { validityDays: number }) {
   const { t } = useLocale();
   const items = [
     { value: '−15%', label: t('packs.valueProps.saveLabel'), accent: true },
-    { value: '12 m', label: t('packs.valueProps.monthsLabel'), accent: false },
+    { value: formatValidityCompact(validityDays), label: t('packs.valueProps.monthsLabel'), accent: false },
     { value: '1 tap', label: t('packs.valueProps.tapLabel'), accent: false },
   ];
   return (
@@ -208,6 +209,7 @@ export default function PacksScreen() {
 
   const hasActivePack = credits != null && credits.packSize != null && credits.credits > 0;
   const packs = pricing ? sortPacks(pricing.packs) : [];
+  const validityDays = pricing?.packValidityDays ?? 180;
 
   return (
     <View style={styles.screen}>
@@ -266,7 +268,7 @@ export default function PacksScreen() {
             </>
           ) : (
             <>
-              <ValueProps />
+              <ValueProps validityDays={validityDays} />
               <SectionDivider title={t('packs.section.chooseTitle')} />
             </>
           )}
@@ -278,7 +280,7 @@ export default function PacksScreen() {
           <View style={styles.footerNote}>
             <MaterialCommunityIcons name="shield-check-outline" size={14} color={Colors.textDim} />
             <Text style={styles.footerNoteText}>
-              {t('packs.footer')}
+              {t('packs.footer').replace('{validity}', formatValidity(validityDays, t))}
             </Text>
           </View>
         </ScrollView>

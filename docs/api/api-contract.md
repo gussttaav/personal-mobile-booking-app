@@ -223,7 +223,8 @@ on-device. The free 15-min intro is not included (it is not a priced product).
       "savingsCents":        2000,
       "savingsPct":          13
     }
-  ]
+  ],
+  "packValidityDays": 180
 }
 ```
 
@@ -240,6 +241,7 @@ on-device. The free 15-min intro is not included (it is not a priced product).
 | `packs[].originalAmountCents` | `number \| null` | Cost of the same hours as single 1h sessions (the strikethrough). `null` when the pack is not cheaper |
 | `packs[].savingsCents` | `number \| null` | `originalAmountCents − amountCents`. `null` when no discount |
 | `packs[].savingsPct` | `number \| null` | Whole-percent discount vs. single sessions. `null` when no discount |
+| `packValidityDays` | `number` | Days a purchased pack stays redeemable, in **days**. **Admin-editable** (default `180`); format on-device — the backend models a month as 30 days (`180` = 6 months). Applies to all packs |
 
 > The `originalAmountCents` / `savings*` fields are **derived** server-side from the 1h
 > session price (`1h price × hours`), so they always stay consistent with the live prices.
@@ -259,7 +261,8 @@ on-device. The free 15-min intro is not included (it is not a priced product).
 ### `GET /api/schedule`
 
 Returns the booking schedule configuration: the teacher's working hours per day, the
-minimum advance notice required before a slot can be booked, and the schedule timezone.
+minimum advance notice required before a slot can be booked, the cancel/reschedule
+window (`cancelMinNoticeHours`), and the schedule timezone.
 Use this to render the bookable-hours grid and to gate slot selection client-side. The
 values are **admin-editable** (changed from `/admin/schedule`) — fetch on app start and
 after returning from background; the response reflects edits immediately.
@@ -287,6 +290,7 @@ after returning from background; the response reflects edits immediately.
   },
   "timezone": "Europe/Madrid",
   "minNoticeHours": 5,
+  "cancelMinNoticeHours": 2,
   "bookingWindowWeeks": 8
 }
 ```
@@ -300,7 +304,8 @@ after returning from background; the response reflects edits immediately.
 | `weeklyHours["d"][].startMinute` | `number` | Block start as minutes since local midnight (e.g. `540` = 09:00). Range `0`–`1439` |
 | `weeklyHours["d"][].endMinute` | `number` | Block end as minutes since local midnight (e.g. `810` = 13:30). Always `> startMinute`; range `1`–`1440` (`1440` = 24:00) |
 | `timezone` | `string` | IANA timezone the working hours are expressed in (e.g. `"Europe/Madrid"`) |
-| `minNoticeHours` | `number` | Minimum hours between now and a slot's start for it to be bookable. Enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`) |
+| `minNoticeHours` | `number` | Minimum hours between now and a slot's start for it to be **bookable**. Enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`) |
+| `cancelMinNoticeHours` | `number` | The cancel/reschedule window: hours before a class's start inside which it can no longer be cancelled or rescheduled. **Admin-editable** (default `2`); distinct from `minNoticeHours` (booking advance). Enforced server-side on `POST /api/cancel` (`OUTSIDE_CANCEL_WINDOW`) and on a reschedule `POST /api/book` (`OUTSIDE_RESCHEDULE_WINDOW`) |
 | `bookingWindowWeeks` | `number` | How many weeks ahead booking is allowed (currently fixed at `8`) |
 
 > Times are **minutes since midnight in `timezone`**, not UTC — convert for display
@@ -377,7 +382,7 @@ Pack sessions deduct one credit atomically.
 | 400 | `REQUIRES_PAYMENT` | `session1h`/`session2h` sent without `rescheduleToken` |
 | 400 | `INSUFFICIENT_CREDITS` | Pack session with zero credits |
 | 400 | `INVALID_RESCHEDULE_TOKEN` | Token not found or already used |
-| 400 | `OUTSIDE_RESCHEDULE_WINDOW` | Session starts in < 2 hours |
+| 400 | `OUTSIDE_RESCHEDULE_WINDOW` | Session starts within the cancel/reschedule window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`) |
 | 400 | `SESSION_TYPE_MISMATCH` | Reschedule token session type differs |
 | 400 | `RESCHEDULE_TOKEN_CONSUMED` | Token already consumed by a concurrent request |
 | 409 | `SLOT_UNAVAILABLE` | Slot was taken between availability check and booking |
@@ -389,7 +394,8 @@ Pack sessions deduct one credit atomically.
 
 Cancels a booking using the `cancelToken` returned at booking time. No user session
 is required — the token is the credential. Cancellation is only allowed more than
-**2 hours** before the session start. Pack credits are restored on successful cancellation.
+**`cancelMinNoticeHours`** (admin-editable, default 2h — see `GET /api/schedule`)
+before the session start. Pack credits are restored on successful cancellation.
 
 | Property | Value |
 |---|---|
@@ -423,7 +429,7 @@ is required — the token is the credential. Cancellation is only allowed more t
 | 403 | (message) | CSRF check failed |
 | 400 | (message) | Missing or non-string `token` field |
 | 400 | `INVALID_CANCEL_TOKEN` | Token not found in database |
-| 400 | `OUTSIDE_CANCEL_WINDOW` | Session starts in < 2 hours |
+| 400 | `OUTSIDE_CANCEL_WINDOW` | Session starts within the cancel window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`) |
 | 400 | `CANCEL_TOKEN_CONSUMED` | Token already used (concurrent cancellation) |
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
 
@@ -873,7 +879,7 @@ affordance, so the student sees the real state instead of a button that fails.
 | `reason` | `"ACTIVE_PACK_CREDITS" \| "CANCELLABLE_BOOKINGS" \| null` | `null` exactly when `eligible` is `true`. Drives which screen to show |
 | `packCredits` | `number` | Unused classes in a non-expired pack. Any non-zero value blocks |
 | `cancellableBookings` | `number` | Upcoming classes the student can still cancel himself |
-| `imminentBookings` | `number` | Upcoming classes inside the 2-hour cancellation window. These do **not** block — he can't act on them — but they are cancelled and lost on deletion. Name them in the confirmation copy |
+| `imminentBookings` | `number` | Upcoming classes inside the cancellation window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`). These do **not** block — he can't act on them — but they are cancelled and lost on deletion. Name them in the confirmation copy |
 
 > **Advisory only.** Treat the verdict as a hint for rendering, never as
 > permission. `DELETE` re-runs the whole check server-side, so a stale verdict
@@ -887,7 +893,7 @@ first match; the app mirrors it with one screen per outcome.
 | 1 | Unused credits in an active pack | `ACTIVE_PACK_CREDITS` | Only a refund clears this — send the student to email Gustavo, who refunds the remaining classes under the cancellation policy |
 | 2 | Every cancellable class is a **pack** class | `ACTIVE_PACK_CREDITS` | Cancelling a pack class returns its credit to the pack, landing back on rule 1, so the server routes straight to the refund path. **`packCredits` is `0` here — key the screen off `reason`, never off the counts** |
 | 3 | At least one cancellable non-pack class | `CANCELLABLE_BOOKINGS` | He can act: send him to the upcoming-classes screen to cancel them, so any refund follows the normal policy. Warn that cancelling a pack class returns a credit and then needs the email route |
-| 4 | Nothing redeemable, nothing actionable | `null` (`eligible: true`) | Show the confirmation. When `imminentBookings > 0`, say plainly that those classes are cancelled with no refund — they start inside the 2h window, so he cannot cancel them himself |
+| 4 | Nothing redeemable, nothing actionable | `null` (`eligible: true`) | Show the confirmation. When `imminentBookings > 0`, say plainly that those classes are cancelled with no refund — they start inside the cancellation window (`cancelMinNoticeHours`), so he cannot cancel them himself |
 
 **Errors:**
 
@@ -1283,12 +1289,12 @@ Checks whether the authenticated student is subscribed to a given list.
 | `INSUFFICIENT_CREDITS` | 400 | Student has no pack credits left |
 | `SLOT_UNAVAILABLE` | 409 | Time slot was taken by a concurrent booking |
 | `INVALID_RESCHEDULE_TOKEN` | 400 | Reschedule token not found or already used |
-| `OUTSIDE_RESCHEDULE_WINDOW` | 400 | Session starts in < 2 hours |
+| `OUTSIDE_RESCHEDULE_WINDOW` | 400 | Session starts within the cancel/reschedule window (`cancelMinNoticeHours`, default 2h) |
 | `SESSION_TYPE_MISMATCH` | 400 | Reschedule token session type doesn't match request |
 | `RESCHEDULE_TOKEN_CONSUMED` | 400 | Token already consumed by a concurrent request |
 | `REQUIRES_PAYMENT` | 400 | Paid session type sent without a reschedule token |
 | `INVALID_CANCEL_TOKEN` | 400 | Cancel token not found |
-| `OUTSIDE_CANCEL_WINDOW` | 400 | Session starts in < 2 hours (cancellation window closed) |
+| `OUTSIDE_CANCEL_WINDOW` | 400 | Session starts within the cancellation window (`cancelMinNoticeHours`, default 2h) |
 | `CANCEL_TOKEN_CONSUMED` | 400 | Cancel token already used |
 | `BOOKING_NOT_FOUND` | 400 | Booking not found for the given identifier |
 | `INVALID_CURSOR` | 400 | Malformed pagination cursor (`GET /api/my-bookings/history`) |

@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { useConfig } from '@/lib/config-context';
 import { openGustavoEmail } from '@/lib/contact';
 import { getDeviceTimeZone } from '@/lib/grid-time';
 import { rescheduleFlag } from '@/lib/reschedule-flag';
@@ -87,6 +88,7 @@ type Phase =
 export default function RescheduleConfirmScreen() {
   const insets = useSafeAreaInsets();
   const { locale, t } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const { rescheduleToken, sessionType, newStartIso, newEndIso, origStartsAt } =
     useLocalSearchParams<{
       rescheduleToken: string;
@@ -343,7 +345,7 @@ export default function RescheduleConfirmScreen() {
               <MaterialCommunityIcons name="check-circle-outline" size={16} color={Colors.primary} />
               <Text style={styles.ruleText}>
                 {t('reschedule.confirm.ruleTextBefore')}
-                <Text style={styles.ruleBold}>2 h</Text>
+                <Text style={styles.ruleBold}>{`${cancelMinNoticeHours} h`}</Text>
                 {t('reschedule.confirm.ruleTextAfter')}
               </Text>
             </View>
@@ -466,7 +468,7 @@ export default function RescheduleConfirmScreen() {
               <View style={{ flex: 1, paddingTop: 1 }}>
                 <Text style={styles.sheetTitle}>{t('reschedule.blockedTitle')}</Text>
                 <Text style={styles.sheetSubtitle}>
-                  {t('reschedule.confirm.outsideWindowBody')}
+                  {t('reschedule.confirm.outsideWindowBody').replace('{hours}', String(cancelMinNoticeHours))}
                 </Text>
               </View>
             </View>

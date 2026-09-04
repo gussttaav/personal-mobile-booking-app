@@ -17,6 +17,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { api, ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { useConfig } from '@/lib/config-context';
 import { openGustavoEmail } from '@/lib/contact';
 import { useLocale } from '@/lib/i18n/locale-context';
 import {
@@ -49,6 +50,7 @@ type SubmitError = 'mismatch' | 'rate_limited' | 'generic';
 
 export default function DeleteAccountScreen() {
   const { t, locale } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const { session, completeAccountDeletion } = useAuth();
   const email = session?.user.email ?? '';
 
@@ -280,9 +282,10 @@ export default function DeleteAccountScreen() {
                 style={styles.noteIcon}
               />
               <Text style={styles.warnCardText}>
-                {imminent === 1
+                {(imminent === 1
                   ? t('deleteAccount.confirm.imminentOne')
-                  : t('deleteAccount.confirm.imminent').replace('{n}', String(imminent))}
+                  : t('deleteAccount.confirm.imminent').replace('{n}', String(imminent))
+                ).replace('{hours}', String(cancelMinNoticeHours))}
               </Text>
             </View>
           )}

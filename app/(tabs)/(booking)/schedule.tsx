@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import { api } from '@/lib/api-client';
+import { ensureSchedule } from '@/lib/config-context';
 import { useLocale, useT } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
 import { rescheduleFlag } from '@/lib/reschedule-flag';
@@ -670,7 +671,9 @@ export default function ScheduleScreen() {
       try {
         let sched = scheduleRef.current;
         if (!sched) {
-          sched = await api.getSchedule();
+          // Reuse the app-wide cached schedule (fetched once by ConfigProvider)
+          // rather than firing our own /api/schedule request.
+          sched = await ensureSchedule();
           scheduleRef.current = sched;
           setSchedule(sched);
         }

@@ -273,6 +273,49 @@ or go to the upcoming-classes screen) — a dead end would not satisfy the store
 policies that forced this work. Deletion also cancels the OS-scheduled class
 reminders, which point at bookings that no longer exist.
 
+### ADR-10: `ConfigProvider` for the server-driven cancel window (2026-09-04)
+
+**Context.** The cancel/reschedule window (2 h) and pack validity (12 months) were
+hardcoded across the app. The backend made both admin-editable and exposed them on
+existing mobile endpoints: `cancelMinNoticeHours` on `GET /api/schedule` and
+`packValidityDays` on `GET /api/pricing` (defaults 2 / 180; the artifact's
+admin-only `/api/admin/*` reshapes are out of the mobile contract's scope). The
+brief was to consume both without each screen re-fetching just to render a policy
+number.
+
+**Decision.** Two different shapes for two different situations:
+- **`cancelMinNoticeHours`** is read by ~7 screens (the cancel/reschedule gates
+  and gate copy, the booking-detail policy banner, the pay/free captions, the
+  delete-account imminent warning) — most of which never fetched `/api/schedule`.
+  So a new `lib/config-context.tsx` (`ConfigProvider`/`useConfig`) fetches it ONCE
+  on session-ready and re-fetches on app foreground, cached module-level (the
+  auth-context pattern: a synchronous cache + reactive state), shared by all of
+  them. `ensureSchedule()` is the single memoized fetch the booking grid
+  (`schedule.tsx`) now reuses too, so `/api/schedule` is hit once app-wide.
+- **`packValidityDays`** is needed only by `packs.tsx` and `pay.tsx`, which
+  already fetch `/api/pricing`. It is read straight off those responses — no
+  provider, no extra request.
+
+**Why not put pricing in the provider too.** Symmetry would cost a redundant
+`/api/pricing` fetch (the provider's + the packs/pay screens' own, which they need
+for the live price rows anyway) and risk showing a stale price list from an
+app-start cache. The schedule scalar, by contrast, changes rarely and its screens
+had no fetch of their own — so the asymmetry is the efficient answer, not an
+oversight.
+
+**Consequences.** The provider mounts inside `AuthProvider` (the endpoint needs
+the bearer). The value is ADVISORY on the client — the gates default to 2 while
+loading and the server re-enforces the window
+(`OUTSIDE_CANCEL_WINDOW`/`OUTSIDE_RESCHEDULE_WINDOW`), so a cold or failed fetch
+degrades safely. Display: all window copy uses the app's existing compact `{hours} h`
+form (the two delete-account strings that said "2 horas"/"2 hours" were normalised
+to it, dropping the need for hour-word plurals). Pack validity formats on-device
+via `formatValidity`/`formatValidityCompact` (`lib/format.ts`): months when the day
+count is a whole number of 30-day months (180 → "6 meses"), else exact days — so
+the displayed validity now follows the backend (dropping from the old hardcoded
+"12 months" to 6 for the 180-day default). Both formatters are unit-tested. JS-only
+change — no native dep, no dev-client rebuild.
+
 ---
 
 ## Part 2 — Backend-contract findings that unlocked mobile

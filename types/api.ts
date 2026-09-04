@@ -68,6 +68,7 @@ export interface GetScheduleResponse {
   weeklyHours: Record<string, ScheduleBlock[]>; // keys "0"(Sun)–"6"(Sat); empty array = non-working day
   timezone: string;          // IANA, e.g. "Europe/Madrid"
   minNoticeHours: number;    // hours before a slot starts to be bookable
+  cancelMinNoticeHours: number; // hours before start inside which a class can no longer be cancelled/rescheduled (admin-editable; default 2)
   bookingWindowWeeks: number;// weeks ahead booking is allowed
 }
 
@@ -126,6 +127,7 @@ export interface GetPricingResponse {
   currency: string;
   sessions: PricingSession[];
   packs: PricingPack[];
+  packValidityDays: number; // days a purchased pack stays redeemable (admin-editable; default 180)
 }
 
 // ── Payment ───────────────────────────────────────────────────────────────────

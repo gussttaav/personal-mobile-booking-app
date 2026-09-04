@@ -340,8 +340,11 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
 - **`appVersionSource: remote`** — EAS owns `versionCode`; do NOT add one to
   `app.json`. Bump `expo.version` by hand for a user-visible version name.
 - **Always publish updates via the npm scripts** (`npm run update:staging` /
-  `update:production`) — they pass `--environment`, without which the OTA bundle
-  is built with NO `EXPO_PUBLIC_*` vars and every client throws on launch.
+  `update:production`). They pass two flags that are both load-bearing:
+  `--environment` (without it the OTA bundle is built with NO `EXPO_PUBLIC_*`
+  vars and every client throws on launch) and `--platform android` (without it
+  `eas update` defaults to `--platform=all`, and bundling for web dies on
+  `@stripe/stripe-react-native` importing react-native internals).
 - **Google Sign-In needs the production SHA-1s.** The Play build is signed with a
   different certificate than dev builds, and Play App Signing re-signs on Google's
   side, so BOTH the EAS upload-keystore SHA-1 and the Play App Signing SHA-1 must

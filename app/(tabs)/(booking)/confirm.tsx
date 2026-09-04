@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   initPaymentSheet,
+  PaymentSheet,
   PaymentSheetError,
   presentPaymentSheet,
 } from '@stripe/stripe-react-native';
@@ -447,6 +448,12 @@ export default function ConfirmScreen() {
         paymentIntentClientSecret: checkout.clientSecret,
         merchantDisplayName: 'Gustavo AI',
         style: 'alwaysDark',
+        // Card-only checkout. This hides the Link wallet button AND its
+        // "save your details" opt-in inside the card form. The remaining
+        // wallets (Klarna, Amazon Pay, Bancontact, EPS) are attached to the
+        // PaymentIntent by /api/stripe/checkout, so they can ONLY be removed
+        // server-side — not from here.
+        link: { display: PaymentSheet.LinkDisplay.NEVER },
       });
 
       if (initError) {

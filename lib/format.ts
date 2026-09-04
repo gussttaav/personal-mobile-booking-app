@@ -34,6 +34,28 @@ export function leadTimeLabel(minutes: number): string {
   return minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`;
 }
 
+// Pack validity comes from the backend in DAYS (`packValidityDays`). The backend
+// models a "month" as 30 days (its 180-day default = 6 months), so we show months
+// only when the day count divides evenly into 30-day months, else the exact days.
+
+/** Compact badge form: "6 m" (whole 30-day months) or "180 d". Unit symbols stay
+ *  untranslated, matching `leadTimeLabel`. */
+export function formatValidityCompact(days: number): string {
+  return days > 0 && days % 30 === 0 ? `${days / 30} m` : `${days} d`;
+}
+
+/** Full pluralized phrase for sentences: "6 meses" / "1 mes" / "180 días" / "1 día"
+ *  (and the EN equivalents), via the common.duration* keys. */
+export function formatValidity(days: number, t: TFn): string {
+  if (days > 0 && days % 30 === 0) {
+    const months = days / 30;
+    const key = months === 1 ? 'common.durationMonthsOne' : 'common.durationMonthsOther';
+    return t(key).replace('{n}', String(months));
+  }
+  const key = days === 1 ? 'common.durationDaysOne' : 'common.durationDaysOther';
+  return t(key).replace('{n}', String(days));
+}
+
 export function durationFromSessionType(sessionType: SessionType): Duration {
   if (sessionType === 'free15min') return '15min';
   return sessionType === 'session2h' ? '2h' : '1h';

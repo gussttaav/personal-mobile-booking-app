@@ -22,6 +22,10 @@ export type ApiErrorCode =
   | 'UNAUTHORIZED'
   | 'ALREADY_SUBSCRIBED'
   | 'REVIEW_BOOKING_NOT_FOUND'
+  | 'DELETION_NOT_CONFIRMED'
+  | 'DELETION_BLOCKED_ACTIVE_PACK'
+  | 'DELETION_BLOCKED_CANCELLABLE_BOOKINGS'
+  | 'USER_NOT_FOUND'
   | 'INVALID_REQUEST'
   | 'INTERNAL_ERROR';
 
@@ -64,6 +68,7 @@ export interface GetScheduleResponse {
   weeklyHours: Record<string, ScheduleBlock[]>; // keys "0"(Sun)–"6"(Sat); empty array = non-working day
   timezone: string;          // IANA, e.g. "Europe/Madrid"
   minNoticeHours: number;    // hours before a slot starts to be bookable
+  cancelMinNoticeHours: number; // hours before start inside which a class can no longer be cancelled/rescheduled (admin-editable; default 2)
   bookingWindowWeeks: number;// weeks ahead booking is allowed
 }
 
@@ -122,6 +127,7 @@ export interface GetPricingResponse {
   currency: string;
   sessions: PricingSession[];
   packs: PricingPack[];
+  packValidityDays: number; // days a purchased pack stays redeemable (admin-editable; default 180)
 }
 
 // ── Payment ───────────────────────────────────────────────────────────────────
@@ -261,6 +267,37 @@ export interface PostLocaleRequest {
 }
 
 export interface PostLocaleResponse {
+  ok: true;
+}
+
+// ── Account deletion ──────────────────────────────────────────────────────────
+// GET /api/account is an ADVISORY verdict (render hint only) — DELETE re-runs the
+// whole gate server-side, so a stale verdict fails with 409 rather than deleting
+// something it shouldn't.
+
+export type DeletionBlockReason = 'ACTIVE_PACK_CREDITS' | 'CANCELLABLE_BOOKINGS';
+
+export interface GetAccountResponse {
+  eligible: boolean;
+  /** `null` exactly when `eligible` is true. Drives which screen to show — key off
+   *  this, NEVER off the counts (a pack-class booking blocks with packCredits 0). */
+  reason: DeletionBlockReason | null;
+  /** Unused classes in a non-expired pack. Any non-zero value blocks. */
+  packCredits: number;
+  /** Upcoming classes the student can still cancel himself. */
+  cancellableBookings: number;
+  /** Upcoming classes inside the 2h window. They do NOT block — he can't act on
+   *  them — but they are cancelled and lost on deletion. Name them in the copy. */
+  imminentBookings: number;
+}
+
+export interface DeleteAccountRequest {
+  /** Must equal the signed-in account's email (case-insensitive, trimmed). A
+   *  confirmation, never an identity — the account acted on comes from the bearer. */
+  confirmEmail: string;
+}
+
+export interface DeleteAccountResponse {
   ok: true;
 }
 

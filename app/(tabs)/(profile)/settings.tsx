@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as Calendar from 'expo-calendar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -19,7 +19,8 @@ import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/them
 import type { Locale } from '@/types/api';
 
 // S18 · Ajustes — settings list: notification preference (toggle + reminder lead
-// time), calendar permission, language (ES/EN) and sign-out.
+// time), calendar permission, language (ES/EN), sign-out and the account-deletion
+// entry point (S21).
 //
 // Changing the preference or lead time re-syncs the scheduled class reminders via
 // syncClassReminders() (lib/notifications-native.ts) — enabling schedules them,
@@ -295,6 +296,27 @@ export default function SettingsScreen() {
           <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
         </Pressable>
 
+        {/* ── CUENTA ── deliberately the last, quietest row on the screen: an
+            unhurried entry point to the irreversible flow, not a primary action. */}
+        <Text style={styles.sectionTitle}>{t('settings.account.title')}</Text>
+        <View style={styles.card}>
+          <Pressable
+            style={styles.row}
+            onPress={() => router.push('/(tabs)/(profile)/delete-account')}
+          >
+            <View style={styles.rowIcon}>
+              <MaterialCommunityIcons name="delete-outline" size={19} color={Colors.error} />
+            </View>
+            <View style={styles.rowTextWrap}>
+              <Text style={[styles.rowTitle, styles.rowTitleDanger]}>
+                {t('settings.account.deleteRow')}
+              </Text>
+              <Text style={styles.rowSubtitle}>{t('settings.account.deleteRowDesc')}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={19} color={Colors.textDim} />
+          </Pressable>
+        </View>
+
         <Text style={styles.footer}>gustavoai.dev · {t('common.version')} 1.0.0</Text>
       </ScrollView>
     </View>
@@ -404,6 +426,9 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontWeight: '600',
     color: Colors.text,
+  },
+  rowTitleDanger: {
+    color: Colors.error,
   },
   rowSubtitle: {
     ...TypeScale.caption,

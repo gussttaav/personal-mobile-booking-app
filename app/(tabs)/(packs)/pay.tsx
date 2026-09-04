@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   initPaymentSheet,
+  PaymentSheet,
   PaymentSheetError,
   presentPaymentSheet,
 } from '@stripe/stripe-react-native';
@@ -18,6 +19,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
+import { formatValidity } from '@/lib/format';
 import { pollPackConfirmation, PollAbortedError } from '@/lib/payment-confirmation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { SkeletonBlock } from '@/components/SkeletonBlock';
@@ -137,13 +139,15 @@ function SummaryCard({ pack, size }: { pack: PricingPack; size: number }) {
 
 // ── CreditsNote ───────────────────────────────────────────────────────────────
 
-function CreditsNote({ size }: { size: number }) {
+function CreditsNote({ size, validityDays }: { size: number; validityDays: number }) {
   const { t } = useLocale();
   return (
     <View style={styles.creditsNote}>
       <MaterialCommunityIcons name="information-outline" size={17} color={Colors.textDim} style={styles.creditsNoteIcon} />
       <Text style={styles.creditsNoteText}>
-        {t('packPay.creditsNote').replace('{size}', String(size))}
+        {t('packPay.creditsNote')
+          .replace('{size}', String(size))
+          .replace('{validity}', formatValidity(validityDays, t))}
       </Text>
     </View>
   );
@@ -313,6 +317,7 @@ export default function PackPayScreen() {
 
   const [state, setState] = useState<ScreenState>('loading');
   const [pack, setPack] = useState<PricingPack | null>(null);
+  const [validityDays, setValidityDays] = useState(180);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   // Captured on Stripe authorization; the confirmation poller keys off it.
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
@@ -334,6 +339,7 @@ export default function PackPayScreen() {
       if (!found) { setState('load_error'); return; }
       if (!mountedRef.current) return;
       setPack(found);
+      setValidityDays(pricing.packValidityDays);
       setState('summary');
     } catch {
       if (!mountedRef.current) return;
@@ -395,6 +401,12 @@ export default function PackPayScreen() {
         paymentIntentClientSecret: checkout.clientSecret,
         merchantDisplayName: 'Gustavo AI',
         style: 'alwaysDark',
+        // Card-only checkout. This hides the Link wallet button AND its
+        // "save your details" opt-in inside the card form. The remaining
+        // wallets (Klarna, Amazon Pay, Bancontact, EPS) are attached to the
+        // PaymentIntent by /api/stripe/checkout, so they can ONLY be removed
+        // server-side — not from here.
+        link: { display: PaymentSheet.LinkDisplay.NEVER },
       });
 
       if (initError) {
@@ -535,7 +547,7 @@ export default function PackPayScreen() {
           )}
 
           <SummaryCard pack={pack} size={size} />
-          <CreditsNote size={size} />
+          <CreditsNote size={size} validityDays={validityDays} />
         </ScrollView>
       )}
 

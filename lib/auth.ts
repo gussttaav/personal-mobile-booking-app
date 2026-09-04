@@ -201,3 +201,20 @@ export async function signOutGoogle(): Promise<void> {
   setStoredSession(null);
   await clearPersistedSession();
 }
+
+/**
+ * Post-deletion credential purge. Same end state as signOutGoogle(), with two
+ * differences that matter once the account no longer exists:
+ *   1. the in-memory bearer is dropped FIRST, so nothing in flight can pick it up;
+ *   2. a failing GoogleSignin.signOut() can't leave the stored session behind.
+ * Never leaves a credential that could re-register the deleted account.
+ */
+export async function purgeSession(): Promise<void> {
+  setStoredSession(null);
+  try {
+    await GoogleSignin.signOut(); // so the next sign-in shows the account chooser
+  } catch {
+    // Best-effort: the local caches below are what actually keep us signed in.
+  }
+  await clearPersistedSession();
+}

@@ -14,6 +14,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { useConfig } from '@/lib/config-context';
 import { getDeviceTimeZone } from '@/lib/grid-time';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
@@ -162,6 +163,7 @@ function ErrorBanner({ title, body }: { title: string; body: string }) {
 export default function ConfirmFreeScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const { start: startParam } = useLocalSearchParams<{ start?: string }>();
 
   const start = startParam ?? '';
@@ -311,7 +313,9 @@ export default function ConfirmFreeScreen() {
             )}
           </TouchableOpacity>
           <View style={styles.payCaption}>
-            <Text style={styles.payCaptionText}>{t('confirmFree.caption')}</Text>
+            <Text style={styles.payCaptionText}>
+              {t('confirmFree.caption').replace('{hours}', String(cancelMinNoticeHours))}
+            </Text>
           </View>
         </View>
       )}

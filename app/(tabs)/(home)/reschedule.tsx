@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useConfig } from '@/lib/config-context';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
 
@@ -27,6 +28,7 @@ function formatTimeRemaining(startsAt: string, t: TFn): string {
 export default function RescheduleScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const { token, startsAt, sessionType } = useLocalSearchParams<{
     token: string;
     startsAt: string;
@@ -37,8 +39,11 @@ export default function RescheduleScreen() {
   const safeStartsAt = startsAt ?? '';
   const safeSessionType = sessionType ?? 'session1h';
 
-  // Synchronous 2h window check — mirrors S12's cancel gate
-  const isBlocked = new Date(safeStartsAt).getTime() - 2 * 60 * 60 * 1000 <= Date.now();
+  // Synchronous window check — mirrors S12's cancel gate. Window from the server
+  // (cancelMinNoticeHours, via useConfig); re-enforced on the reschedule POST
+  // (OUTSIDE_RESCHEDULE_WINDOW).
+  const isBlocked =
+    new Date(safeStartsAt).getTime() - cancelMinNoticeHours * 60 * 60 * 1000 <= Date.now();
 
   useEffect(() => {
     if (!isBlocked) {
@@ -88,7 +93,7 @@ export default function RescheduleScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.infoTitle}>{t('reschedule.windowTitle')}</Text>
             <Text style={styles.infoBody}>
-              {t('reschedule.windowBody')}
+              {t('reschedule.windowBody').replace('{hours}', String(cancelMinNoticeHours))}
             </Text>
           </View>
         </View>

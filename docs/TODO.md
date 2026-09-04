@@ -37,6 +37,18 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
   the booking flow at the right session type/duration, but the user picks a new
   time from scratch (there is no repeat-this-slot endpoint).
 
+- **Play Data safety: web-accessible account-deletion URL.** Google Play's Data
+  safety form asks for a deletion path reachable **without installing the app**.
+  The in-app flow (S21) satisfies the in-app requirement; the form still needs a
+  URL — point it at `https://gustavoai.dev/area-personal` (the same flow on the
+  web) and cite `/privacidad` for what gets erased. Play Console task, no code.
+- **S21 against a live server.** The deletion flow is implemented but has only
+  been exercised against types and unit tests. Run §9 of ACCOUNT-DELETE-01 on
+  staging: the 400 `DELETION_NOT_CONFIRMED` path, a 409 arriving on submit
+  (re-fetches the verdict), the 404 `USER_NOT_FOUND` = success path, and — on
+  device — that backgrounding + reopening after a successful delete lands on the
+  signed-out root.
+
 ## Backend-hardening (Next.js API — other repo)
 
 These are gaps observed in the live API that the mobile client works around or

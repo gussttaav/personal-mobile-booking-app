@@ -227,6 +227,97 @@ rendering; cell height was left at 40px. Grid math covered by new cases in
 
 ---
 
+### ADR-9: Account deletion lives in S18 (Ajustes), not S17 (Perfil)
+
+**Context.** ACCOUNT-DELETE-01 added `GET`/`DELETE /api/account`, and both stores
+now require in-app deletion for any app that supports account creation (Apple
+5.1.1(v), Google Play's data-deletion policy) — so the v1.0 "delete account: web
+only" scope cut (docs/design/design-brief.md) had to be reversed. The entry point
+could go on S17 Perfil (the account-identity screen, which already shows the
+avatar, email and a sign-out button) or on S18 Ajustes.
+
+**Decision.** The entry point is a quiet row in a new **Cuenta** section at the
+BOTTOM of S18, below sign-out, pushing a dedicated screen
+(`(profile)/delete-account.tsx`, S21). Perfil gets nothing.
+
+**Why.**
+- S17 is the screen a student opens to look at their balance and history; it is
+  reached in one tap from the tab bar, and its only footer control is *Cerrar
+  sesión*. Putting an irreversible action next to a routine one, on a
+  frequently-visited screen, is exactly the mis-tap the contract's "an unhurried
+  entry point, not a primary action" guidance warns against.
+- S18 is already the destination for account-shaped state (notification prefs,
+  calendar permission, language) and is one level deeper. Perfil's own row
+  subtitle already promises "Notificaciones, idioma y **privacidad**".
+- The flow is multi-step and stateful (verdict fetch → one of three screens →
+  typed-email confirmation → in-flight lock), which is a screen, not a sheet
+  hanging off a profile card.
+
+**The teardown is the load-bearing part.** The bearer is stateless and stays valid
+for up to an hour after the account is gone; protected routes `ensureUser()`-upsert
+and `POST /api/auth/mobile` registers the user. This app auto-refreshes on 401
+(ADR-7), so the *existing* recovery path would have resurrected the deleted
+account on the very next background request. Hence `setRefreshEnabled(false)` in
+`lib/api-client.ts`, called FIRST by `useAuth().completeAccountDeletion()` and
+re-armed only by an interactive `signIn()`. `purgeSession()` (a deletion-specific
+sibling of `signOutGoogle()`) drops the in-memory bearer before anything else and
+does not let a failing `GoogleSignin.signOut()` leave the stored session behind.
+
+**Consequences.** The gate's three outcomes are rendered off `reason`, never off
+the counts — rule 2 (every cancellable class is a pack class) blocks with
+`packCredits: 0`, so a count-driven screen would print "0 unused classes"; it gets
+its own copy (`blockedPack.bodyPackClasses`). The verdict is advisory: a 409 on
+submit re-fetches it and re-renders the matching blocked screen instead of showing
+an error. Both blocked screens ship a working action (compose an email to Gustavo,
+or go to the upcoming-classes screen) — a dead end would not satisfy the store
+policies that forced this work. Deletion also cancels the OS-scheduled class
+reminders, which point at bookings that no longer exist.
+
+### ADR-10: `ConfigProvider` for the server-driven cancel window (2026-09-04)
+
+**Context.** The cancel/reschedule window (2 h) and pack validity (12 months) were
+hardcoded across the app. The backend made both admin-editable and exposed them on
+existing mobile endpoints: `cancelMinNoticeHours` on `GET /api/schedule` and
+`packValidityDays` on `GET /api/pricing` (defaults 2 / 180; the artifact's
+admin-only `/api/admin/*` reshapes are out of the mobile contract's scope). The
+brief was to consume both without each screen re-fetching just to render a policy
+number.
+
+**Decision.** Two different shapes for two different situations:
+- **`cancelMinNoticeHours`** is read by ~7 screens (the cancel/reschedule gates
+  and gate copy, the booking-detail policy banner, the pay/free captions, the
+  delete-account imminent warning) — most of which never fetched `/api/schedule`.
+  So a new `lib/config-context.tsx` (`ConfigProvider`/`useConfig`) fetches it ONCE
+  on session-ready and re-fetches on app foreground, cached module-level (the
+  auth-context pattern: a synchronous cache + reactive state), shared by all of
+  them. `ensureSchedule()` is the single memoized fetch the booking grid
+  (`schedule.tsx`) now reuses too, so `/api/schedule` is hit once app-wide.
+- **`packValidityDays`** is needed only by `packs.tsx` and `pay.tsx`, which
+  already fetch `/api/pricing`. It is read straight off those responses — no
+  provider, no extra request.
+
+**Why not put pricing in the provider too.** Symmetry would cost a redundant
+`/api/pricing` fetch (the provider's + the packs/pay screens' own, which they need
+for the live price rows anyway) and risk showing a stale price list from an
+app-start cache. The schedule scalar, by contrast, changes rarely and its screens
+had no fetch of their own — so the asymmetry is the efficient answer, not an
+oversight.
+
+**Consequences.** The provider mounts inside `AuthProvider` (the endpoint needs
+the bearer). The value is ADVISORY on the client — the gates default to 2 while
+loading and the server re-enforces the window
+(`OUTSIDE_CANCEL_WINDOW`/`OUTSIDE_RESCHEDULE_WINDOW`), so a cold or failed fetch
+degrades safely. Display: all window copy uses the app's existing compact `{hours} h`
+form (the two delete-account strings that said "2 horas"/"2 hours" were normalised
+to it, dropping the need for hour-word plurals). Pack validity formats on-device
+via `formatValidity`/`formatValidityCompact` (`lib/format.ts`): months when the day
+count is a whole number of 30-day months (180 → "6 meses"), else exact days — so
+the displayed validity now follows the backend (dropping from the old hardcoded
+"12 months" to 6 for the 180-day default). Both formatters are unit-tested. JS-only
+change — no native dep, no dev-client rebuild.
+
+---
+
 ## Part 2 — Backend-contract findings that unlocked mobile
 
 Records of what we discovered about the live Next.js API — the gaps we depended
@@ -731,3 +822,122 @@ prebuild-baked native resources, none are OTA/JS):
   in-shade small icon + badge.
 - Verified: `npx expo config --type prebuild` clean (name/adaptiveIcon/plugin all
   resolve, exit 0). On-device appearance can only be confirmed after the rebuild.
+
+### Production release configuration — OTA, env split, EAS profiles (2026-09-03)
+
+First move toward a Play Store release. The app had a working EAS link
+(`projectId` + a three-profile `eas.json`) but nothing production-shaped: the
+`production` profile carried only `autoIncrement`, and `constants/config.ts`
+hardcoded **staging** values — `API_BASE = https://staging.gustavoai.dev` and,
+less obviously, a Stripe **test** publishable key (`pk_test_…`). A production
+build off that config would have pointed real users at staging and shown them a
+payment sheet that charges nothing.
+
+Decisions:
+- **expo-updates added BEFORE the first build, deliberately.** OTA needs a native
+  module in the shipped binary; adding it after the first release would have cost
+  a second build + Play review just to unlock it. Since no production build
+  existed yet, it was free. `runtimeVersion` policy is **`fingerprint`**, not the
+  `appVersion` default `eas update:configure` writes — `appVersion` keys
+  compatibility to the hand-maintained `expo.version` string, so forgetting to
+  bump it after a native change would let an incompatible JS bundle reach an old
+  binary. `fingerprint` derives the key from the actual native module set, which
+  is the guarantee we want.
+- **Env split via `EXPO_PUBLIC_*` + EAS environment variables**, not an
+  `app.config.js` variant switch. All four values (API base, Stripe *publishable*
+  key, Supabase URL + *anon* key) are public client-side values, so none needs
+  secret handling; storing them as EAS env vars keeps `eas build` and `eas update`
+  reading the same source, which a build-profile-only `env` block would not
+  (`eas update` bundles JS on the CLI's own environment).
+- **Release builds throw on a missing var; only dev falls back to staging.** A
+  silent staging fallback in a production binary is the exact failure this work
+  exists to prevent, and the `staging` build catches a misconfiguration before any
+  user sees it. The `update:*` npm scripts hardcode `--environment` for the same
+  reason — an OTA published without it would ship a bundle with no vars at all.
+
+Gotcha found: `eas update:configure` rewrote `android.permissions` with the
+**resolved** config (plugin-injected `READ_CALENDAR`/`WRITE_CALENDAR` included)
+and appended it twice, duplicating all five entries. Restored the hand-maintained
+three-entry list; `npx expo config --type prebuild --json` re-verified the
+resolved output (5 unique permissions, `runtimeVersion: fingerprint`,
+`versionCode: undefined` per `appVersionSource: remote`). `npm test` 94/94,
+`tsc --noEmit` clean.
+
+Still open at the end of this entry: EAS env vars not yet created (need the live
+Stripe key + the separate production Supabase project's values), no Play Console
+app yet, and the production SHA-1s not yet registered on the Google OAuth Android
+client.
+
+### Account deletion (S21) — gated in-app erase (2026-09-03)
+
+Implemented ACCOUNT-DELETE-01 end to end: `GET /api/account` (advisory verdict) +
+`DELETE /api/account` (`{ confirmEmail }`, irreversible), both on a **shared
+10/hour-per-account** budget. Placement reasoning and the refresh-disarm rule are
+ADR-9; the contract is now transcribed into `docs/api/api-contract.md` under a new
+**Account** section.
+
+Shape of the work:
+- `lib/account-deletion.ts` (pure, tested — 17 cases): `gateFor()` maps a verdict
+  to one of three screens keying off `reason`; `confirmEmailMatches()` mirrors the
+  server's trimmed/case-insensitive comparison; `classifyDeleteFailure()` folds the
+  status/code matrix into five outcomes, of which `404 USER_NOT_FOUND` is a
+  **success** (the account is already gone — that is what was asked for).
+- `api.getAccount()` / `api.deleteAccount()`. The wrapper already serializes a body
+  for every non-`GET` method, so the `DELETE`-with-a-body trap the contract warns
+  about doesn't apply here; nothing else changed in the request path.
+- `useAuth().completeAccountDeletion()` runs the teardown in the mandated order and
+  ends by nulling the session, which flips the existing `<Stack.Protected>` guard —
+  no manual navigator reset. The "deleted" confirmation is an `Alert`, deliberately:
+  it is imperative and survives this screen unmounting under the guard flip, where
+  an in-screen success state could not (and nothing can pass params through a
+  guard-driven redirect to `/login`).
+- S18 gained a **Cuenta** section (last row on the screen); S21 renders four states
+  plus in-flight, all bilingual (`deleteAccount.*`, copy aligned with the web app's
+  strings from §8 of the contract). The typed-email field grows a Reanimated
+  keyboard spacer — SDK 54's edge-to-edge Android default doesn't pan (same rule as
+  the chat sheet).
+
+No native dependency, so this ships **OTA**. `npm test` 108/108, `tsc --noEmit`
+clean, `expo lint` clean for the new files. Not yet exercised against a live
+server: the curl sequence in §9 of the contract (and the on-device checks it calls
+out — body survival, a 409 arriving on submit, and backgrounding after a delete
+landing on the signed-out root) is still to run against staging.
+
+### First OTA publish — two failures worth keeping (2026-09-04)
+
+Published the first EAS Update to the `staging` channel (a card-only checkout
+change: `link.display = NEVER` on both PaymentSheet call sites). It failed twice
+before landing, and both failures are more instructive than the change itself.
+
+**1. `eas update` defaults to `--platform=all`.** The export died bundling for
+web: `@stripe/stripe-react-native`'s `NativeCardField` spec imports
+`react-native/Libraries/Utilities/codegenNativeCommands`, which web cannot
+resolve. `app.json` declares `web.output: static`, so web is a real platform as
+far as the CLI is concerned. The app only ships Android — both `update:*` scripts
+now pin `--platform android`. Note this would have hit `update:production`
+identically on the first production OTA.
+
+**2. Fixing (1) severed OTA compatibility with the installed APK.** The fix edited
+two npm *scripts*. That moved the fingerprint from `5b1bd763…` to `f76a79df…`, so
+the published update was never served to the build already on the phone. Proven
+by swapping `package.json` back to its build-time content and recomputing:
+the old file reproduces `5b1bd763…` **exactly**, matching what EAS recorded for
+build `08694b3c`.
+
+The rule this establishes is in CLAUDE.md: the fingerprint covers the whole root
+`package.json` including `scripts`, plus `app.json`/`eas.json`/config plugins. The
+"JS ships OTA" mental model is too loose — only `app/`, `lib/`, `components/` are
+genuinely outside it. Resolved by rebuilding staging (`d6d7fa42`, commit
+`6d80d8f`), whose runtimeVersion now matches the published update.
+
+Also observed: something in the local environment amends every commit immediately
+after creation (reflog shows `commit` followed by `commit (amend)`, identical tree
+and message). A commit pushed inside the same shell call goes out pre-amend, so
+local and origin diverge with duplicate content. `git pull --rebase` drops the
+duplicate by patch-id; no force-push needed.
+
+Scope note: the wallet list (Klarna, Amazon Pay, Bancontact, EPS) is NOT
+client-controllable. `initPaymentSheet` accepts `paymentMethodTypes` only on the
+deferred `intentConfiguration` flow, which the union type makes mutually exclusive
+with `paymentIntentClientSecret` — the flow this app uses. Those methods come from
+`/api/stripe/checkout` and must be removed in the Stripe Dashboard or server-side.

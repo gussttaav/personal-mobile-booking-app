@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { ConfigProvider } from '@/lib/config-context';
 import { LocaleProvider } from '@/lib/i18n/locale-context';
 import { cancelAllReminders, syncClassReminders } from '@/lib/notifications-native';
 import { STRIPE_PUBLISHABLE_KEY } from '@/constants/config';
@@ -93,19 +94,24 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={DarkTheme}>
       <AuthProvider>
-        <LocaleProvider>
-          <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
-            {/* Zoom SDK provider is mounted ONCE here (app-session singleton) so the
-                native SDK inits exactly once. It must NOT live in the (video) group:
-                that layout remounts on every entry, and the library re-calls initSdk
-                with no unmount cleanup — a second init on the already-initialized SDK
-                returns an error the native module rejects with a null userInfo, which
-                NPE-crashes the app (RNZoomVideoSdkModule.initSdk). */}
-            <ZoomVideoSdkProvider config={ZOOM_CONFIG}>
-              <RootNavigator />
-            </ZoomVideoSdkProvider>
-          </StripeProvider>
-        </LocaleProvider>
+        {/* Fetches the admin-editable booking policy (cancel window) once on
+            session-ready + on foreground, shared via useConfig(). Inside
+            AuthProvider because /api/schedule needs the bearer. */}
+        <ConfigProvider>
+          <LocaleProvider>
+            <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="gustavoai">
+              {/* Zoom SDK provider is mounted ONCE here (app-session singleton) so the
+                  native SDK inits exactly once. It must NOT live in the (video) group:
+                  that layout remounts on every entry, and the library re-calls initSdk
+                  with no unmount cleanup — a second init on the already-initialized SDK
+                  returns an error the native module rejects with a null userInfo, which
+                  NPE-crashes the app (RNZoomVideoSdkModule.initSdk). */}
+              <ZoomVideoSdkProvider config={ZOOM_CONFIG}>
+                <RootNavigator />
+              </ZoomVideoSdkProvider>
+            </StripeProvider>
+          </LocaleProvider>
+        </ConfigProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   initPaymentSheet,
+  PaymentSheet,
   PaymentSheetError,
   presentPaymentSheet,
 } from '@stripe/stripe-react-native';
@@ -19,6 +20,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
+import { useConfig } from '@/lib/config-context';
 import { pollPaymentConfirmation, PollAbortedError } from '@/lib/payment-confirmation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
@@ -213,6 +215,7 @@ interface StickyBarProps {
 
 function StickyBar({ priceCents, state, onPay, onRetry, insetBottom }: StickyBarProps) {
   const { t } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const isInitiating = state === 'initiating';
   const isRejected = state === 'rejected';
   const label = isRejected
@@ -239,7 +242,9 @@ function StickyBar({ priceCents, state, onPay, onRetry, insetBottom }: StickyBar
       {!isRejected && (
         <View style={styles.payCaption}>
           <MaterialCommunityIcons name="lock-outline" size={13} color={Colors.textDim} />
-          <Text style={styles.payCaptionText}>{t('confirm.pay.caption')}</Text>
+          <Text style={styles.payCaptionText}>
+            {t('confirm.pay.caption').replace('{hours}', String(cancelMinNoticeHours))}
+          </Text>
         </View>
       )}
     </View>
@@ -447,6 +452,12 @@ export default function ConfirmScreen() {
         paymentIntentClientSecret: checkout.clientSecret,
         merchantDisplayName: 'Gustavo AI',
         style: 'alwaysDark',
+        // Card-only checkout. This hides the Link wallet button AND its
+        // "save your details" opt-in inside the card form. The remaining
+        // wallets (Klarna, Amazon Pay, Bancontact, EPS) are attached to the
+        // PaymentIntent by /api/stripe/checkout, so they can ONLY be removed
+        // server-side — not from here.
+        link: { display: PaymentSheet.LinkDisplay.NEVER },
       });
 
       if (initError) {

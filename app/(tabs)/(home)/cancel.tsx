@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { useConfig } from '@/lib/config-context';
 import { openGustavoEmail } from '@/lib/contact';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
@@ -92,6 +93,7 @@ type Phase =
 export default function CancelScreen() {
   const insets = useSafeAreaInsets();
   const { t, locale } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const { token, startsAt, sessionType } = useLocalSearchParams<{
     token: string;
     startsAt: string;
@@ -102,8 +104,11 @@ export default function CancelScreen() {
   const safeToken = token ?? '';
   const safeSessionType = sessionType ?? 'session1h';
 
-  // Synchronous 2h window check — no useEffect needed, initialises state once
-  const isBlocked = new Date(safeStartsAt).getTime() - 2 * 60 * 60 * 1000 <= Date.now();
+  // Synchronous window check — no useEffect needed, initialises state once. The
+  // window comes from the server (cancelMinNoticeHours, via useConfig); the server
+  // re-enforces it on POST /api/cancel (OUTSIDE_CANCEL_WINDOW).
+  const isBlocked =
+    new Date(safeStartsAt).getTime() - cancelMinNoticeHours * 60 * 60 * 1000 <= Date.now();
 
   const [phase, setPhase] = useState<Phase>(isBlocked ? 'blocked' : 'confirm');
   const [cancelResult, setCancelResult] = useState<PostCancelResponse | null>(null);
@@ -338,12 +343,14 @@ export default function CancelScreen() {
               )}
             </View>
 
-            {/* 2h rule */}
+            {/* Cancellation-window rule (window from useConfig) */}
             <View style={styles.ruleRow}>
               <MaterialCommunityIcons name="check-circle-outline" size={16} color={Colors.primary} />
               <Text style={styles.ruleText}>
                 {t('cancel.confirm.ruleBefore')}
-                <Text style={styles.ruleBold}>{t('cancel.confirm.ruleHours')}</Text>
+                <Text style={styles.ruleBold}>
+                  {t('cancel.confirm.ruleHours').replace('{hours}', String(cancelMinNoticeHours))}
+                </Text>
                 {t('cancel.confirm.ruleAfter')}
               </Text>
             </View>
@@ -435,7 +442,7 @@ export default function CancelScreen() {
                 <Text style={styles.sheetTitle}>{t('cancel.blocked.title')}</Text>
                 <Text style={styles.sheetSubtitle}>
                   {phase === 'err_outside_window'
-                    ? t('cancel.blocked.subtitleOutside')
+                    ? t('cancel.blocked.subtitleOutside').replace('{hours}', String(cancelMinNoticeHours))
                     : formatTimeRemaining(safeStartsAt, t)}
                 </Text>
               </View>
@@ -451,7 +458,7 @@ export default function CancelScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.infoCardTitle}>{t('cancel.blocked.respectTitle')}</Text>
                 <Text style={styles.infoCardBody}>
-                  {t('cancel.blocked.respectBody')}
+                  {t('cancel.blocked.respectBody').replace('{hours}', String(cancelMinNoticeHours))}
                 </Text>
               </View>
             </View>

@@ -35,6 +35,12 @@ own backend.
     dev-client rebuild; the JS scheduling itself needs no rebuild. A custom
     notification SOUND would need the plugin's `sounds` array (another rebuild) —
     still deferred. See `lib/notifications-native.ts`.)
+  - expo-updates (OTA JS delivery). `runtimeVersion` policy is **`fingerprint`**
+    (top-level in `app.json`) — an update only reaches a binary with an identical
+    native fingerprint, so incompatible JS can never be pushed. NOT present in the
+    current dev-client binary (added after the last rebuild); OTA never runs in a
+    dev build anyway, so day-to-day development is unaffected — it takes effect
+    from the next `preview`/`production` build onward.
   - @zoom/react-native-videosdk **pinned EXACT 2.5.10** — legacy-arch SDK running
     through RN's New-Arch interop shim; ships no config plugin (autolinking
     handles it); requires **minSdkVersion 28** (via `expo-build-properties`,
@@ -73,6 +79,16 @@ own backend.
   soft keyboard; use Reanimated `useAnimatedKeyboard` (not KeyboardAvoidingView /
   the raw Keyboard API) to lift the chat sheet. The sheet needs a definite
   `height` (not `maxHeight`) or its `flex:1` list collapses to 0.
+- **Account deletion (S21) — disarm the refresh BEFORE dropping credentials.** The
+  bearer stays valid for up to an hour after `DELETE /api/account`, protected
+  routes `ensureUser()`-upsert, and `POST /api/auth/mobile` registers the user —
+  so a single stray 401→silent-refresh after the delete silently recreates the
+  account. `useAuth().completeAccountDeletion()` is the ONE sanctioned teardown:
+  `setRefreshEnabled(false)` → `purgeSession()` → cancel reminders → clear the
+  session (the guard routes to /login). Never hand-roll it. The verdict from
+  `GET /api/account` is ADVISORY — render off `reason`, never off the counts (a
+  pack-class booking blocks with `packCredits: 0`), and a 409 on submit means
+  re-fetch the verdict, not an error screen.
 - **Class reminders (`lib/notifications-native.ts`) rules:** an Android channel
   (`setNotificationChannelAsync`) is REQUIRED (minSdk 28) or the notification
   silently never shows. A reminder's identity is `eventId@fireAtMs` stashed in
@@ -81,6 +97,16 @@ own backend.
   `syncClassReminders` must NOT cancel when the bookings fetch fails (a blip would
   wipe valid reminders) — it bails instead. Use the SDK-54 handler fields
   (`shouldShowBanner`/`shouldShowList`/…), not the deprecated `shouldShowAlert`.
+
+- **OTA compatibility is FINGERPRINT-scoped, not "JS vs native".** With the
+  `fingerprint` runtimeVersion policy, `@expo/fingerprint` hashes the whole root
+  `package.json` (**`scripts` included**), `app.json`, `eas.json` and every config
+  plugin. Editing an npm script is enough to change `runtimeVersion` and cut OTA
+  delivery to every existing binary — the update publishes fine and is then
+  silently never served. Only the JS bundle (`app/`, `lib/`, `components/`) sits
+  outside the fingerprint. Before trusting a publish, check the two values match:
+  `eas build:list --platform android --limit 1` (runtimeVersion) vs the
+  runtimeVersion printed by `eas update`. A mismatch means rebuild, not republish.
 
 ### Design source of truth
 - Brand tokens as code: `docs/design/design-system/` (`colors_and_type.css` =
@@ -97,8 +123,9 @@ own backend.
 ```
 app/
 ├── _layout.tsx            — root Stack; GoogleSignin.configure + SplashScreen +
-│                            AuthProvider + LocaleProvider + StripeProvider +
-│                            ZoomVideoSdkProvider (root singleton); <Stack.Protected> guards
+│                            AuthProvider + ConfigProvider + LocaleProvider +
+│                            StripeProvider + ZoomVideoSdkProvider (root singleton);
+│                            <Stack.Protected> guards
 ├── login.tsx              — S01 Bienvenida / Iniciar sesión
 ├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
 ├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
@@ -115,8 +142,8 @@ app/
     │   ├── index.tsx      — S03 Inicio   ← the ONLY route at "/" (see note below)
     │   ├── booking-detail.tsx     — S11 Detalle (thin re-export of the shared
     │   │                            components/BookingDetailScreen; reached from S03)
-    │   ├── cancel.tsx             — S12 Cancelar reserva (2h gate)
-    │   ├── reschedule.tsx         — S13 Reprogramar · 2h gate → S05 mode:'reschedule'
+    │   ├── cancel.tsx             — S12 Cancelar reserva (cancelMinNoticeHours gate)
+    │   ├── reschedule.tsx         — S13 Reprogramar · cancelMinNoticeHours gate → S05 mode:'reschedule'
     │   └── reschedule-confirm.tsx — S13 confirm sheet + terminal states
     ├── (booking)/         — Tab: Reservar (calendar-outline / calendar)
     │   ├── session-type.tsx   — S04 Tipo de sesión (stack initial route; the free
@@ -143,7 +170,10 @@ app/
         │                    history up front — the header count + stats are totals)
         ├── history-detail.tsx — S20 detail · read-only past class (Dejar reseña →
         │                    /review with returnTo; Reservar otra igual)
-        └── settings.tsx   — S18 Ajustes
+        ├── settings.tsx   — S18 Ajustes
+        └── delete-account.tsx — S21 Eliminar cuenta (gated: verdict → blocked-pack /
+                             blocked-bookings / type-your-email confirm; entered from
+                             S18 only — the store-required in-app deletion path)
 ```
 - Screens outside `(tabs)` automatically hide the tab bar (Expo Router behaviour).
 - Each tab group has its own `_layout.tsx` wrapping a `<Stack>` with
@@ -163,27 +193,46 @@ app/
   "dedupe" them into one file. (Why: docs/DEVLOG.md, S08→S11 peek.)
 
 ### Key files
-- `constants/config.ts` — `API_BASE` (prod: https://www.gustavoai.dev);
-  `CONTACT_EMAIL` (`contacto@gustavoai.dev` — the direct line to Gustavo).
+- `constants/config.ts` — environment-dependent values (`API_BASE`,
+  `STRIPE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`) read from
+  `EXPO_PUBLIC_*` build-time vars via the local `fromEnv()` helper; dev falls back
+  to staging, **release builds THROW on a missing var** rather than silently
+  falling back (see Release below). Static values stay inline: `CONTACT_EMAIL`
+  (`contacto@gustavoai.dev` — the direct line to Gustavo), `GOOGLE_REVIEW_URL`,
+  `TERMS_URL`/`PRIVACY_URL`.
 - `lib/contact.ts` — `openGustavoEmail({subject, body, noMailAppTitle,
   noMailAppBody})`: opens the mail composer pre-filled, alert-fallback if no mail
   app. The ONLY sanctioned "contact Gustavo" path, and ONLY a failure escape
-  hatch (cancel/reschedule `err_generic`). The 2h cancel/reschedule rule has NO
-  override — inside the window the blocked sheets offer no alternative.
+  hatch (cancel/reschedule `err_generic`). The cancel/reschedule window rule has NO
+  override — inside the window the blocked sheets offer no alternative. The window
+  length is server-driven (`cancelMinNoticeHours` via `useConfig`), not hardcoded.
 - `lib/auth.ts` — auth module: `signInWithGoogle`, `exchangeGoogleToken`,
   `refreshSession` (single-flight silent refresh), `signOutGoogle`,
-  `hydrateSession`, `AuthSession`/`AuthUser` types, `AuthError`,
+  `hydrateSession`, `purgeSession` (post-deletion credential purge — clears the
+  in-memory bearer FIRST and survives a failing Google sign-out),
+  `AuthSession`/`AuthUser` types, `AuthError`,
   `getStoredSession`/`setStoredSession` (synchronous in-memory cache). Screens
   import auth from here — never call `GoogleSignin` or the auth endpoint directly.
 - `lib/token-store.ts` — expo-secure-store wrapper; whole session as one JSON blob
   under `auth.session` (`loadPersistedSession`/`persistSession`/`clearPersistedSession`).
 - `lib/auth-context.tsx` — `AuthProvider`/`useAuth`: reactive `session`+`isReady`
-  (+`expired`) driving the `<Stack.Protected>` guards; exposes `signIn`/`signOut`.
+  (+`expired`) driving the `<Stack.Protected>` guards; exposes
+  `signIn`/`signOut`/`completeAccountDeletion` (the S21 teardown; `signIn` re-arms
+  the refresh it disarmed).
+- `lib/config-context.tsx` — `ConfigProvider`/`useConfig`: the admin-editable
+  booking policy carried by `/api/schedule`, fetched ONCE on session-ready and
+  refreshed on app foreground, cached module-level (auth-style synchronous cache +
+  reactive state) and shared app-wide. Exposes `cancelMinNoticeHours` (the
+  cancel/reschedule window, default 2 — see below) + the raw `schedule`;
+  `ensureSchedule()` is the single memoized fetch the booking grid reuses so
+  `/api/schedule` is hit once. ADVISORY on the client — the server re-enforces the
+  window (`OUTSIDE_CANCEL_WINDOW`/`OUTSIDE_RESCHEDULE_WINDOW`).
 - `types/api.ts` — TS interfaces for all API request/response shapes + domain
   error codes.
 - `lib/api-client.ts` — typed fetch wrapper; use `api.*` from here, never call
   `fetch` directly. Reads the bearer synchronously via `getStoredSession()`;
-  `registerRefreshHook(fn)` (wired by auth-context); `ApiError` `{ status, code,
+  `registerRefreshHook(fn)` (wired by auth-context) + `setRefreshEnabled(bool)`
+  (the deletion disarm — see gotchas); `ApiError` `{ status, code,
   requiresAuth? }`.
 - `app/_layout.tsx` — app init (see nav tree); provider stack + route guards.
 - `lib/grid-time.ts` — pure tz/grid math for S05: `weeklyHours` frame → device-tz
@@ -199,10 +248,17 @@ app/
 - `lib/history.ts` — pure S20 logic: `fetchAllHistory()` (walks the keyset cursor
   to the last page; page fetcher injected), `effectiveStatus()` (the settlement-lag
   rule — see gotchas), `groupByMonth()`, `historyStats()`. Tested.
+- `lib/account-deletion.ts` — PURE S21 logic: `gateFor()` (verdict → which of the
+  three deletion screens; keys off `reason`, never the counts),
+  `confirmEmailMatches()` (trimmed, case-insensitive — same rule the server
+  applies) and `classifyDeleteFailure()` (404 `USER_NOT_FOUND` = success, 409 =
+  re-fetch the verdict). Tested.
 - `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
   `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
-  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"). NEW
-  screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
+  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"),
+  `formatValidityCompact`/`formatValidity` (pack validity from `packValidityDays`,
+  in DAYS — shows whole 30-day months as "6 m"/"6 meses" else exact days; tested).
+  NEW screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
 - `lib/class-reminders.ts` — PURE class-reminder logic (no React/expo, `now`
   injectable): `computeDesiredReminders()` (fireAt = start − lead, drops non-future,
   caps at `MAX_SCHEDULED_REMINDERS`=60 for iOS's 64-pending limit) +
@@ -232,6 +288,12 @@ app/
   batch native deps (a new one needs a dev-client rebuild).
 - Auth only via `lib/auth.ts`; all backend calls via `api` from
   `lib/api-client.ts` (screens never call `fetch` directly).
+- **Environment-dependent values go through `constants/config.ts`, never inline.**
+  A new one is a `fromEnv(process.env.EXPO_PUBLIC_X, …)` export plus an
+  `eas env:create` in BOTH the `preview` and `production` EAS environments
+  (`preview` is what the `staging` build profile reads). Metro
+  inlines `EXPO_PUBLIC_*` textually — always reference `process.env.EXPO_PUBLIC_X`
+  as a literal, never a computed key.
 - **Scope fence:** `lib/supabase.ts` + `lib/use-chat-session.ts` are CHAT-ONLY.
   Payments are POLL-ONLY (`lib/payment-confirmation.ts`) — do NOT reuse the
   Realtime path for payments. (Why: docs/DEVLOG.md ADR-1, ADR-3.)
@@ -284,6 +346,35 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
   as-is (`cancel.refundBody`, "…menos la comisión de Stripe" / "…minus the Stripe
   fee" — not softened). Pack product names ("Pack Esencial"/"Pack Intensivo") are
   NOT translated.
+
+### Release / distribution (Android)
+- **Two update channels.** JS-only changes ship OTA via EAS Update; anything
+  native (a dependency, a permission, an `app.json` plugin, an SDK bump) needs a
+  new build + Play submission. The `fingerprint` runtimeVersion policy enforces
+  the boundary — it will refuse to serve an update to a mismatched binary.
+- **eas.json profiles** → `development` (apk, dev client, staging defaults),
+  `staging` (apk, internal distribution, **production values** — the release
+  candidate you sideload to test before promoting), `production` (**app-bundle**,
+  `autoIncrement`). Each profile pins both a `channel` and an `environment`.
+  Profile + channel names track the git branches (`staging` / `main` →
+  `production`); the `environment` axis keeps EAS's fixed name `preview`, since
+  EAS provides exactly `development`/`preview`/`production` there.
+- **`appVersionSource: remote`** — EAS owns `versionCode`; do NOT add one to
+  `app.json`. Bump `expo.version` by hand for a user-visible version name.
+- **Always publish updates via the npm scripts** (`npm run update:staging` /
+  `update:production`). They pass two flags that are both load-bearing:
+  `--environment` (without it the OTA bundle is built with NO `EXPO_PUBLIC_*`
+  vars and every client throws on launch) and `--platform android` (without it
+  `eas update` defaults to `--platform=all`, and bundling for web dies on
+  `@stripe/stripe-react-native` importing react-native internals).
+- **Google Sign-In needs the production SHA-1s.** The Play build is signed with a
+  different certificate than dev builds, and Play App Signing re-signs on Google's
+  side, so BOTH the EAS upload-keystore SHA-1 and the Play App Signing SHA-1 must
+  be registered on the Google OAuth **Android** client (package
+  `dev.gustavoai.mobile`). Missing them = sign-in works in dev, fails in
+  production.
+- The Play Store *listing* title is set in Play Console (≤30 chars), independent
+  of `expo.name`.
 
 ### Deferred / follow-ups
 Full list in [docs/TODO.md](docs/TODO.md). Ship blocker to flag: the Apple

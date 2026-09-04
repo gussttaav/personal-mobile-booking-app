@@ -95,6 +95,12 @@
         "projectId": "3a7ad02a-b234-44cc-9688-7b4359f1a226"
       }
     },
-    "owner": "gussttaav"
+    "owner": "gussttaav",
+    "updates": {
+      "url": "https://u.expo.dev/3a7ad02a-b234-44cc-9688-7b4359f1a226"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    }
   }
 }

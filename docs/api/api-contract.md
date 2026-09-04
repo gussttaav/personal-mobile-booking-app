@@ -223,7 +223,8 @@ on-device. The free 15-min intro is not included (it is not a priced product).
       "savingsCents":        2000,
       "savingsPct":          13
     }
-  ]
+  ],
+  "packValidityDays": 180
 }
 ```
 
@@ -240,6 +241,7 @@ on-device. The free 15-min intro is not included (it is not a priced product).
 | `packs[].originalAmountCents` | `number \| null` | Cost of the same hours as single 1h sessions (the strikethrough). `null` when the pack is not cheaper |
 | `packs[].savingsCents` | `number \| null` | `originalAmountCents − amountCents`. `null` when no discount |
 | `packs[].savingsPct` | `number \| null` | Whole-percent discount vs. single sessions. `null` when no discount |
+| `packValidityDays` | `number` | Days a purchased pack stays redeemable, in **days**. **Admin-editable** (default `180`); format on-device — the backend models a month as 30 days (`180` = 6 months). Applies to all packs |
 
 > The `originalAmountCents` / `savings*` fields are **derived** server-side from the 1h
 > session price (`1h price × hours`), so they always stay consistent with the live prices.
@@ -259,7 +261,8 @@ on-device. The free 15-min intro is not included (it is not a priced product).
 ### `GET /api/schedule`
 
 Returns the booking schedule configuration: the teacher's working hours per day, the
-minimum advance notice required before a slot can be booked, and the schedule timezone.
+minimum advance notice required before a slot can be booked, the cancel/reschedule
+window (`cancelMinNoticeHours`), and the schedule timezone.
 Use this to render the bookable-hours grid and to gate slot selection client-side. The
 values are **admin-editable** (changed from `/admin/schedule`) — fetch on app start and
 after returning from background; the response reflects edits immediately.
@@ -287,6 +290,7 @@ after returning from background; the response reflects edits immediately.
   },
   "timezone": "Europe/Madrid",
   "minNoticeHours": 5,
+  "cancelMinNoticeHours": 2,
   "bookingWindowWeeks": 8
 }
 ```
@@ -300,7 +304,8 @@ after returning from background; the response reflects edits immediately.
 | `weeklyHours["d"][].startMinute` | `number` | Block start as minutes since local midnight (e.g. `540` = 09:00). Range `0`–`1439` |
 | `weeklyHours["d"][].endMinute` | `number` | Block end as minutes since local midnight (e.g. `810` = 13:30). Always `> startMinute`; range `1`–`1440` (`1440` = 24:00) |
 | `timezone` | `string` | IANA timezone the working hours are expressed in (e.g. `"Europe/Madrid"`) |
-| `minNoticeHours` | `number` | Minimum hours between now and a slot's start for it to be bookable. Enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`) |
+| `minNoticeHours` | `number` | Minimum hours between now and a slot's start for it to be **bookable**. Enforced server-side on `POST /api/book` (a too-soon slot yields `SLOT_UNAVAILABLE`) |
+| `cancelMinNoticeHours` | `number` | The cancel/reschedule window: hours before a class's start inside which it can no longer be cancelled or rescheduled. **Admin-editable** (default `2`); distinct from `minNoticeHours` (booking advance). Enforced server-side on `POST /api/cancel` (`OUTSIDE_CANCEL_WINDOW`) and on a reschedule `POST /api/book` (`OUTSIDE_RESCHEDULE_WINDOW`) |
 | `bookingWindowWeeks` | `number` | How many weeks ahead booking is allowed (currently fixed at `8`) |
 
 > Times are **minutes since midnight in `timezone`**, not UTC — convert for display
@@ -377,7 +382,7 @@ Pack sessions deduct one credit atomically.
 | 400 | `REQUIRES_PAYMENT` | `session1h`/`session2h` sent without `rescheduleToken` |
 | 400 | `INSUFFICIENT_CREDITS` | Pack session with zero credits |
 | 400 | `INVALID_RESCHEDULE_TOKEN` | Token not found or already used |
-| 400 | `OUTSIDE_RESCHEDULE_WINDOW` | Session starts in < 2 hours |
+| 400 | `OUTSIDE_RESCHEDULE_WINDOW` | Session starts within the cancel/reschedule window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`) |
 | 400 | `SESSION_TYPE_MISMATCH` | Reschedule token session type differs |
 | 400 | `RESCHEDULE_TOKEN_CONSUMED` | Token already consumed by a concurrent request |
 | 409 | `SLOT_UNAVAILABLE` | Slot was taken between availability check and booking |
@@ -389,7 +394,8 @@ Pack sessions deduct one credit atomically.
 
 Cancels a booking using the `cancelToken` returned at booking time. No user session
 is required — the token is the credential. Cancellation is only allowed more than
-**2 hours** before the session start. Pack credits are restored on successful cancellation.
+**`cancelMinNoticeHours`** (admin-editable, default 2h — see `GET /api/schedule`)
+before the session start. Pack credits are restored on successful cancellation.
 
 | Property | Value |
 |---|---|
@@ -423,7 +429,7 @@ is required — the token is the credential. Cancellation is only allowed more t
 | 403 | (message) | CSRF check failed |
 | 400 | (message) | Missing or non-string `token` field |
 | 400 | `INVALID_CANCEL_TOKEN` | Token not found in database |
-| 400 | `OUTSIDE_CANCEL_WINDOW` | Session starts in < 2 hours |
+| 400 | `OUTSIDE_CANCEL_WINDOW` | Session starts within the cancel window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`) |
 | 400 | `CANCEL_TOKEN_CONSUMED` | Token already used (concurrent cancellation) |
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
 
@@ -824,6 +830,148 @@ Persists the user's preferred locale to the database (`users.locale`) and sets t
 
 ---
 
+## Account
+
+> **Read this before implementing deletion.** On a `200` from `DELETE /api/account`
+> the app **must immediately discard its bearer and stop making authenticated
+> calls**. The bearer is stateless — it stays cryptographically valid for up to an
+> hour after the account is gone, and several routes call `ensureUser()`, which
+> *upserts*: one stray authenticated request silently recreates an empty account.
+> The same applies with more force to the **refresh path** — re-exchanging a Google
+> ID token at `POST /api/auth/mobile` registers the user, so an auto-refresh on
+> `401` **will** resurrect the deleted account unless it is disarmed first.
+> (Mobile: `setRefreshEnabled(false)` in `lib/api-client.ts`, driven by
+> `useAuth().completeAccountDeletion`.)
+
+Both endpoints ride the existing mobile auth flow — no new credentials and no new
+configuration. Nothing about deletion is behind its own flag: if sign-in works,
+deletion works. They share **one rate-limit budget: 10 requests per hour per
+account** — don't poll the verdict.
+
+### `GET /api/account`
+
+Asks whether this account may be deleted, and if not, why. Safe to call whenever
+the deletion screen opens — it writes nothing. Call it before showing any delete
+affordance, so the student sees the real state instead of a button that fails.
+
+| Property | Value |
+|---|---|
+| Auth required | Yes — 401 if absent |
+| CSRF | No |
+| Rate limit | 10 req/hour per account (**shared** with `DELETE /api/account`) |
+
+**Success `200`:**
+```json
+{
+  "eligible":            false,
+  "reason":              "ACTIVE_PACK_CREDITS",
+  "packCredits":         4,
+  "cancellableBookings": 2,
+  "imminentBookings":    1
+}
+```
+
+**Field reference:**
+
+| Field | Type | Notes |
+|---|---|---|
+| `eligible` | `boolean` | May this account be deleted right now |
+| `reason` | `"ACTIVE_PACK_CREDITS" \| "CANCELLABLE_BOOKINGS" \| null` | `null` exactly when `eligible` is `true`. Drives which screen to show |
+| `packCredits` | `number` | Unused classes in a non-expired pack. Any non-zero value blocks |
+| `cancellableBookings` | `number` | Upcoming classes the student can still cancel himself |
+| `imminentBookings` | `number` | Upcoming classes inside the cancellation window (`cancelMinNoticeHours`, default 2h — see `GET /api/schedule`). These do **not** block — he can't act on them — but they are cancelled and lost on deletion. Name them in the confirmation copy |
+
+> **Advisory only.** Treat the verdict as a hint for rendering, never as
+> permission. `DELETE` re-runs the whole check server-side, so a stale verdict
+> fails safely with a **409** rather than deleting something it shouldn't.
+
+**The gate, rung by rung.** The server evaluates these in order and stops at the
+first match; the app mirrors it with one screen per outcome.
+
+| # | Condition | `reason` | What the app does |
+|---|---|---|---|
+| 1 | Unused credits in an active pack | `ACTIVE_PACK_CREDITS` | Only a refund clears this — send the student to email Gustavo, who refunds the remaining classes under the cancellation policy |
+| 2 | Every cancellable class is a **pack** class | `ACTIVE_PACK_CREDITS` | Cancelling a pack class returns its credit to the pack, landing back on rule 1, so the server routes straight to the refund path. **`packCredits` is `0` here — key the screen off `reason`, never off the counts** |
+| 3 | At least one cancellable non-pack class | `CANCELLABLE_BOOKINGS` | He can act: send him to the upcoming-classes screen to cancel them, so any refund follows the normal policy. Warn that cancelling a pack class returns a credit and then needs the email route |
+| 4 | Nothing redeemable, nothing actionable | `null` (`eligible: true`) | Show the confirmation. When `imminentBookings > 0`, say plainly that those classes are cancelled with no refund — they start inside the cancellation window (`cancelMinNoticeHours`), so he cannot cancel them himself |
+
+**Errors:**
+
+| Status | `error` | Condition |
+|---|---|---|
+| 401 | `Unauthorized` | Missing, malformed or expired bearer |
+| 429 | (message) | Shared 10/hour budget exceeded |
+| 500 | `INTERNAL_ERROR` | Unexpected server error |
+
+---
+
+### `DELETE /api/account`
+
+Erases the account and every row attached to it — bookings, class history,
+credits, course progress and answers, payment records — in one database
+transaction, and tears down the Google Calendar events of any imminent classes on
+the way out. **Irreversible.**
+
+| Property | Value |
+|---|---|
+| Auth required | Yes — 401 if absent |
+| CSRF | No — bearer requests are exempt (a `403 Forbidden` means a session *cookie* is riding along with the bearer; strip the cookie jar) |
+| Rate limit | 10 req/hour per account (**shared** with `GET /api/account`) |
+
+**Request body:**
+```json
+{ "confirmEmail": "student@example.com" }
+```
+
+`confirmEmail` must equal the signed-in account's address. The comparison is
+case-insensitive and trims whitespace, so `"  Student@Example.COM "` is accepted.
+It is a confirmation, never an identity: the account acted on always comes from
+the bearer.
+
+> **A `DELETE` with a body.** Some HTTP stacks quietly drop request bodies on
+> `DELETE`. React Native's `fetch` sends it (and so does `lib/api-client.ts`,
+> which serializes `body` for every non-`GET` method), but several wrapper
+> libraries do not. A correct call coming back `400 INVALID_REQUEST` means the
+> body never arrived.
+
+**Success `200`:**
+```json
+{ "ok": true }
+```
+
+Deliberately empty of detail — the per-table counts go to the server log, not to
+the client.
+
+**Errors:**
+
+| Status | `error` | Condition | What the app does |
+|---|---|---|---|
+| 400 | `INVALID_REQUEST` | Malformed body or not an email address | A client bug — not something to show the user |
+| 400 | `DELETION_NOT_CONFIRMED` | The typed address doesn't match the account | Keep the form open and mark the field |
+| 401 | `Unauthorized` | Missing, malformed or expired bearer | Refresh — *unless* deletion already succeeded |
+| 403 | `Forbidden` | A cookie is being sent alongside the bearer | Should never happen on mobile |
+| 404 | `USER_NOT_FOUND` | Credential valid, account already gone | Treat exactly like success: tear down and sign out |
+| 409 | `DELETION_BLOCKED_ACTIVE_PACK` | Rule 1 / 2 | Re-fetch the verdict and show the pack-credits screen |
+| 409 | `DELETION_BLOCKED_CANCELLABLE_BOOKINGS` | Rule 3 | Re-fetch the verdict and show the cancel-your-classes screen |
+| 429 | (message) | Shared 10/hour budget exceeded | Back off; don't poll |
+| 500 | `INTERNAL_ERROR` | Unexpected server error | Offer a retry |
+
+> **Parsing rule.** `SCREAMING_SNAKE_CASE` values are stable machine codes —
+> switch on them. `"Unauthorized"`, `"Forbidden"` and `"Demasiadas peticiones"`
+> are human strings that happen to sit in the same field; key off the HTTP status
+> for those, never the text.
+
+**Post-deletion teardown (order is load-bearing):**
+
+1. **Disarm the 401 refresh interceptor first** — a refresh re-registers the user.
+2. Drop every credential (bearer in memory + secure storage, and
+   `GoogleSignin.signOut()` so the next sign-in shows the chooser).
+3. Drop cached traces of the account (scheduled class reminders, cached lists).
+4. Reset navigation to the signed-out root — never pop back into an authenticated
+   screen.
+
+---
+
 ## History
 
 ### `GET /api/my-bookings`
@@ -1123,6 +1271,7 @@ Checks whether the authenticated student is subscribed to a given list.
 | `GET /api/schedule` | 60/min | Per IP |
 | `GET /api/credits` | 60/min | Per IP |
 | `GET /api/my-bookings/history` | 60/min | Per IP |
+| `GET /api/account`, `DELETE /api/account` | 10/hour (shared) | Per account |
 | `POST /api/zoom/token` | 60/min | Per IP |
 | `POST /api/chat` (authenticated) | 20/min | Per user email |
 | `POST /api/chat-session` | 20/min | Per IP |
@@ -1140,16 +1289,20 @@ Checks whether the authenticated student is subscribed to a given list.
 | `INSUFFICIENT_CREDITS` | 400 | Student has no pack credits left |
 | `SLOT_UNAVAILABLE` | 409 | Time slot was taken by a concurrent booking |
 | `INVALID_RESCHEDULE_TOKEN` | 400 | Reschedule token not found or already used |
-| `OUTSIDE_RESCHEDULE_WINDOW` | 400 | Session starts in < 2 hours |
+| `OUTSIDE_RESCHEDULE_WINDOW` | 400 | Session starts within the cancel/reschedule window (`cancelMinNoticeHours`, default 2h) |
 | `SESSION_TYPE_MISMATCH` | 400 | Reschedule token session type doesn't match request |
 | `RESCHEDULE_TOKEN_CONSUMED` | 400 | Token already consumed by a concurrent request |
 | `REQUIRES_PAYMENT` | 400 | Paid session type sent without a reschedule token |
 | `INVALID_CANCEL_TOKEN` | 400 | Cancel token not found |
-| `OUTSIDE_CANCEL_WINDOW` | 400 | Session starts in < 2 hours (cancellation window closed) |
+| `OUTSIDE_CANCEL_WINDOW` | 400 | Session starts within the cancellation window (`cancelMinNoticeHours`, default 2h) |
 | `CANCEL_TOKEN_CONSUMED` | 400 | Cancel token already used |
 | `BOOKING_NOT_FOUND` | 400 | Booking not found for the given identifier |
 | `INVALID_CURSOR` | 400 | Malformed pagination cursor (`GET /api/my-bookings/history`) |
 | `UNAUTHORIZED` | 403 | Authenticated user is not the owner of this resource |
 | `ALREADY_SUBSCRIBED` | 409 | User is already on this mailing list |
 | `REVIEW_BOOKING_NOT_FOUND` | 404 | No eligible booking found for review |
+| `DELETION_NOT_CONFIRMED` | 400 | `confirmEmail` doesn't match the signed-in account |
+| `USER_NOT_FOUND` | 404 | Credential is valid but the account is already deleted |
+| `DELETION_BLOCKED_ACTIVE_PACK` | 409 | Unused credits in an active pack — refund required first |
+| `DELETION_BLOCKED_CANCELLABLE_BOOKINGS` | 409 | Upcoming classes the student can still cancel |
 | `INTERNAL_ERROR` | 500 | Unhandled server error (reported to Sentry) |

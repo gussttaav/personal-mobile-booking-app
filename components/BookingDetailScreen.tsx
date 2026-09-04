@@ -19,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
+import { useConfig } from '@/lib/config-context';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
 import type { Locale } from '@/types/api';
@@ -101,6 +102,7 @@ function payLabel(sessionType: string, t: TFn, packSize?: string): string {
 export default function BookingDetailScreen() {
   const insets = useSafeAreaInsets();
   const { t, locale } = useLocale();
+  const { cancelMinNoticeHours } = useConfig();
   const params = useLocalSearchParams<{
     token: string;
     joinToken: string;
@@ -304,7 +306,7 @@ export default function BookingDetailScreen() {
         <View style={styles.policyBanner}>
           <MaterialCommunityIcons name="shield-check-outline" size={16} color={Colors.textDim} />
           <Text style={styles.policyText}>
-            {t('bookingDetail.policyBanner')}
+            {t('bookingDetail.policyBanner').replace('{hours}', String(cancelMinNoticeHours))}
           </Text>
         </View>
 

@@ -859,3 +859,42 @@ clean, `expo lint` clean for the new files. Not yet exercised against a live
 server: the curl sequence in §9 of the contract (and the on-device checks it calls
 out — body survival, a 409 arriving on submit, and backgrounding after a delete
 landing on the signed-out root) is still to run against staging.
+
+### First OTA publish — two failures worth keeping (2026-09-04)
+
+Published the first EAS Update to the `staging` channel (a card-only checkout
+change: `link.display = NEVER` on both PaymentSheet call sites). It failed twice
+before landing, and both failures are more instructive than the change itself.
+
+**1. `eas update` defaults to `--platform=all`.** The export died bundling for
+web: `@stripe/stripe-react-native`'s `NativeCardField` spec imports
+`react-native/Libraries/Utilities/codegenNativeCommands`, which web cannot
+resolve. `app.json` declares `web.output: static`, so web is a real platform as
+far as the CLI is concerned. The app only ships Android — both `update:*` scripts
+now pin `--platform android`. Note this would have hit `update:production`
+identically on the first production OTA.
+
+**2. Fixing (1) severed OTA compatibility with the installed APK.** The fix edited
+two npm *scripts*. That moved the fingerprint from `5b1bd763…` to `f76a79df…`, so
+the published update was never served to the build already on the phone. Proven
+by swapping `package.json` back to its build-time content and recomputing:
+the old file reproduces `5b1bd763…` **exactly**, matching what EAS recorded for
+build `08694b3c`.
+
+The rule this establishes is in CLAUDE.md: the fingerprint covers the whole root
+`package.json` including `scripts`, plus `app.json`/`eas.json`/config plugins. The
+"JS ships OTA" mental model is too loose — only `app/`, `lib/`, `components/` are
+genuinely outside it. Resolved by rebuilding staging (`d6d7fa42`, commit
+`6d80d8f`), whose runtimeVersion now matches the published update.
+
+Also observed: something in the local environment amends every commit immediately
+after creation (reflog shows `commit` followed by `commit (amend)`, identical tree
+and message). A commit pushed inside the same shell call goes out pre-amend, so
+local and origin diverge with duplicate content. `git pull --rebase` drops the
+duplicate by patch-id; no force-push needed.
+
+Scope note: the wallet list (Klarna, Amazon Pay, Bancontact, EPS) is NOT
+client-controllable. `initPaymentSheet` accepts `paymentMethodTypes` only on the
+deferred `intentConfiguration` flow, which the union type makes mutually exclusive
+with `paymentIntentClientSecret` — the flow this app uses. Those methods come from
+`/api/stripe/checkout` and must be removed in the Stripe Dashboard or server-side.

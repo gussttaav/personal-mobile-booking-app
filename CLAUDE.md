@@ -98,6 +98,16 @@ own backend.
   wipe valid reminders) — it bails instead. Use the SDK-54 handler fields
   (`shouldShowBanner`/`shouldShowList`/…), not the deprecated `shouldShowAlert`.
 
+- **OTA compatibility is FINGERPRINT-scoped, not "JS vs native".** With the
+  `fingerprint` runtimeVersion policy, `@expo/fingerprint` hashes the whole root
+  `package.json` (**`scripts` included**), `app.json`, `eas.json` and every config
+  plugin. Editing an npm script is enough to change `runtimeVersion` and cut OTA
+  delivery to every existing binary — the update publishes fine and is then
+  silently never served. Only the JS bundle (`app/`, `lib/`, `components/`) sits
+  outside the fingerprint. Before trusting a publish, check the two values match:
+  `eas build:list --platform android --limit 1` (runtimeVersion) vs the
+  runtimeVersion printed by `eas update`. A mismatch means rebuild, not republish.
+
 ### Design source of truth
 - Brand tokens as code: `docs/design/design-system/` (`colors_and_type.css` =
   exact color/type values, `_ds_manifest.json` = components). These drive

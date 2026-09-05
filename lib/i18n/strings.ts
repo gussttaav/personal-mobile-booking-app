@@ -62,7 +62,7 @@ const es = {
       title: 'Ahorra con un pack',
       discount: '-15%',
       body: 'Compra 5 o 10 clases por adelantado y reserva con crédito cuando quieras.',
-      trust: 'Cancela gratis hasta 24 h antes',
+      trust: 'Cancela gratis hasta {hours} h antes',
     },
     withClasses: {
       upcomingTitle: 'Próximas clases',
@@ -792,7 +792,7 @@ const en: Dictionary = {
       title: 'Save with a pack',
       discount: '-15%',
       body: 'Buy 5 or 10 classes up front and book with credit whenever you like.',
-      trust: 'Free cancellation up to 24 h before',
+      trust: 'Free cancellation up to {hours} h before',
     },
     withClasses: {
       upcomingTitle: 'Upcoming classes',

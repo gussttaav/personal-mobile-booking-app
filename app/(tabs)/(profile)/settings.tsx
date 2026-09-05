@@ -11,6 +11,7 @@ import { leadTimeLabel } from '@/lib/format';
 import { syncClassReminders } from '@/lib/notifications-native';
 import {
   DEFAULT_NOTIFICATION_PREFS,
+  LEAD_TIME_OPTIONS,
   loadNotificationPrefs,
   persistNotificationPrefs,
   type NotificationPreferences,
@@ -32,8 +33,6 @@ const LANGUAGE_OPTIONS: { value: Locale; labelKey: 'settings.language.es' | 'set
   { value: 'es', labelKey: 'settings.language.es' },
   { value: 'en', labelKey: 'settings.language.en' },
 ];
-
-const LEAD_TIMES = [5, 10, 15, 30, 60];
 
 export default function SettingsScreen() {
   const { locale, setLocale, t } = useLocale();
@@ -199,7 +198,7 @@ export default function SettingsScreen() {
               </View>
             </View>
             <View style={styles.pillRow}>
-              {LEAD_TIMES.map((m) => {
+              {LEAD_TIME_OPTIONS.map((m) => {
                 const active = prefs.leadTimeMinutes === m;
                 return (
                   <Pressable

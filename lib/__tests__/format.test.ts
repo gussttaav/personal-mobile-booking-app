@@ -1,4 +1,4 @@
-import { formatValidity, formatValidityCompact } from '../format';
+import { formatValidity, formatValidityCompact, leadTimeLabel } from '../format';
 import { translate, type TranslationKey } from '../i18n/strings';
 import type { Locale } from '../../types/api';
 
@@ -38,5 +38,19 @@ describe('formatValidity', () => {
     expect(formatValidity(200, en)).toBe('200 days');
     expect(formatValidity(1, es)).toBe('1 día');
     expect(formatValidity(1, en)).toBe('1 day');
+  });
+});
+
+describe('leadTimeLabel', () => {
+  it('renders the three offered lead times', () => {
+    expect(leadTimeLabel(30)).toBe('30 min');
+    expect(leadTimeLabel(60)).toBe('1 h');
+    expect(leadTimeLabel(1440)).toBe('1 d'); // a full day
+  });
+
+  it('prefers the largest fitting unit', () => {
+    expect(leadTimeLabel(120)).toBe('2 h');
+    expect(leadTimeLabel(2880)).toBe('2 d');
+    expect(leadTimeLabel(45)).toBe('45 min');
   });
 });

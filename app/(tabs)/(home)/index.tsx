@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '@/lib/api-client';
 import { getStoredSession } from '@/lib/auth';
+import { useConfig } from '@/lib/config-context';
 import { syncClassReminders } from '@/lib/notifications-native';
 import { BookingRow } from '@/components/BookingRow';
 import { Card } from '@/components/Card';
@@ -237,6 +238,7 @@ function LoadingSkeleton() {
 function EmptyState({ userName, returningLearner }: { userName: string; returningLearner: boolean }) {
   const insets = useSafeAreaInsets();
   const t = useT();
+  const { cancelMinNoticeHours } = useConfig();
   const name = userName.split(' ')[0] || '';
   // Returning learners (have taken a real class before) get "keep learning" copy;
   // new users keep the first-class pitch.
@@ -308,7 +310,9 @@ function EmptyState({ userName, returningLearner }: { userName: string; returnin
 
         <View style={styles.trustBadge}>
           <MaterialCommunityIcons name="shield-check-outline" size={14} color={Colors.textDim} />
-          <Text style={styles.trustText}>{t('home.crossSell.trust')}</Text>
+          <Text style={styles.trustText}>
+            {t('home.crossSell.trust').replace('{hours}', String(cancelMinNoticeHours))}
+          </Text>
         </View>
       </ScrollView>
     </View>

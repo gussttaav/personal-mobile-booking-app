@@ -97,6 +97,15 @@ own backend.
   `syncClassReminders` must NOT cancel when the bookings fetch fails (a blip would
   wipe valid reminders) — it bails instead. Use the SDK-54 handler fields
   (`shouldShowBanner`/`shouldShowList`/…), not the deprecated `shouldShowAlert`.
+- **Reminder delivery is INEXACT on Android — never write reminder copy that
+  asserts a RELATIVE time.** expo-notifications only takes
+  `setExactAndAllowWhileIdle` when `canScheduleExactAlarms()` is true; without
+  `SCHEDULE_EXACT_ALARM` (which we deliberately do NOT declare — Play restricts it
+  to alarm/calendar-core apps) it falls back to `setAndAllowWhileIdle`, and Doze
+  can defer a reminder by many minutes. Observed on a real device: a 10-min lead
+  delivered 12 min late, i.e. AFTER the class had begun, while the body still read
+  "Empieza en 10 min". Hence the body states the ABSOLUTE start time only
+  (`'Tu clase empieza a las {time}.'`) and the shortest offered lead is 30 min.
 
 - **OTA compatibility is FINGERPRINT-scoped, not "JS vs native".** With the
   `fingerprint` runtimeVersion policy, `@expo/fingerprint` hashes the whole root
@@ -255,7 +264,7 @@ app/
   re-fetch the verdict). Tested.
 - `lib/format.ts` — shared display formatters: `formatEur` (stays `es-ES`),
   `bcp47`, `formatTime`/`formatDate`/`formatTimeRange`, `durationLabel`,
-  `durationFromSessionType`, `leadTimeLabel` (reminder lead "10 min"/"1 h"),
+  `durationFromSessionType`, `leadTimeLabel` (reminder lead "30 min"/"1 h"/"1 d"),
   `formatValidityCompact`/`formatValidity` (pack validity from `packValidityDays`,
   in DAYS — shows whole 30-day months as "6 m"/"6 meses" else exact days; tested).
   NEW screens import from here. (Older screens still carry local copies — see docs/TODO.md.)
@@ -278,7 +287,11 @@ app/
   persistence disabled). CHAT-ONLY.
 - `lib/notification-store.ts` — expo-secure-store wrapper for the S18 notification
   PREFERENCE (`{ enabled, leadTimeMinutes }`) under `app.notification-prefs`.
-  Local-only; `DEFAULT_NOTIFICATION_PREFS` = enabled:false/leadTime:10. The prefs
+  Local-only; `DEFAULT_NOTIFICATION_PREFS` = enabled:false/leadTime:**30**, and
+  `LEAD_TIME_OPTIONS` (**30 min / 1 h / 1 day**) is the single source of truth for
+  the S18 pills — `loadNotificationPrefs` coerces any stored value outside it back
+  to the default, so the dropped 5/10/15 presets can't leave S18 with no pill
+  selected. The prefs
   drive scheduling in `lib/class-reminders.ts` / `lib/notifications-native.ts`.
 - `lib/i18n/` — see i18n below.
 

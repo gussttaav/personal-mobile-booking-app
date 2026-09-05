@@ -316,6 +316,13 @@ the displayed validity now follows the backend (dropping from the old hardcoded
 "12 months" to 6 for the 180-day default). Both formatters are unit-tested. JS-only
 change — no native dep, no dev-client rebuild.
 
+**Follow-up (2026-09-05).** The initial sweep missed one hardcode: the Home
+empty-state cross-sell trust badge (`home.crossSell.trust`) still read a literal
+"24 h". Rewired to the same `{hours}` token + `useConfig().cancelMinNoticeHours`
+in `app/(tabs)/(home)/index.tsx` (`EmptyState`), so it now shows the server value
+(2 by default) like every other window-copy screen. The badge only renders in the
+empty state, so `WithClasses` was unaffected.
+
 ---
 
 ## Part 2 — Backend-contract findings that unlocked mobile

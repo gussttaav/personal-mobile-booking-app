@@ -12,8 +12,8 @@
     "build:staging": "eas build --platform android --profile staging",
     "build:production": "eas build --platform android --profile production",
     "submit:production": "eas submit --platform android --profile production",
-    "update:staging": "eas update --platform android --channel staging --environment preview",
-    "update:production": "eas update --platform android --channel production --environment production"
+    "update:staging": "bash scripts/preflight.sh staging && eas update --platform android --channel staging --environment preview",
+    "update:production": "bash scripts/preflight.sh production && eas update --platform android --channel production --environment production"
   },
   "jest": {
     "preset": "jest-expo"

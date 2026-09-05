@@ -29,8 +29,10 @@ export function formatTime(iso: string): string {
   return `${h}:${m}`;
 }
 
-/** Reminder lead time as a short label: "10 min" / "1 h" (matches the S18 pills). */
+/** Reminder lead time as a short label: "30 min" / "1 h" / "1 d" (matches the
+ *  S18 pills). Unit symbols stay untranslated, as in `formatValidityCompact`. */
 export function leadTimeLabel(minutes: number): string {
+  if (minutes >= 1440) return `${minutes / 1440} d`;
   return minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`;
 }
 

@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 import { api } from './api-client';
-import { formatTime, leadTimeLabel } from './format';
+import { formatTime } from './format';
 import { translate } from './i18n/strings';
 import { loadPersistedLocale } from './i18n/locale-store';
 import { deriveLocale, getDeviceLanguage } from './i18n/device-locale';
@@ -134,9 +134,10 @@ export async function syncClassReminders(bookings?: Booking[]): Promise<void> {
     const title = translate(locale, 'notifications.reminder.title');
     const bodyTemplate = translate(locale, 'notifications.reminder.body');
     for (const r of toSchedule) {
-      const body = bodyTemplate
-        .replace('{lead}', leadTimeLabel(r.leadTimeMinutes))
-        .replace('{time}', formatTime(new Date(r.startsAtMs).toISOString()));
+      const body = bodyTemplate.replace(
+        '{time}',
+        formatTime(new Date(r.startsAtMs).toISOString())
+      );
       await scheduleOne(r, title, body);
     }
   } catch {

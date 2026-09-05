@@ -98,7 +98,7 @@ const es = {
     reminder: {
       channelName: 'Recordatorios de clase',
       title: 'Tu clase empieza pronto',
-      body: 'Empieza en {lead}, a las {time}.',
+      body: 'Tu clase empieza a las {time}.',
     },
   },
   settings: {
@@ -828,7 +828,7 @@ const en: Dictionary = {
     reminder: {
       channelName: 'Class reminders',
       title: 'Your class starts soon',
-      body: 'Starts in {lead}, at {time}.',
+      body: 'Your class starts at {time}.',
     },
   },
   settings: {

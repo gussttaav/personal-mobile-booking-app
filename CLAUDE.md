@@ -109,13 +109,17 @@ own backend.
 
 - **OTA compatibility is FINGERPRINT-scoped, not "JS vs native".** With the
   `fingerprint` runtimeVersion policy, `@expo/fingerprint` hashes the whole root
-  `package.json` (**`scripts` included**), `app.json`, `eas.json` and every config
-  plugin. Editing an npm script is enough to change `runtimeVersion` and cut OTA
-  delivery to every existing binary — the update publishes fine and is then
-  silently never served. Only the JS bundle (`app/`, `lib/`, `components/`) sits
-  outside the fingerprint. Before trusting a publish, check the two values match:
-  `eas build:list --platform android --limit 1` (runtimeVersion) vs the
-  runtimeVersion printed by `eas update`. A mismatch means rebuild, not republish.
+  `package.json` (**`scripts` included**), `app.json`, `eas.json`, **`.gitignore`**
+  and every config plugin. Editing an npm script — or one line of `.gitignore` — is
+  enough to change `runtimeVersion` and cut OTA delivery to every existing binary:
+  the update publishes fine and is then silently never served.
+  **Verified safe to edit** (fingerprint unchanged): the JS bundle (`app/`, `lib/`,
+  `components/`, `types/`), anything under `scripts/`, and markdown (`CLAUDE.md`,
+  `docs/`). Everything else, assume it moves the fingerprint and check.
+  `npm run update:*` now runs `scripts/preflight.sh` first, which typechecks,
+  tests, and compares the tree fingerprint against the runtimeVersion of the
+  latest finished build on that channel — aborting on a mismatch. A mismatch means
+  rebuild, not republish. Do NOT bypass the wrapper.
 
 ### Design source of truth
 - Brand tokens as code: `docs/design/design-system/` (`colors_and_type.css` =
@@ -374,6 +378,16 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
   EAS provides exactly `development`/`preview`/`production` there.
 - **`appVersionSource: remote`** — EAS owns `versionCode`; do NOT add one to
   `app.json`. Bump `expo.version` by hand for a user-visible version name.
+- **The upload keystore is permanent and lives OUTSIDE this repo.** Build
+  credentials `T9JcZ6Kxbh` sign every Android profile (dev/staging/production), so
+  its SHA-1 is the one already registered on the Google OAuth Android client. Once
+  the app is live that signing identity can never change — losing it means no
+  existing install can ever be updated again. Back it up with
+  `eas credentials --platform android` → *credentials.json: Download*, then move
+  `credentials.json` (it carries the keystore passwords) and the `.jks` out of the
+  working directory. `.gitignore` covers `*.jks` but NOT `credentials.json`, and
+  it cannot be amended without moving the fingerprint — so the file must never sit
+  in the repo, even briefly.
 - **Always publish updates via the npm scripts** (`npm run update:staging` /
   `update:production`). They pass two flags that are both load-bearing:
   `--environment` (without it the OTA bundle is built with NO `EXPO_PUBLIC_*`

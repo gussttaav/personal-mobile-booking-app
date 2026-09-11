@@ -948,3 +948,76 @@ client-controllable. `initPaymentSheet` accepts `paymentMethodTypes` only on the
 deferred `intentConfiguration` flow, which the union type makes mutually exclusive
 with `paymentIntentClientSecret` — the flow this app uses. Those methods come from
 `/api/stripe/checkout` and must be removed in the Stripe Dashboard or server-side.
+
+### Automatic calendar sync replaces S19 "Añadir al calendario" (2026-09-11)
+
+S18's calendar row already promised "Añade automáticamente tus clases reservadas a
+tu calendario", but granting access did nothing by itself: the only write was the
+manual S19 modal (`app/add-to-calendar.tsx`), reached from S08, S11 and the Home
+next-class card — and the Home entry was broken (it pushed `/add-to-calendar` with
+no params, so the modal errored on an empty date). S13's success footer carried a
+"coming soon" stub. Nothing ever removed or moved an event on cancel/reschedule.
+Now the device calendar is a **reconciled mirror** of the confirmed bookings once
+access is granted, and every manual entry point is gone.
+
+- SAME SPLIT AS THE REMINDERS: pure decision logic in `lib/calendar-events.ts`
+  (injectable `now`, unit-tested — 21 cases) + a thin effectful
+  `lib/calendar-native.ts` (the ONLY module that reads/writes calendar events; S18
+  keeps calling the permission API directly, as it does for notifications).
+  `computeDesiredCalendarEvents(bookings, now)` keeps `endsAt > now` (in-progress
+  included), drops bookings without a join token, de-dupes;
+  `reconcileCalendarEvents(desired, existing)` → `{ toDeleteIds, toUpdate, toCreate }`.
+- IDENTITY = `joinToken`, parsed back from the join URL (`…/sesion/<token>`) that
+  every event we write already carries in `location` and `notes`. Reasons: (a) no
+  local map of device event ids — nothing to go stale, survives a reinstall, no
+  secure-store size ceiling; (b) no extra visible "reference" line in the notes;
+  (c) `joinToken` is always present, whereas `eventId` is documented as possibly
+  `""` on the history endpoint. The parse is locale-independent (the `/es/`/`/en/`
+  prefix is ignored), so a language switch never orphans an event. Only events
+  that parse a token are ever touched — the user's other calendar entries are
+  invisible to the sync.
+- WINDOW: reads `[now, now + 365 d]` across every `allowsModifications` calendar
+  (writes still go to the original picker's choice: iOS default, Android
+  local-writable → first-writable). Reading everything writable means an event
+  created under an earlier pick is still found. Past events fall outside the
+  window and are therefore never deleted — a finished class stays in the user's
+  calendar as history. A reschedule that keeps the token but moves the times
+  updates in place; one that issues a new booking deletes the old token's event
+  and creates the new — both shapes are covered because the backend contract
+  doesn't say which it does.
+- TRIGGER POINTS (no central bookings store, as with reminders): Home's focus
+  `load()` passes the already-fetched list (the primary sync point; this is also
+  what picks up a cancel made on the web), S08 success mount self-fetches so the
+  event exists before the user can open their calendar, S12 cancel + S13
+  reschedule success self-fetch right after the mutation, and S18 "Conectar" →
+  granted self-fetches so the existing bookings appear immediately. Deliberately
+  NOT on `_layout` session-ready (Home focus already covers cold start and the
+  post-sign-in landing; a third bookings request at launch buys nothing) and NOT
+  on sign-out — the entries are in the user's own calendar and their classes
+  remain booked, so vanishing them on sign-out would be the surprising behaviour.
+  Known edge (docs/TODO.md): two accounts on one device — user B's sync deletes
+  user A's future events, since the marker isn't user-scoped (`AuthUser` has no
+  opaque id; the email is not something to write into calendar notes).
+- ROBUSTNESS, copied from `syncClassReminders`: in-flight mutex; permission not
+  granted → return without touching anything; a bookings-fetch failure BAILS
+  without deleting (a blip must not wipe valid events); every native error is
+  swallowed (the mirror is a convenience). `resolveActiveLocale()` was promoted
+  from a private helper in `notifications-native.ts` to `lib/i18n/locale-store.ts`
+  so both orchestrators share the off-React resolver.
+- UI: S08 loses its primary "Añadir al calendario" (the sticky bar keeps "Ver
+  detalle" / "Volver al inicio"); S11 loses "Calendario" and now renders the
+  secondary row only when `canManage` (it would otherwise be empty for the paid
+  flow's token-less detail); Home's card loses the icon button; S13's success
+  footer promotes "Volver al inicio" to the primary (matching S12). i18n:
+  `addToCalendar.*` → `calendar.*` keeping only the four event-copy keys;
+  `bookingDetail.calendar`, `reschedule.confirm.calendarSoonBody` and
+  `common.soonTitle` (its last consumer was the S13 stub) removed; S18's helper
+  now states the full contract ("…y las mantiene al día si cancelas o
+  reprogramas").
+- NO REBUILD: expo-calendar was already compiled in (plugin `calendarPermission`,
+  READ/WRITE_CALENDAR in the manifest); every new call is a JS runtime call into
+  the linked module. `npx expo config --type prebuild` unchanged; no `app.json`,
+  `package.json`, `eas.json` or `.gitignore` edit, so the OTA fingerprint is
+  untouched and this ships as an update. Verified via `tsc`, the 136-case jest
+  run, and `expo lint` (no new warnings); on-device behaviour to be exercised on
+  the current dev client (see the README's calendar section).

@@ -6,6 +6,7 @@ import * as Calendar from 'expo-calendar';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useAuth } from '@/lib/auth-context';
+import { syncCalendarEvents } from '@/lib/calendar-native';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { leadTimeLabel } from '@/lib/format';
 import { syncClassReminders } from '@/lib/notifications-native';
@@ -25,7 +26,9 @@ import type { Locale } from '@/types/api';
 //
 // Changing the preference or lead time re-syncs the scheduled class reminders via
 // syncClassReminders() (lib/notifications-native.ts) — enabling schedules them,
-// disabling cancels them, a new lead time re-times them.
+// disabling cancels them, a new lead time re-times them. Granting calendar access
+// kicks off syncCalendarEvents() (lib/calendar-native.ts) so the booked classes
+// land in the device calendar immediately; Home focus keeps them in sync after.
 
 type PermStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -108,8 +111,13 @@ export default function SettingsScreen() {
   async function onConnectCalendar() {
     const res = await Calendar.requestCalendarPermissionsAsync();
     setCalPerm(res.status as PermStatus);
+    if (res.status === 'granted') {
+      // Connected → mirror the existing bookings into the calendar right away.
+      void syncCalendarEvents();
+      return;
+    }
     // No second prompt available → recover via the system settings app.
-    if (res.status !== 'granted' && !res.canAskAgain) {
+    if (!res.canAskAgain) {
       Linking.openSettings();
     }
   }

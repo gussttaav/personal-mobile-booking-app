@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { syncCalendarEvents } from '@/lib/calendar-native';
 import { useConfig } from '@/lib/config-context';
 import { openGustavoEmail } from '@/lib/contact';
 import { getDeviceTimeZone } from '@/lib/grid-time';
@@ -125,6 +125,9 @@ export default function RescheduleConfirmScreen() {
       });
       setBookingResult(res);
       setPhase('success');
+      // Move the class in the device calendar (when connected) — self-fetches the
+      // bookings so the old slot is dropped and the new one written.
+      void syncCalendarEvents();
       // submittingRef stays true — success screen has no retry path
     } catch (err) {
       submittingRef.current = false;
@@ -261,26 +264,18 @@ export default function RescheduleConfirmScreen() {
           </View>
         </ScrollView>
 
-        {/* Sticky footer */}
+        {/* Sticky footer — "Volver al inicio" is the single primary (matches the
+            S12 cancel-success footer); the calendar is mirrored automatically. */}
         <View style={[styles.stickyFooter, { paddingBottom: footerPB }]}>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() =>
-              Alert.alert(t('common.soonTitle'), t('reschedule.confirm.calendarSoonBody'))
-            }
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons name="calendar-plus" size={18} color={Colors.onPrimary} />
-            <Text style={styles.primaryBtnText}>{t('addToCalendar.title')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.ghostBtn}
             onPress={() => {
               goHome();
             }}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
-            <Text style={styles.ghostBtnText}>{t('common.backHome')}</Text>
+            <MaterialCommunityIcons name="home-outline" size={18} color={Colors.onPrimary} />
+            <Text style={styles.primaryBtnText}>{t('common.backHome')}</Text>
           </TouchableOpacity>
         </View>
       </View>

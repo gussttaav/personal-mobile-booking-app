@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api-client';
 import { getStoredSession } from '@/lib/auth';
 import { useConfig } from '@/lib/config-context';
+import { syncCalendarEvents } from '@/lib/calendar-native';
 import { syncClassReminders } from '@/lib/notifications-native';
 import { BookingRow } from '@/components/BookingRow';
 import { Card } from '@/components/Card';
@@ -131,10 +132,13 @@ export default function InicioScreen() {
         api.getCredits(),
       ]);
 
-      // Reconcile class reminders against the freshly-fetched list (reuses it — no
-      // extra request). This is the primary sync point: create/cancel/reschedule all
-      // return to Home, and a language change refreshes localized copy here too.
+      // Reconcile class reminders AND the device-calendar mirror against the
+      // freshly-fetched list (reuses it — no extra request). This is the primary
+      // sync point: create/cancel/reschedule all return to Home (and a cancel made
+      // on the web is picked up here), and a language change refreshes localized
+      // reminder copy here too.
       void syncClassReminders(bookingsRes.bookings);
+      void syncCalendarEvents(bookingsRes.bookings);
 
       const now = Date.now();
       const upcoming = bookingsRes.bookings
@@ -481,7 +485,8 @@ function NextClassCard({ booking, locale, t }: { booking: Booking; locale: Local
         </Text>
       </TouchableOpacity>
 
-      {/* Secondary actions */}
+      {/* Secondary action — the calendar is mirrored automatically (S18), so
+          there's no manual add-to-calendar button here. */}
       <View style={styles.secondaryRow}>
         <TouchableOpacity
           style={styles.detailBtn}
@@ -502,13 +507,6 @@ function NextClassCard({ booking, locale, t }: { booking: Booking; locale: Local
           activeOpacity={0.7}
         >
           <Text style={styles.detailBtnText}>{t('home.nextClass.detail')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.calendarBtn}
-          onPress={() => router.push('/add-to-calendar')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons name="calendar-check-outline" size={20} color={Colors.textMuted} />
         </TouchableOpacity>
       </View>
     </Card>
@@ -697,15 +695,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     color: Colors.textMuted,
   },
-  calendarBtn: {
-    width: 48,
-    borderRadius: Radius['2xl'],
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // Section header
   section: {
     gap: Spacing[2],

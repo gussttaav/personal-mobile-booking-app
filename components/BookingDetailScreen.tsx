@@ -114,7 +114,6 @@ export default function BookingDetailScreen() {
   }>();
 
   const token = params.token ?? '';
-  const joinToken = params.joinToken ?? '';
   const eventId = params.eventId ?? '';
   const sessionType = params.sessionType ?? 'session1h';
   const startsAt = params.startsAt ?? '';
@@ -165,13 +164,6 @@ export default function BookingDetailScreen() {
     router.push({
       pathname: '/(tabs)/(home)/reschedule',
       params: { token, startsAt, sessionType },
-    });
-  };
-
-  const addToCalendar = () => {
-    router.push({
-      pathname: '/add-to-calendar',
-      params: { startIso: startsAt, endIso: endsAt, sessionType, joinToken },
     });
   };
 
@@ -335,20 +327,11 @@ export default function BookingDetailScreen() {
           <Text style={styles.joinHint}>{t('bookingDetail.joinHint')}</Text>
         )}
 
-        {/* Secondary row */}
-        <View style={styles.secondaryRow}>
-          {/* Calendario */}
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={addToCalendar}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="calendar-plus" size={17} color={Colors.textMuted} />
-            <Text style={styles.secondaryBtnText}>{t('bookingDetail.calendar')}</Text>
-          </TouchableOpacity>
-
-          {/* Reprogramar */}
-          {canManage && (
+        {/* Secondary row — token-gated manage actions only. The device calendar is
+            mirrored automatically when connected (S18), so no manual button here. */}
+        {canManage && (
+          <View style={styles.secondaryRow}>
+            {/* Reprogramar */}
             <TouchableOpacity
               style={styles.secondaryBtn}
               onPress={goReschedule}
@@ -357,10 +340,8 @@ export default function BookingDetailScreen() {
               <MaterialCommunityIcons name="calendar-refresh-outline" size={17} color={Colors.textMuted} />
               <Text style={styles.secondaryBtnText}>{t('common.reschedule')}</Text>
             </TouchableOpacity>
-          )}
 
-          {/* Cancelar */}
-          {canManage && (
+            {/* Cancelar */}
             <TouchableOpacity
               style={[styles.secondaryBtn, styles.cancelBtn]}
               onPress={goCancel}
@@ -369,8 +350,8 @@ export default function BookingDetailScreen() {
               <MaterialCommunityIcons name="close-circle-outline" size={17} color={Colors.error} />
               <Text style={[styles.secondaryBtnText, styles.cancelBtnText]}>{t('bookingDetail.cancel')}</Text>
             </TouchableOpacity>
-          )}
-        </View>
+          </View>
+        )}
         </View>
       </ScrollView>
     </View>

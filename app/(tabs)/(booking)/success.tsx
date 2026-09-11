@@ -1,10 +1,11 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { syncCalendarEvents } from '@/lib/calendar-native';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { TranslationKey } from '@/lib/i18n/strings';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
@@ -77,6 +78,13 @@ export default function BookingSuccessScreen() {
   // credit of the pack; surface a gentle nudge to repurchase.
   const spentLastCredit = sessionType === 'pack' && params.remainingCredits === '0';
 
+  // Mirror the fresh booking into the device calendar right away (when calendar
+  // access is granted) — all three booking flows land here, and the user may open
+  // their calendar before ever returning to Home (the primary sync point).
+  useEffect(() => {
+    void syncCalendarEvents();
+  }, []);
+
   // Land on Inicio without leaving the completed booking stack behind: collapse
   // it to its root first, then switch tabs. (S08 sits atop the full flow.)
   const goHome = useCallback(() => {
@@ -112,13 +120,6 @@ export default function BookingSuccessScreen() {
   const goPacks = useCallback(() => {
     router.push('/(tabs)/(packs)/packs');
   }, []);
-
-  const addToCalendar = useCallback(() => {
-    router.push({
-      pathname: '/add-to-calendar',
-      params: { startIso: start, endIso: end, sessionType, joinToken },
-    });
-  }, [start, end, sessionType, joinToken]);
 
   return (
     <View style={styles.screen}>
@@ -233,12 +234,9 @@ export default function BookingSuccessScreen() {
         </View>
       </ScrollView>
 
-      {/* ── Sticky action bar ──────────────────────────────────────────────── */}
+      {/* ── Sticky action bar ── (no add-to-calendar CTA: the device calendar is
+          mirrored automatically when connected in S18) ─────────────────────── */}
       <View style={styles.stickyBar}>
-        <TouchableOpacity style={styles.calBtn} onPress={addToCalendar} activeOpacity={0.85}>
-          <MaterialCommunityIcons name="calendar-plus" size={18} color={Colors.onPrimary} />
-          <Text style={styles.calBtnText}>{t('addToCalendar.title')}</Text>
-        </TouchableOpacity>
         <View style={styles.secondaryRow}>
           <TouchableOpacity style={styles.secondaryBtn} onPress={goDetail} activeOpacity={0.7}>
             <Text style={styles.secondaryBtnText}>{t('success.seeDetail')}</Text>
@@ -589,22 +587,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing[4],
     paddingHorizontal: Spacing[4],
     gap: Spacing[2] + 2,
-  },
-  calBtn: {
-    height: 52,
-    borderRadius: Radius.xl,
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing[2],
-    boxShadow: '0px 0px 26px rgba(78, 222, 163, 0.35)',
-  } as any,
-  calBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: FontFamily.body,
-    color: Colors.onPrimary,
   },
   secondaryRow: {
     flexDirection: 'row',

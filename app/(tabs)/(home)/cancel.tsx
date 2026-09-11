@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError } from '@/lib/api-client';
+import { syncCalendarEvents } from '@/lib/calendar-native';
 import { useConfig } from '@/lib/config-context';
 import { openGustavoEmail } from '@/lib/contact';
 import { useLocale } from '@/lib/i18n/locale-context';
@@ -126,6 +127,9 @@ export default function CancelScreen() {
       const res = await api.postCancel({ token: safeToken });
       setCancelResult(res);
       setPhase('success');
+      // Drop the class from the device calendar (when connected) — self-fetches the
+      // bookings, so the cancelled one is no longer desired and its event is deleted.
+      void syncCalendarEvents();
       // submittingRef stays true — success screen has no retry path
     } catch (err) {
       submittingRef.current = false;

@@ -36,7 +36,7 @@ The app is a **client only**: it consumes the existing gustavoai Next.js API ove
 | **Supabase Realtime** (`@supabase/supabase-js`, pinned 2.110.0) | In-session text chat only (payments stay poll-based) |
 | **Reanimated 4** | Animations and keyboard handling |
 | **expo-secure-store** | Encrypted storage for the auth session, locale, and notification prefs |
-| **expo-calendar** / **expo-notifications** | Add-to-calendar; class-reminder preference |
+| **expo-calendar** / **expo-notifications** | Automatic device-calendar mirror of bookings; class reminders |
 | **Jest** + **jest-expo** | Unit tests for the pure logic modules |
 | **EAS Build** | Builds the custom dev client and distributables |
 
@@ -51,7 +51,7 @@ The app is a **client only**: it consumes the existing gustavoai Next.js API ove
 - **Embedded live classroom** — join the 1:1 Zoom session directly in the app: camera/mic pre-join test, event-driven waiting↔in-class states, and privacy-aware camera release when backgrounded
 - **In-session chat** — real-time text chat alongside the live video, backed by Supabase Realtime with reconnect-safe message reconciliation
 - **Manage bookings** — see upcoming and past classes, and reschedule or cancel from a detail screen, with the 2-hour policy window enforced client-side
-- **Add to calendar** — one tap writes the class (with join link) to the device calendar
+- **Calendar sync** — once calendar access is granted in Settings, booked classes (with join link) are written to the device calendar automatically and kept in step when you reschedule or cancel
 - **Post-class review** — a gentle progressive rating → comment → optional Google-review flow
 - **Bilingual (Spanish / English)** — every screen is localized; the app adopts the account's saved language (falling back to the device language for new users) and can be switched in-app from Settings
 - **Profile & settings** — Google identity, credit balance, language switch, and a local class-reminder preference
@@ -64,7 +64,7 @@ Screens stay thin: UI calls a typed API client, and non-trivial logic lives in s
 
 ```
 app/            File-based routes (Expo Router): the 4-tab app + full-screen
-                experiences (login, session-expired, video, review, calendar)
+                experiences (login, session-expired, video, review)
 components/      Reusable UI components
 constants/      Theme tokens (theme.ts) + config (config.ts: API_BASE, keys)
 lib/            Non-UI logic — auth, api-client, i18n, pure pollers/reconcilers,

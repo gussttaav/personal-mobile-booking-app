@@ -17,6 +17,7 @@ import {
   persistNotificationPrefs,
   type NotificationPreferences,
 } from '@/lib/notification-store';
+import { PLAY_STORE_URI, PLAY_STORE_URL } from '@/constants/config';
 import { Colors, FontFamily, Radius, Spacing, TypeScale } from '@/constants/theme';
 import type { Locale } from '@/types/api';
 
@@ -106,6 +107,16 @@ export default function SettingsScreen() {
     setPrefs(updated);
     await persistNotificationPrefs(updated);
     void syncClassReminders(); // new lead time → re-times existing reminders
+  }
+
+  // Hand off to the Play listing. `market://` is preferred so the Play app opens
+  // straight on the review sheet; where Play is absent (emulator, some devices)
+  // openURL rejects and we fall back to the web listing. Never surface an error —
+  // this is a courtesy affordance, not a task the user is trying to complete.
+  function onRateApp() {
+    Linking.openURL(PLAY_STORE_URI).catch(() => {
+      Linking.openURL(PLAY_STORE_URL).catch(() => {});
+    });
   }
 
   async function onConnectCalendar() {
@@ -291,6 +302,21 @@ export default function SettingsScreen() {
               );
             })}
           </View>
+        </View>
+
+        {/* ── VALORACIÓN ── */}
+        <Text style={styles.sectionTitle}>{t('settings.rate.title')}</Text>
+        <View style={styles.card}>
+          <Pressable style={styles.row} onPress={onRateApp}>
+            <View style={styles.rowIcon}>
+              <MaterialCommunityIcons name="star-outline" size={19} color={Colors.textMuted} />
+            </View>
+            <View style={styles.rowTextWrap}>
+              <Text style={styles.rowTitle}>{t('settings.rate.label')}</Text>
+              <Text style={styles.rowSubtitle}>{t('settings.rate.desc')}</Text>
+            </View>
+            <MaterialCommunityIcons name="open-in-new" size={17} color={Colors.textDim} />
+          </Pressable>
         </View>
 
         {/* ── SIGN OUT ── */}

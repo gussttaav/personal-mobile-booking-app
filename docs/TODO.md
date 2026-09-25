@@ -33,6 +33,14 @@ for current-state guidance and `docs/DEVLOG.md` for the reasoning behind each.
   `(booking)/session-type.tsx`, and the date/duration helpers in
   `components/BookingRow.tsx` + `(home)/booking-detail.tsx`. Mechanical, but left
   out of the S20 diff to keep it reviewable.
+- **Calendar-mirror residuals.** The automatic device-calendar sync
+  (`lib/calendar-events.ts` + `lib/calendar-native.ts`) is DONE. Left open:
+  (a) **account switch on one device** — the join-URL marker isn't user-scoped
+  (`AuthUser` has no opaque id), so user B's sync deletes user A's future events;
+  (b) **no alarm on the event** — the class reminders cover it, but a user who
+  keeps notifications off gets no calendar-side alert; (c) **no in-app
+  "disconnect"** — S18 only exposes the OS permission, so turning the mirror off
+  means revoking calendar access in system settings (events already written stay).
 - **S20 rebook does not preselect the past slot.** "Reservar otra igual" re-enters
   the booking flow at the right session type/duration, but the user picks a new
   time from scratch (there is no repeat-this-slot endpoint).

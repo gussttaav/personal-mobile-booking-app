@@ -73,7 +73,6 @@ function RootNavigator() {
             The group is parenthesized, so URLs stay /video-prejoin, /video-room. */}
         <Stack.Screen name="(video)"          options={{ headerShown: false }} />
         <Stack.Screen name="review"           options={{ headerShown: false }} />
-        <Stack.Screen name="add-to-calendar"  options={{ headerShown: false, presentation: 'modal' }} />
       </Stack.Protected>
 
       {/* S02 re-login — a present session lapsed beyond silent refresh. Tab bar

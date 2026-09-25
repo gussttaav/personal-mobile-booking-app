@@ -25,7 +25,10 @@ own backend.
   - @stripe/stripe-react-native (plugin: `enableGooglePay` true; card-only in the
     app for now; iOS `merchantIdentifier` is a PLACEHOLDER — see docs/TODO.md)
   - expo-secure-store (plugin: `configureAndroidBackup`)
-  - expo-calendar (plugin: `calendarPermission`; auto-adds READ/WRITE_CALENDAR)
+  - expo-calendar (plugin: `calendarPermission`; auto-adds READ/WRITE_CALENDAR).
+    The device calendar is an AUTOMATIC mirror of the user's bookings once access
+    is granted in S18 — no manual "add to calendar" anywhere. JS-only runtime
+    calls (`lib/calendar-native.ts`); no rebuild involved.
   - expo-notifications (local class-reminder scheduling is LIVE via JS only;
     `POST_NOTIFICATIONS` declared in `android.permissions`. The config plugin IS
     now added — it sets the Android small (status-bar) icon to
@@ -107,15 +110,27 @@ own backend.
   "Empieza en 10 min". Hence the body states the ABSOLUTE start time only
   (`'Tu clase empieza a las {time}.'`) and the shortest offered lead is 30 min.
 
+- **Calendar mirror (`lib/calendar-native.ts`) rules:** an event is "ours" iff its
+  `location`/`notes` carries a join URL (`…/sesion/<joinToken>`) — `joinToken` is
+  the identity (NOT `eventId`, which may be `""`); only ever touch events that
+  parse one. The reconcile reads `[now, now+1y]` only, so PAST events are never
+  touched (they stay as history) and sign-out leaves the calendar alone (the
+  entries are the user's own). `syncCalendarEvents` must NOT delete when the
+  bookings fetch fails — it bails. Never delete/update by title or time range.
+
 - **OTA compatibility is FINGERPRINT-scoped, not "JS vs native".** With the
   `fingerprint` runtimeVersion policy, `@expo/fingerprint` hashes the whole root
-  `package.json` (**`scripts` included**), `app.json`, `eas.json` and every config
-  plugin. Editing an npm script is enough to change `runtimeVersion` and cut OTA
-  delivery to every existing binary — the update publishes fine and is then
-  silently never served. Only the JS bundle (`app/`, `lib/`, `components/`) sits
-  outside the fingerprint. Before trusting a publish, check the two values match:
-  `eas build:list --platform android --limit 1` (runtimeVersion) vs the
-  runtimeVersion printed by `eas update`. A mismatch means rebuild, not republish.
+  `package.json` (**`scripts` included**), `app.json`, `eas.json`, **`.gitignore`**
+  and every config plugin. Editing an npm script — or one line of `.gitignore` — is
+  enough to change `runtimeVersion` and cut OTA delivery to every existing binary:
+  the update publishes fine and is then silently never served.
+  **Verified safe to edit** (fingerprint unchanged): the JS bundle (`app/`, `lib/`,
+  `components/`, `types/`), anything under `scripts/`, and markdown (`CLAUDE.md`,
+  `docs/`). Everything else, assume it moves the fingerprint and check.
+  `npm run update:*` now runs `scripts/preflight.sh` first, which typechecks,
+  tests, and compares the tree fingerprint against the runtimeVersion of the
+  latest finished build on that channel — aborting on a mismatch. A mismatch means
+  rebuild, not republish. Do NOT bypass the wrapper.
 
 ### Design source of truth
 - Brand tokens as code: `docs/design/design-system/` (`colors_and_type.css` =
@@ -138,7 +153,8 @@ app/
 ├── login.tsx              — S01 Bienvenida / Iniciar sesión
 ├── session-expired.tsx    — S02 Sesión expirada · Re-login   (tab bar hidden)
 ├── review.tsx             — S16 Valoración post-clase        (tab bar hidden)
-├── add-to-calendar.tsx    — S19 Añadir al calendario         (modal)
+│                            (S19 "Añadir al calendario" was RETIRED — the calendar
+│                            is mirrored automatically, see lib/calendar-native.ts)
 ├── (video)/               — tab-bar-hidden video routes; _layout is a plain <Stack>.
 │   │                        Parenthesized → URLs stay /video-prejoin, /video-room.
 │   ├── video-prejoin.tsx  — S14 pre-join camera/mic test
@@ -179,7 +195,8 @@ app/
         │                    history up front — the header count + stats are totals)
         ├── history-detail.tsx — S20 detail · read-only past class (Dejar reseña →
         │                    /review with returnTo; Reservar otra igual)
-        ├── settings.tsx   — S18 Ajustes
+        ├── settings.tsx   — S18 Ajustes (granting calendar access triggers the
+        │                    first calendar sync)
         └── delete-account.tsx — S21 Eliminar cuenta (gated: verdict → blocked-pack /
                              blocked-bookings / type-your-email confirm; entered from
                              S18 only — the store-required in-app deletion path)
@@ -280,6 +297,19 @@ app/
   Triggered from Home focus (reuses the fetched list), S18 toggle/lead-time change,
   and `_layout` session-ready (sign-out cancels all). Module-scope
   `setNotificationHandler` lives in `app/_layout.tsx`.
+- `lib/calendar-events.ts` — PURE device-calendar mirror logic (no React/expo,
+  `now` injectable): `parseJoinToken()` (identity from an event's location/notes),
+  `computeDesiredCalendarEvents()` (bookings with `endsAt > now`, keyed by
+  `joinToken`) + `reconcileCalendarEvents()` → `{ toDeleteIds, toUpdate, toCreate }`
+  (moved times update in place; a gone token deletes; duplicates are pruned). Tested.
+- `lib/calendar-native.ts` — the ONLY module that reads/writes calendar events
+  (S18 only calls the permission API). `syncCalendarEvents(bookings?)` —
+  fire-and-forget, in-flight-guarded: permission check → bookings (passed or
+  self-fetched; fetch failure bails) → read OUR events across writable calendars →
+  reconcile → delete/update/create (title + join-URL notes/location resolved via
+  `translate`). Triggered from Home focus (reuses the fetched list — the primary
+  sync point, also catches web-side cancels), S08 success mount, S12 cancel + S13
+  reschedule success, and S18 "Conectar". NOT on sign-out (leaves the calendar).
 - `lib/use-chat-session.ts` — S15 Pass B Realtime lifecycle hook (handshake →
   merge backlog → `supabase.channel().on('broadcast').subscribe()`; send via
   `api.postChatSession`; reconcile-on-SUBSCRIBED; idempotent teardown). CHAT-ONLY.
@@ -331,8 +361,9 @@ Pure-JS foundation in `lib/i18n/` — device language via `Intl`, persistence vi
 expo-secure-store (no expo-localization / no AsyncStorage / no native dep):
 `device-locale.ts`; `strings.ts` (keyed ES/EN dictionaries — `es` canonical, `en`
 typed against it so tsc enforces key parity; `translate()` resolves dotted paths);
-`locale-store.ts` (under `app.locale`); `locale-context.tsx` (`LocaleProvider`,
-`useLocale()`/`useT()`).
+`locale-store.ts` (under `app.locale`; also `resolveActiveLocale()` — the
+off-React resolver the native orchestrators use); `locale-context.tsx`
+(`LocaleProvider`, `useLocale()`/`useT()`).
 
 - **The app is fully bilingual** — no hardcoded user-facing Spanish anywhere.
 - **Key convention:** `screen.section.element`. Strings shared across ≥2 screens
@@ -374,6 +405,16 @@ typed against it so tsc enforces key parity; `translate()` resolves dotted paths
   EAS provides exactly `development`/`preview`/`production` there.
 - **`appVersionSource: remote`** — EAS owns `versionCode`; do NOT add one to
   `app.json`. Bump `expo.version` by hand for a user-visible version name.
+- **The upload keystore is permanent and lives OUTSIDE this repo.** Build
+  credentials `T9JcZ6Kxbh` sign every Android profile (dev/staging/production), so
+  its SHA-1 is the one already registered on the Google OAuth Android client. Once
+  the app is live that signing identity can never change — losing it means no
+  existing install can ever be updated again. Back it up with
+  `eas credentials --platform android` → *credentials.json: Download*, then move
+  `credentials.json` (it carries the keystore passwords) and the `.jks` out of the
+  working directory. `.gitignore` covers `*.jks` but NOT `credentials.json`, and
+  it cannot be amended without moving the fingerprint — so the file must never sit
+  in the repo, even briefly.
 - **Always publish updates via the npm scripts** (`npm run update:staging` /
   `update:production`). They pass two flags that are both load-bearing:
   `--environment` (without it the OTA bundle is built with NO `EXPO_PUBLIC_*`

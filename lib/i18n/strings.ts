@@ -10,26 +10,12 @@ import type { Locale } from '../../types/api';
 // Add keys here as screens are localized incrementally.
 
 const es = {
-  addToCalendar: {
-    title: 'Añadir al calendario',
+  // Device-calendar event copy (the automatic mirror in lib/calendar-native.ts).
+  calendar: {
     eventTitle1h: 'Sesión de 1 hora con Gustavo Torres',
     eventTitle2h: 'Sesión de 2 horas con Gustavo Torres',
     eventTitle15: 'Sesión gratuita de 15 min con Gustavo Torres',
     joinLine: 'Únete a tu clase:',
-    checking: 'Comprobando acceso…',
-    requestTitle: 'Acceso al calendario',
-    requestDesc: 'Necesitamos acceder a tu calendario para guardar la clase.',
-    requestBtn: 'Conceder acceso',
-    adding: 'Añadiendo al calendario…',
-    successTitle: 'Añadido al calendario',
-    successDesc: 'Tu clase se ha guardado en tu calendario.',
-    done: 'Listo',
-    deniedTitle: 'Acceso denegado',
-    deniedDesc: 'Para añadir clases, activa el permiso de calendario en los ajustes del sistema.',
-    openSettings: 'Abrir ajustes',
-    errorTitle: 'Error al añadir',
-    errorDesc: 'No se pudo guardar la clase en el calendario.',
-    retry: 'Reintentar',
   },
   tabs: {
     home: 'Inicio',
@@ -122,7 +108,8 @@ const es = {
       connected: 'Conectado',
       connect: 'Conectar',
       blocked: 'Bloqueado · ábrelo en ajustes',
-      helper: 'Añade automáticamente tus clases reservadas a tu calendario.',
+      helper:
+        'Añade automáticamente tus clases reservadas a tu calendario y las mantiene al día si cancelas o reprogramas.',
     },
     language: {
       title: 'Idioma',
@@ -378,7 +365,6 @@ const es = {
     reschedule: 'Reprogramar',
     continue: 'Continuar',
     backToDetail: 'Volver al detalle',
-    soonTitle: 'Próximamente',
     stillFailing: '¿Sigue fallando?',
     writeToGustavo: 'Escribir a Gustavo',
     noMailAppTitle: 'No se pudo abrir el correo',
@@ -684,7 +670,6 @@ const es = {
       reassuranceTitle: 'Sin cargo · sin cambio de crédito',
       reassuranceBody:
         'La clase anterior fue cancelada automáticamente. Este cambio no genera ningún pago adicional.',
-      calendarSoonBody: 'Añadir al calendario estará disponible pronto.',
       sheetTitle: '¿Confirmar el cambio?',
       ruleTextBefore: 'Aún puedes reprogramar: faltan más de ',
       ruleTextAfter: ' para el inicio.',
@@ -728,7 +713,6 @@ const es = {
     policyBanner: 'Cancela o reprograma gratis hasta {hours} h antes',
     join: 'Unirse a la clase',
     joinHint: 'Disponible 15 min antes',
-    calendar: 'Calendario',
     cancel: 'Cancelar',
     today: 'Hoy',
     tomorrow: 'Mañana',
@@ -740,26 +724,11 @@ const es = {
 type Dictionary = typeof es;
 
 const en: Dictionary = {
-  addToCalendar: {
-    title: 'Add to calendar',
+  calendar: {
     eventTitle1h: '1-hour session with Gustavo Torres',
     eventTitle2h: '2-hour session with Gustavo Torres',
     eventTitle15: 'Free 15-min session with Gustavo Torres',
     joinLine: 'Join your class:',
-    checking: 'Checking access…',
-    requestTitle: 'Calendar access',
-    requestDesc: 'We need calendar access to save the class.',
-    requestBtn: 'Grant access',
-    adding: 'Adding to calendar…',
-    successTitle: 'Added to calendar',
-    successDesc: 'Your class has been saved to your calendar.',
-    done: 'Done',
-    deniedTitle: 'Access denied',
-    deniedDesc: 'To add classes, enable the calendar permission in your system settings.',
-    openSettings: 'Open settings',
-    errorTitle: 'Failed to add',
-    errorDesc: "The class couldn't be saved to your calendar.",
-    retry: 'Retry',
   },
   tabs: {
     home: 'Home',
@@ -852,7 +821,8 @@ const en: Dictionary = {
       connected: 'Connected',
       connect: 'Connect',
       blocked: 'Blocked · open in settings',
-      helper: 'Automatically add your booked classes to your calendar.',
+      helper:
+        'Automatically adds your booked classes to your calendar and keeps them up to date when you cancel or reschedule.',
     },
     language: {
       title: 'Language',
@@ -1108,7 +1078,6 @@ const en: Dictionary = {
     reschedule: 'Reschedule',
     continue: 'Continue',
     backToDetail: 'Back to details',
-    soonTitle: 'Coming soon',
     stillFailing: 'Still failing?',
     writeToGustavo: 'Message Gustavo',
     noMailAppTitle: "Couldn't open email",
@@ -1414,7 +1383,6 @@ const en: Dictionary = {
       reassuranceTitle: 'No charge · no credit change',
       reassuranceBody:
         'The previous class was cancelled automatically. This change creates no additional payment.',
-      calendarSoonBody: 'Adding to calendar will be available soon.',
       sheetTitle: 'Confirm the change?',
       ruleTextBefore: 'You can still reschedule: more than ',
       ruleTextAfter: ' until it starts.',
@@ -1458,7 +1426,6 @@ const en: Dictionary = {
     policyBanner: 'Cancel or reschedule free up to {hours} h before',
     join: 'Join the class',
     joinHint: 'Available 15 min before',
-    calendar: 'Calendar',
     cancel: 'Cancel',
     today: 'Today',
     tomorrow: 'Tomorrow',

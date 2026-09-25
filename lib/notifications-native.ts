@@ -4,8 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { api } from './api-client';
 import { formatTime } from './format';
 import { translate } from './i18n/strings';
-import { loadPersistedLocale } from './i18n/locale-store';
-import { deriveLocale, getDeviceLanguage } from './i18n/device-locale';
+import { resolveActiveLocale } from './i18n/locale-store';
 import { loadNotificationPrefs } from './notification-store';
 import {
   REMINDER_KIND,
@@ -25,11 +24,6 @@ import type { Booking, Locale } from '../types/api';
 
 /** Android notification channel for reminders (required on Android 8+/minSdk 28). */
 export const REMINDER_CHANNEL_ID = 'class-reminders';
-
-/** Resolve the active locale off-React: persisted choice wins, else device language. */
-async function resolveLocale(): Promise<Locale> {
-  return (await loadPersistedLocale()) ?? deriveLocale(getDeviceLanguage());
-}
 
 /** Create/refresh the Android channel. Idempotent no-op elsewhere. */
 async function ensureAndroidChannel(locale: Locale): Promise<void> {
@@ -110,7 +104,7 @@ export async function syncClassReminders(bookings?: Booking[]): Promise<void> {
       return;
     }
 
-    const locale = await resolveLocale();
+    const locale = await resolveActiveLocale();
     await ensureAndroidChannel(locale);
 
     // A fetch failure must NOT wipe valid reminders — bail without cancelling.

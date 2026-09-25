@@ -45,6 +45,13 @@ export const SUPABASE_ANON_KEY = fromEnv(
 
 export const GOOGLE_REVIEW_URL = 'https://g.page/r/CeUEcIsZXTyiEBM/review';
 
+// Play Store listing for this app — distinct from GOOGLE_REVIEW_URL, which rates
+// Gustavo's tutoring business, not the app. `market://` hands off to the Play
+// app; the https form is the fallback where Play is absent.
+export const PLAY_STORE_URI = 'market://details?id=dev.gustavoai.mobile';
+export const PLAY_STORE_URL =
+  'https://play.google.com/store/apps/details?id=dev.gustavoai.mobile';
+
 // Direct line to Gustavo — the fallback contact when an in-app action keeps
 // failing (see lib/contact.ts). NOT an alternative to the 2h cancel/reschedule
 // rule; that boundary has no override.

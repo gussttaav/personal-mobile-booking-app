@@ -117,6 +117,11 @@ const es = {
       es: 'Español',
       en: 'English',
     },
+    rate: {
+      title: 'Valoración',
+      label: 'Valorar la app',
+      desc: 'Cuéntanos qué tal en Google Play',
+    },
     signOut: 'Cerrar sesión',
     account: {
       title: 'Cuenta',
@@ -829,6 +834,11 @@ const en: Dictionary = {
       label: 'App language',
       es: 'Español',
       en: 'English',
+    },
+    rate: {
+      title: 'Rating',
+      label: 'Rate the app',
+      desc: 'Tell us how it is going on Google Play',
     },
     signOut: 'Sign out',
     account: {

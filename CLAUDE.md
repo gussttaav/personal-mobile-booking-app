@@ -125,8 +125,8 @@ own backend.
   enough to change `runtimeVersion` and cut OTA delivery to every existing binary:
   the update publishes fine and is then silently never served.
   **Verified safe to edit** (fingerprint unchanged): the JS bundle (`app/`, `lib/`,
-  `components/`, `types/`), anything under `scripts/`, and markdown (`CLAUDE.md`,
-  `docs/`). Everything else, assume it moves the fingerprint and check.
+  `components/`, `types/`, `constants/`), anything under `scripts/`, and markdown
+  (`CLAUDE.md`, `docs/`). Everything else, assume it moves the fingerprint and check.
   `npm run update:*` now runs `scripts/preflight.sh` first, which typechecks,
   tests, and compares the tree fingerprint against the runtimeVersion of the
   latest finished build on that channel — aborting on a mismatch. A mismatch means
@@ -196,7 +196,8 @@ app/
         ├── history-detail.tsx — S20 detail · read-only past class (Dejar reseña →
         │                    /review with returnTo; Reservar otra igual)
         ├── settings.tsx   — S18 Ajustes (granting calendar access triggers the
-        │                    first calendar sync)
+        │                    first calendar sync; "Valorar la app" hands off to the
+        │                    Play listing)
         └── delete-account.tsx — S21 Eliminar cuenta (gated: verdict → blocked-pack /
                              blocked-bookings / type-your-email confirm; entered from
                              S18 only — the store-required in-app deletion path)
@@ -224,7 +225,10 @@ app/
   `EXPO_PUBLIC_*` build-time vars via the local `fromEnv()` helper; dev falls back
   to staging, **release builds THROW on a missing var** rather than silently
   falling back (see Release below). Static values stay inline: `CONTACT_EMAIL`
-  (`contacto@gustavoai.dev` — the direct line to Gustavo), `GOOGLE_REVIEW_URL`,
+  (`contacto@gustavoai.dev` — the direct line to Gustavo), `GOOGLE_REVIEW_URL`
+  (rates the TUTORING BUSINESS on Google — NOT the app), `PLAY_STORE_URI`/
+  `PLAY_STORE_URL` (the app's Play listing, used by the S18 "Valorar la app" row;
+  `market://` first, https as the fallback where Play is absent),
   `TERMS_URL`/`PRIVACY_URL`.
 - `lib/contact.ts` — `openGustavoEmail({subject, body, noMailAppTitle,
   noMailAppBody})`: opens the mail composer pre-filled, alert-fallback if no mail

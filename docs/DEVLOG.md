@@ -1021,3 +1021,68 @@ access is granted, and every manual entry point is gone.
   untouched and this ships as an update. Verified via `tsc`, the 136-case jest
   run, and `expo lint` (no new warnings); on-device behaviour to be exercised on
   the current dev client (see the README's calendar section).
+
+### Production release — vc3, and the two things that blocked it (2026-10-01)
+
+- SHIPPED: build `0cd6b81c`, **versionCode 3**, version 1.0.0, channel `production`,
+  runtimeVersion `e49572c4bd39875d59777ecc13e22b186d6818ff`, from commit `45a150a`
+  (the PR #4 merge on `main`). Keystore `T9JcZ6Kxbh`, unchanged — the signing
+  identity whose two SHA-1s are registered on the OAuth Android client. All four
+  `EXPO_PUBLIC_*` loaded from the `production` EAS environment. Submitted to review
+  at full 100% rollout, together with country targeting (all 178 + "rest of world")
+  and the data-safety correction, in one submission.
+- WHY A REBUILD RATHER THAN PROMOTING vc2. The closed-test binary vc2 was built
+  2026-09-05, i.e. before both OTAs (`892a2cbe` calendar mirror, `86926098` rate-app
+  row). `app.json` sets no `fallbackToCacheTimeout`, so the default 0 applies: a cold
+  install runs the EMBEDDED bundle and applies a downloaded update only on the NEXT
+  launch. Promoting vc2 would therefore have given every new installer a first
+  session containing the retired, broken manual "Añadir al calendario" step — on the
+  S08 success path, i.e. the main booking flow, and precisely the defect the
+  production-access application cited as fixed. vc3 costs one build and embeds the
+  current JS. The fingerprint is unchanged, so vc3 joins the SAME update branch as
+  vc2 (verified: `update:list --branch production` and the build both read
+  `e49572c4…`), and its embedded bundle is exactly what the 12 testers had been
+  running by OTA since 25 Sept — strictly more exercised than vc2, not less.
+- VERIFIED ON THE REAL ARTIFACT, not a proxy. The staging APK route died (see the
+  retention note below), so vc3 went to Play's **internal testing** track first and
+  was installed from Play. That beats a sideload on every axis: Play App Signing
+  applies, so it also re-proves the deployment-certificate SHA-1 path; env is
+  production; and no review gate. Checked on-device: the S18 "Valorar la app" row
+  renders, a booking appears in the device calendar unassisted, and CANCELLING it
+  removes the event — the exact round trip a student reported broken.
+- BLOCKER 1, DATA SAFETY. Play's pre-review scan rejected the submission with
+  "device or other IDs not declared", citing versionCode 2. The declaration is
+  APP-LEVEL, not per-version, so there was nothing to re-apply to the new build and
+  nothing to rebuild — it was simply incomplete. Grepping `app/ lib/ components/
+  constants/` for `androidId|deviceId|installationId|advertisingId|getUniqueId`
+  returns nothing: we never read an identifier. The collection is the linked SDKs —
+  `@stripe/stripe-react-native` (Radar fraud signals), `@zoom/react-native-videosdk`
+  (session management), `expo-updates` (installation id), `@react-native-google-signin`
+  (Play Services). Declared: collected **yes**, shared **yes**, required, purposes
+  *App functionality* + *Fraud prevention, security and compliance*. "Shared" is a
+  judgement — Google excludes pure service providers, but Stripe reuses the signals
+  in its own network, and our privacy policy ALREADY links Stripe/Google/Zoom's own
+  policies, which reads as sharing; declaring it keeps the two documents consistent,
+  and over-declaring carries no penalty while under-declaring is what caused this.
+- BLOCKER 1's SECOND HALF, easy to miss. Play requires the privacy policy to MATCH
+  the declaration. `gustavoai.dev/privacidad` named Stripe/Zoom/Google but said
+  nothing about device identifiers (confirmed by fetching the live page). Both
+  `/privacidad` and `/en/privacidad` (web repo, not this one) gained a paragraph
+  naming the identifiers, their three purposes, and that they are not used for
+  advertising or tracking. Fixing only the console leaves the mismatch a human
+  reviewer can still act on.
+- BLOCKER 2, A DEAD ARTIFACT. The plan had been to sideload the staging APK
+  `6f6549a0` (11 Sept). EAS had purged it: the `expo.dev/artifacts/…` URL still
+  resolves and signs a fresh 900s S3 request, which then 404s — the browser shows
+  `NoSuchKey`. The 5 Sept `.aab` was gone too. Retention is finite (both under three
+  weeks); never plan on reinstalling from an old build. The internal-track route
+  above is the replacement and is better anyway.
+- CHANNEL DRIFT, worth not repeating. The rate-app row had been published to
+  `production` only, so `staging` sat one update behind and the APK would have shown
+  no such row — indistinguishable from a bug. `npm run update:staging` (group
+  `c39b665f`, commit `45a150a`) levelled them. Publish to `staging` first, always,
+  even for a change already live in production.
+- TOOLING: `eas update` requires an explicit `--message` when stdin is not a TTY;
+  the npm script's trailing args pass through, so
+  `npm run update:staging -- --message "…"` is the non-interactive form. Preflight
+  passed clean beforehand: tsc, 136 tests / 10 suites, fingerprint match.

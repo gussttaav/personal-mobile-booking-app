@@ -425,6 +425,22 @@ off-React resolver the native orchestrators use); `locale-context.tsx`
   vars and every client throws on launch) and `--platform android` (without it
   `eas update` defaults to `--platform=all`, and bundling for web dies on
   `@stripe/stripe-react-native` importing react-native internals).
+  Outside a TTY `eas update` also demands an explicit `--message`; the scripts'
+  trailing args pass through, so `npm run update:staging -- --message "…"`.
+- **Publish to `staging` before `production`, always** — even for a change already
+  live in production. A channel left behind makes the sideloaded APK differ from
+  the shipped app in ways that read exactly like a bug.
+- **EAS purges build artifacts (both under three weeks, observed).** The
+  `expo.dev/artifacts/…` URL survives and still signs a fresh S3 request, which
+  then 404s as `NoSuchKey` — so an old build is NOT a reinstall path. To put a
+  current binary on a device without spending a build, upload the `.aab` to Play's
+  **internal testing** track and install from there: no review, minutes to
+  propagate, and it exercises the real Play-signed artifact against production.
+- **A new install runs the EMBEDDED bundle on its first launch.** `app.json` sets
+  no `fallbackToCacheTimeout`, so the default 0 applies: an OTA is fetched at
+  launch and applied on the NEXT one. Before shipping a binary to the store, check
+  what its embedded JS contains — promoting a build older than the OTAs on its
+  channel gives every new user a stale first session.
 - **Google Sign-In needs the production SHA-1s.** The Play build is signed with a
   different certificate than dev builds, and Play App Signing re-signs on Google's
   side, so BOTH the EAS upload-keystore SHA-1 and the Play App Signing SHA-1 must

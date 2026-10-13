@@ -2,8 +2,9 @@
 
 React Native (Expo) student app for the [**gustavoai.dev**](https://www.gustavoai.dev) online tutoring platform.
 
-> **Platform:** [gustavoai.dev](https://www.gustavoai.dev) · **Web app:** [gussttaav/personal-tutoring-platform](https://github.com/gussttaav/personal-tutoring-platform)
+> **Google Play:** [**Clases con Gustavo**](https://play.google.com/store/apps/details?id=dev.gustavoai.mobile) · **Platform:** [gustavoai.dev](https://www.gustavoai.dev) · **Web app:** [gussttaav/personal-tutoring-platform](https://github.com/gussttaav/personal-tutoring-platform)
 
+[![Google Play](https://img.shields.io/badge/Google_Play-Clases_con_Gustavo-3DDC84?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=dev.gustavoai.mobile)
 ![Expo](https://img.shields.io/badge/Expo-SDK_54-000020?logo=expo&logoColor=white)
 ![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
@@ -17,7 +18,7 @@ React Native (Expo) student app for the [**gustavoai.dev**](https://www.gustavoa
 
 ## Overview
 
-The student-facing mobile companion to the gustavoai tutoring platform. Students sign in with Google, book and pay for classes (single sessions or credit packs), join the live 1:1 video class with in-session chat, and leave a review afterwards — all from their phone.
+**Live on Google Play since October 2026** — [Clases con Gustavo](https://play.google.com/store/apps/details?id=dev.gustavoai.mobile). The student-facing mobile companion to the gustavoai tutoring platform. Students sign in with Google, book and pay for classes (single sessions or credit packs), join the live 1:1 video class with in-session chat, and leave a review afterwards — all from their phone.
 
 The app is a **client only**: it consumes the existing gustavoai Next.js API over HTTP and has no backend of its own. The full customer experience is **bilingual (Spanish / English)** with automatic device-language detection and a manual switcher, mirroring the web platform. It runs on a **custom development build**, not Expo Go, because of its native integrations.
 
@@ -122,12 +123,28 @@ npm install
 
 ### 2. Configure
 
-Client configuration is checked into source (these are public client keys, not
-secrets). Point them at your environment:
+Environment-dependent values come from **build-time `EXPO_PUBLIC_*` variables**,
+read through the `fromEnv()` helper in **`constants/config.ts`**. In development
+they fall back to staging; a release build **throws on a missing variable** rather
+than falling back silently, so a misconfigured binary fails loudly at launch
+instead of quietly talking to the wrong backend.
 
-- **`constants/config.ts`** — `API_BASE` (the platform API base URL),
-  `STRIPE_PUBLISHABLE_KEY`, `SUPABASE_URL` / `SUPABASE_ANON_KEY`, and
-  `GOOGLE_REVIEW_URL`.
+The four are `EXPO_PUBLIC_API_BASE`, `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`,
+`EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. For your own
+builds, create them in **both** the `preview` and `production` EAS environments:
+
+```bash
+npx eas-cli env:create --environment production \
+  --name EXPO_PUBLIC_API_BASE --value "https://your-api.example" \
+  --type string --visibility plaintext --non-interactive
+```
+
+Local development needs none of them — the `__DEV__` fallbacks cover it.
+
+Still edited in source (public client identifiers, not secrets):
+
+- **`constants/config.ts`** — `CONTACT_EMAIL`, `GOOGLE_REVIEW_URL`,
+  `PLAY_STORE_URL`, `TERMS_URL` / `PRIVACY_URL`.
 - **`app/_layout.tsx`** — the Google Sign-In `webClientId`.
 - **`app.json`** — Android `package`, `scheme`, EAS `projectId`/`owner`, and the
   iOS Stripe `merchantIdentifier` (still a placeholder — see docs/TODO.md).
@@ -147,6 +164,12 @@ eas build --profile development --platform android
 Install the resulting APK on your device/emulator. **Adding a new native module
 later requires rebuilding this dev client** — installing it into `package.json`
 alone won't load it.
+
+> **Uninstall the Play Store version first.** The dev client shares the package
+> name `dev.gustavoai.mobile` with the published app but is signed with a
+> different key, so Android refuses to install either over the other. Running the
+> dev client on an emulator while the phone keeps the store build avoids the
+> swap entirely.
 
 ### 4. Run
 

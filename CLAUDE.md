@@ -10,6 +10,23 @@ own backend.
 > Deferred work lives in [docs/TODO.md](docs/TODO.md). See "Maintaining this
 > file" at the bottom.
 
+### Current status
+- **Live on Google Play since 2026-10-06** — listing "Clases con Gustavo",
+  package `dev.gustavoai.mobile`, version 1.0.0, **versionCode 3**, full rollout,
+  all 178 countries. Real students are using it. Tag `v1.0.0` marks `45a150a`,
+  the tree the shipped `.aab` was built from.
+- **There is no review between `npm run update:production` and those students.**
+  An OTA reaches them on their next launch. Treat a production publish as a
+  deploy to real users, not as a test. `npx eas-cli update:rollback` is the undo.
+- **Three delivery loops** — pick the cheapest one that actually proves the change:
+  - `npm start` → dev client + Metro. Change visible on save (1–2 s), only to you,
+    **against the staging backend**. Where development happens.
+  - `npm run update:staging` → sideloaded staging APK, then `update:production`.
+    Applies on the SECOND app launch (see the embedded-bundle rule under Release).
+  - `npm run build:production` → `npm run submit:production -- --latest` → promote
+    internal→production in Play Console. Days of store review. Only for changes
+    that move the fingerprint.
+
 ### Tech + live rules
 - Expo SDK 54, Expo Router (file-based), TypeScript strict.
 - **npm only** (NOT pnpm/yarn) — keep `package-lock.json` authoritative.
@@ -20,6 +37,21 @@ own backend.
   will load — adding it to `package.json` is not enough; the running binary won't
   have it and rendering its views crashes with `IllegalViewOperationException`.
   Batch native deps and flag the rebuild cost before adding.
+- **The dev client collides with the Play install.** Both are
+  `dev.gustavoai.mobile`, but the dev/staging APKs carry the EAS upload keystore
+  while Play re-signs with its deployment certificate — Android refuses to install
+  either over the other, so one must be uninstalled first. An emulator holding the
+  dev client while the phone keeps the Play app avoids the dance entirely.
+  Uninstalling costs only the session and the local prefs: bookings are
+  server-side, and the mirrored calendar events survive (they belong to the device
+  calendar and the reconcile re-adopts them by `joinToken`).
+- **The `development` EAS environment deliberately has NO `EXPO_PUBLIC_*` vars**,
+  so `fromEnv()` takes its `__DEV__` fallback and the dev client talks to
+  **staging**. Adding them there would silently point local development at the
+  production backend and the live Stripe key.
+- **Keep a local copy of the dev-client APK** (`~/apks/`). EAS purges build
+  artifacts within weeks; the binary only goes stale when a native dep changes, so
+  a saved copy saves a rebuild every time.
 - **Native deps compiled into the current dev client:**
   - expo-linear-gradient (Home ambient top glow; no plugin)
   - @stripe/stripe-react-native (plugin: `enableGooglePay` true; card-only in the
@@ -447,6 +479,15 @@ off-React resolver the native orchestrators use); `locale-context.tsx`
   be registered on the Google OAuth **Android** client (package
   `dev.gustavoai.mobile`). Missing them = sign-in works in dev, fails in
   production.
+- **`submit:production` is automated.** A Google service account
+  (`eas-submit@clases-489708.iam.gserviceaccount.com`, key held on EAS servers,
+  granted release permissions in Play Console) uploads the `.aab` to the
+  **internal** track — `npm run submit:production -- --latest`. From there it is
+  promoted to production in Play Console; the submit never publishes. Re-submitting
+  an already-published versionCode fails with a duplicate-version error, and
+  Expo's advice to "increment the version code in app.json" does NOT apply here:
+  `appVersionSource: remote` + `autoIncrement` own it, and adding one to
+  `app.json` would also move the fingerprint.
 - The Play Store *listing* title is set in Play Console (≤30 chars), independent
   of `expo.name`.
 
